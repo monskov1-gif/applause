@@ -9,6 +9,7 @@ import { GameState, newState, writeSave, settings } from '../core/state';
 import { CHARS } from '../data/chars';
 import { portrait } from '../gfx/portraits';
 import { NOTES, ITEMS } from '../data/notes';
+import { MECH, EGGS } from '../data/quests';
 import { ui } from '../ui/ui';
 
 const LOADERS: Record<string, () => Promise<{ rooms: Record<string, RoomDef> }>> = {
@@ -29,7 +30,7 @@ class Game {
   cam = { x: 0, z: 0, dist: 24, focus: null as null | { x: number; z: number; dist: number }, shake: 0, roll: 0, pitch: 0.56, yOff: 1.2 };
   near: Inter | null = null; trail: { x: number; z: number }[] = []; followers: Actor[] = []; stepT = 0; busy = false; inPhoto = false; fast = false;
   playerSpeed = 5.6; override: null | ((dt: number) => void) = null; debug = false; gradeBase: Grade = {};
-  audio = audio; ui = ui; menuScene: any = null;
+  audio = audio; ui = ui; menuScene: any = null; questT = 0;
 
   boot(canvas: HTMLCanvasElement) {
     this.R = new Renderer(canvas); this.debug = new URLSearchParams(location.search).has('debug');
@@ -45,7 +46,10 @@ class Game {
   flag(k: string) { return this.state.f[k]; }
   set(k: string | Record<string, any>, v: any = true) { if (typeof k === 'string') this.state.f[k] = v; else Object.assign(this.state.f, k); }
   has(item: string) { return this.state.inv.includes(item); }
-  give(item: string, quiet = false) { if (this.has(item)) return; this.state.inv.push(item); if (!ITEMS[item]) console.warn('[game] нет описания предмета', item); if (!quiet) { this.sfx('pickup'); ui.toast('Получено: ' + (ITEMS[item]?.name || item), '✦'); } }
+  give(item: string, quiet = false) { if (this.has(item)) return; this.state.inv.push(item); if (!ITEMS[item]) console.warn('[game] нет описания предмета', item); if (item === 'camera') this.mech('camera'); if (!quiet) { this.sfx('pickup'); ui.showItem(item); } else ui.toast('В инвентаре: ' + (ITEMS[item]?.name || item), '✦'); ui.hud(); }
+  /** Открыть гайд механики (один раз) и сообщить, где его перечитать. */
+  mech(id: string) { const m = (this.state.f.mech ||= {}); if (m[id] || !MECH[id]) return; m[id] = 1; if (!this.fast) ui.toast(`Механика: ${MECH[id].title}. Гайд — в журнале (Tab)`, '❖'); }
+  egg(id: string) { const e = (this.state.f.eggs ||= {}); if (e[id] || !EGGS[id]) return; e[id] = 1; this.sfx('note'); ui.toast(`Находка: ${EGGS[id].title} (${Object.keys(e).length}/${Object.keys(EGGS).length})`, '★'); }
   take(item: string) { const i = this.state.inv.indexOf(item); if (i >= 0) this.state.inv.splice(i, 1); }
   note(id: string) { if (this.state.notes.includes(id)) return; if (!NOTES[id]) { console.warn('[game] нет записи блокнота', id); return; } this.state.notes.push(id); this.sfx('pencil'); ui.toast('Блокнот: ' + NOTES[id].title, '✎'); }
   done(ch: string) { return !!this.state.f['done_' + ch]; }
@@ -59,7 +63,7 @@ class Game {
   // ---------- жизненный цикл ----------
   async start(state: GameState) {
     if (this.menuScene) { this.menuScene.dispose(); this.menuScene = null; }
-    this.state = state; this.running = true; this.lock = 0; this.paused = false; ui.hudShow(true);
+    this.state = state; this.running = true; this.lock = 0; this.paused = false; ui.hudShow(true); setTimeout(() => { this.mech('move'); this.mech('act'); this.mech('journal'); }, 4000);
     await this.goto(state.room, state.spot, { fade: 'fade', load: true });
   }
   stopToMenu() { this.running = false; this.clearRoom(); audio.music(null); audio.ambience(null); ui.hudShow(false); }
@@ -94,6 +98,7 @@ class Game {
       if (o.load && this.state.room === id && this.state.px != null && !this.hits(this.state.px, this.state.pz!)) this.player.place(this.state.px, this.state.pz!, 'f'); else this.player.place(sp.x, sp.z, sp.dir);
       { const fp = this.freeSpot(this.player.x, this.player.z); if (fp.x !== this.player.x || fp.z !== this.player.z) { if (this.debug) console.warn(`[room] ${id}: точка «${spot}» занята, героиня сдвинута`); this.player.place(fp.x, fp.z); } }
       for (const a of this.followers) { const fp = this.freeSpot(this.player.x + 0.8, this.player.z + 0.3); a.place(fp.x, fp.z); }
+      if (room.guards.length) this.mech('stealth'); if (room.lasers.length) this.mech('lasers');
       this.R.scene.add(room.group); this.R.scene.background = new THREE.Color(room.group.userData.bg ?? 0x050406); this.R.scene.fog = room.group.userData.fog || null;
       this.gradeBase = def.grade || {}; this.applyMask(true); this.applyGrade(true);
       this.cam.dist = def.camDist || 24; this.camSnap();
@@ -151,7 +156,7 @@ class Game {
 
   // ---------- маски ----------
   setMask(m: string | null) {
-    if (!this.state.f.masks || this.room?.def.noMasks) return; if (this.state.mask === m) m = null;
+    if (!this.state.f.masks || this.room?.def.noMasks) return; this.mech('masks'); if (this.state.mask === m) m = null;
     this.state.mask = m; this.sfx('mask'); this.applyMask(); this.applyGrade(); ui.hud();
     audio.muffle(m === 'tragedy' ? 900 : m === 'drama' ? 2600 : 20000);
   }
@@ -185,7 +190,7 @@ class Game {
         const caption = subs.length ? subs.map((s) => s.name).join(', ') : room.def.name;
         this.state.photos.push({ id: 'p' + Date.now().toString(36), img, caption, subjects: subs.map((s) => s.id), room: room.id });
         while (this.state.photos.length > 36) { const i = this.state.photos.findIndex((ph) => !ph.subjects.length); this.state.photos.splice(i >= 0 ? i : 0, 1); }
-        ui.toast('Снимок: ' + caption, '◉'); this.unfocus();
+        ui.showPhoto(img, caption); this.unfocus();
         if (room.def.photo) await room.def.photo(this, subs.map((s) => s.id));
       }
     } finally { ui.viewfinder(false); this.unfocus(); this.lock--; this.inPhoto = false; }
@@ -202,9 +207,9 @@ class Game {
     if (a === 'pause' && !this.inPhoto) { ui.pause(); return; }
     if (a === 'history') { ui.history(); return; }
     if (this.lock > 0) return;
-    if (a === 'act' && this.near) { const it = this.near; this.sfx('click'); this.cut(() => it.fn(this)).catch((e) => console.error('[game] ошибка взаимодействия', it.id, e)); }
+    if (a === 'act' && this.near) { const it = this.near; this.sfx('click'); (this.state.f.used ||= {})[this.room!.id + ':' + it.id] = 1; this.cut(() => it.fn(this)).catch((e) => console.error('[game] ошибка взаимодействия', it.id, e)); }
     else if (a === 'mask1') this.setMask('comedy'); else if (a === 'mask2') this.setMask('tragedy'); else if (a === 'mask3') this.setMask('drama'); else if (a === 'mask0') { if (this.state.mask) this.setMask(this.state.mask); }
-    else if (a === 'camera') this.photoMode(); else if (a === 'notebook') ui.notebook();
+    else if (a === 'camera') this.photoMode(); else if (a === 'notebook') ui.notebook(); else if (a === 'inventory') ui.notebook('items');
     else if (this.room?.def.onKey) this.room.def.onKey(this, a);
   }
   /** Ближайшая свободная точка (спираль), чтобы героиня никогда не появлялась внутри мебели. */
@@ -265,6 +270,7 @@ class Game {
     for (const oc of room.occluders) { const hide = p.z < oc.z - 0.2 && p.z > oc.z - 7 && p.x > oc.x0 - 0.8 && p.x < oc.x1 + 0.8; const m = oc.mesh.material as THREE.MeshLambertMaterial; const tgt = hide ? 0.18 : 1; m.opacity += (tgt - m.opacity) * Math.min(1, dt * 8); m.depthWrite = m.opacity > 0.9; }
     for (const u of room.updaters) u(dt, this.t);
     if (room.def.update) room.def.update(this, dt, this.t);
+    this.questT -= dt; if (this.questT < 0) { this.questT = 0.5; ui.quest(); }
     // ближайший интерактивный объект
     let best: Inter | null = null, bd = 1e9;
     if (this.lock === 0 && !ui.modal) for (const it of room.inters) { if (!it.enabled || (it.cond && !it.cond())) { if (it.marker) it.marker.visible = false; continue; } const d = Math.hypot(it.x - p.x, it.z - p.z); if (it.marker) { it.marker.visible = d < 5; it.marker.position.y = it.y + 0.5 + Math.sin(this.t * 3 + it.x) * 0.08; it.marker.rotation.y = this.t * 2; } if (d < it.r && d < bd) { bd = d; best = it; } }

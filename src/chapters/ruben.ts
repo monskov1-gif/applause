@@ -32,7 +32,7 @@ const hideout: RoomDef = {
         { id: 'time', label: 'Время', options: [{ id: 'shift', text: 'Пересменка', hint: 'охрана медленнее' }, { id: 'show', text: 'Во время шоу', hint: 'хозяйка занята на сцене' }] }], confirm: 'Предложить Рубену' });
       const RT: any = { vent: D.routeVent, service: D.routeService, front: D.routeFront }, GT: any = { emp: 'глушилка', holo: 'голо-маска', key: 'магнитный ключ' }, TT: any = { shift: 'в пересменку', show: 'во время шоу' };
       G.set({ rub_plan: 1, rub_route: r.route, rub_gadget: r.gadget, rub_time: r.time, rub_route_t: RT[r.route], rub_gadget_t: GT[r.gadget], rub_time_t: TT[r.time], rub_charges: r.gadget === 'emp' ? 3 : r.gadget === 'holo' ? 2 : 0 });
-      await G.run(D.planAfter(RT[r.route], GT[r.gadget], TT[r.time])); G.toast(D.gadgetHint[r.gadget as 'emp'], '⚙'); } });
+      await G.run(D.planAfter(RT[r.route], GT[r.gadget], TT[r.time])); G.toast(D.gadgetHint[r.gadget as 'emp'], '⚙'); G.mech('gadget'); } });
     R.npc('ruben_heist', -2.4, -2.6, { id: 'ruben', talk: (G: any) => G.run(f.rub_plan ? ['ruben: Готова? Лифт до «Фортуны» — за дверью. Если что — я в наушнике.'] : ['ruben: Сначала план. Потом лифт. Потом — от чего отступать.']) });
     R.npc('nol', 2.6, -2.8, { talk: ['nol: Я взломала камеры казино. Все показывают одно и то же: женщину в золотой полумаске. Она смотрит прямо в объектив.', 'nol: Это не запись. Она смотрит на меня сейчас.'] });
     R.npc('kasseta', 8.4, 0.6, { dir: 'l', talk: ['kasseta: Байк заправлен. Плейлист собран. Если начнётся погоня — я включу что-нибудь, под что приятно уворачиваться.'] });
@@ -57,7 +57,7 @@ const casino: RoomDef = {
     // пост охраны и карта
     R.box(17, 4, 2.4, 1.6, 1.2, { tex: 'metal' });
     if (!f.rub_card && f.rub_gadget !== 'key') { R.sprite(canvasTex(8, 5, (c) => { c.fillStyle = '#40e0d0'; c.fillRect(0, 0, 8, 5); c.fillStyle = '#111'; c.fillRect(1, 1, 3, 1); }, 'card'), 17, 4.2, { y: 1.25, glow: true, name: 'cardSpr' });
-      R.inter('desk', 17, 5.5, { label: 'Пост охраны', fn: async (G) => { await G.run(D.desk); f.rub_card = 1; G.room.named.cardSpr.visible = false; await G.run(D.deskGot); G.sfx('pickup'); } }); }
+      R.inter('desk', 17, 5.5, { label: 'Пост охраны', fn: async (G) => { await G.run(D.desk); f.rub_card = 1; G.room.named.cardSpr.visible = false; await G.run(D.deskGot); G.sfx('pickup'); G.egg('donut'); } }); }
     R.door('lift', 17, { label: 'Лифт в хранилище', col: '#2a2a3a', sign: 'ВАЛЮТА', glow: '#ff4fa0', cond: () => !!f.rub_card || f.rub_gadget === 'key', locked: D.elevatorLocked, fn: async (G) => { G.sfx('engine'); await G.goto('rub_lasers', 'start', { fade: 'glitch' }); } });
     // охрана: количество и скорость зависят от плана
     const slow = f.rub_time === 'shift' ? 0.75 : 1; const catchFn = async (G: any) => { G.sfx('alarm'); G.flash(0.3); await G.run(D.caught); const sp = G.room.spawns[f.rub_route] || G.room.spawns.start; G.player.place(sp.x, sp.z, 'b'); G.camSnap(); };

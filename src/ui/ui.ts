@@ -5,6 +5,8 @@ import { settings, saveSettings, SLOTS, SLOT_NAMES, readSave, writeSave, deleteS
 import { NOTES, ITEMS, CATS } from '../data/notes';
 import { CHARS } from '../data/chars';
 import { portrait } from '../gfx/portraits';
+import { itemIcon } from '../gfx/icons';
+import { objective, MECH, EGGS } from '../data/quests';
 import { G, MASK_NAMES } from '../world/game';
 
 const root = () => document.getElementById('ui')!;
@@ -30,7 +32,7 @@ export const LOGO = logoSVG('m');
 class UI {
   modal = false; dialogOpen = false; private modals: HTMLElement[] = []; private hudEl!: HTMLElement; private dlg!: HTMLElement; private promptEl!: HTMLElement; private toasts!: HTMLElement; private saveEl!: HTMLElement; private lyricEl!: HTMLElement;
   private vf!: HTMLElement; private touchEl!: HTMLElement; private log: { name: string; text: string; color: string }[] = []; private advance: (() => void) | null = null; private loadingEl!: HTMLElement; private maskRow!: HTMLElement; private hudR!: HTMLElement;
-  auto = false; private placeEl: HTMLElement | null = null;
+  auto = false; private placeEl: HTMLElement | null = null; private questEl!: HTMLElement; private lastQuest = '';
 
   init() {
     const r = root();
@@ -41,8 +43,9 @@ class UI {
     this.loadingEl = el('div', 'savemark', 'Меняем декорации…', r); this.loadingEl.style.right = 'auto'; this.loadingEl.style.left = '.8rem';
     this.dlg.addEventListener('click', (e) => { const a = (e.target as HTMLElement).dataset?.a; if (a === 'hist') this.history(); else if (a === 'auto') { this.auto = !this.auto; (e.target as HTMLElement).style.background = this.auto ? '#8e1830' : ''; if (this.auto && this.advance) this.advance(); } else if (a === 'skip') { this.skipping = true; if (this.advance) this.advance(); } else if (this.advance) this.advance(); });
     input.onAction((a) => { if (this.modal) { if (a === 'pause') this.closeTop(); return; } if (a === 'act' && this.advance) this.advance(); });
-    this.hudR.innerHTML = `<button class="hbtn" data-a="cam" title="Фотоаппарат (C)">◉</button><button class="hbtn" data-a="note" title="Блокнот (Tab)">✎</button><button class="hbtn" data-a="pause" title="Пауза (Esc)">❚❚</button>`;
-    this.hudR.addEventListener('click', (e) => { const a = (e.target as HTMLElement).dataset?.a; if (a === 'cam') input.fire('camera'); if (a === 'note') input.fire('notebook'); if (a === 'pause') input.fire('pause'); });
+    this.hudR.innerHTML = `<button class="hbtn" data-a="cam" title="Фотоаппарат (C)">◉</button><button class="hbtn" data-a="inv" title="Инвентарь (I)">▣<span class="hb-n"></span></button><button class="hbtn" data-a="note" title="Журнал (Tab)">✎</button><button class="hbtn" data-a="pause" title="Пауза (Esc)">❚❚</button>`;
+    this.hudR.addEventListener('click', (e) => { const a = (e.target as HTMLElement).closest('[data-a]')?.getAttribute('data-a'); if (a === 'cam') input.fire('camera'); if (a === 'inv') input.fire('inventory'); if (a === 'note') input.fire('notebook'); if (a === 'pause') input.fire('pause'); });
+    this.questEl = el('div', 'questbox', '', this.hudEl); this.questEl.addEventListener('click', () => this.notebook('quests'));
     this.maskRow.addEventListener('click', (e) => { const m = (e.target as HTMLElement).closest('.maskb') as HTMLElement | null; if (m) G.setMask(m.dataset.m!); });
     this.buildTouch(); this.applySettings();
   }
@@ -90,8 +93,30 @@ class UI {
     const f = G.state.f, noM = G.room?.def.noMasks;
     this.maskRow.innerHTML = f.masks && !noM ? Object.entries(MASK_NAMES).map(([k, n], i) => `<button class="maskb${G.state.mask === k ? ' on' : ''}" data-m="${k}" title="${n} (${i + 1})">${k === 'comedy' ? '☺' : k === 'tragedy' ? '☹' : '❦'}<small>${i + 1} ${n}</small></button>`).join('') : '';
     (this.hudR.children[0] as HTMLElement).classList.toggle('hidden', !G.has('camera') || !!G.room?.def.noCamera);
+    const inv = this.hudR.children[1] as HTMLElement; inv.classList.toggle('hidden', !G.state.inv.length); (inv.querySelector('.hb-n') as HTMLElement).textContent = String(G.state.inv.length); this.quest();
   }
-  prompt(label: string | null, x = 0, y = 0) { if (!label) { this.promptEl.classList.add('hidden'); return; } this.promptEl.classList.remove('hidden'); if (this.promptEl.dataset.l !== label) { this.promptEl.dataset.l = label; this.promptEl.innerHTML = `<kbd>E</kbd>${esc(label)}`; } this.promptEl.style.left = (x * 100) + '%'; this.promptEl.style.top = Math.max(8, y * 100) + '%'; }
+  /** Текущее задание в углу экрана. При смене — короткая подсветка и звук карандаша. */
+  quest() {
+    if (!G.running || !this.questEl) return; const o = objective(G); const room = G.room;
+    const left = room ? room.inters.filter((it: any) => it.enabled && !(it.cond && !it.cond()) && !it.quiet && !/^(d_|door|out|back|up|stair|stairs|lift|front)/.test(it.id) && !(G.state.f.used || {})[room.id + ':' + it.id]).length : 0;
+    const key = o.main + '|' + (o.hint || '') + '|' + left + '|' + (o.extra || []).join('|');
+    if (key === this.lastQuest) return; const changedMain = this.lastQuest.split('|')[0] !== o.main; this.lastQuest = key;
+    this.questEl.classList.toggle('hidden', !o.main);
+    this.questEl.innerHTML = `<small>Задание</small><b>${esc(o.main)}</b>${o.hint ? `<i>${esc(o.hint)}</i>` : ''}${left ? `<em>Здесь ещё можно осмотреть: ${left}</em>` : ''}`;
+    if (changedMain && o.main && !G.fast) { this.questEl.classList.remove('flash'); void this.questEl.offsetWidth; this.questEl.classList.add('flash'); audio.sfx('pencil'); }
+  }
+  /** Предмет плавно вылетает снизу, фон затемняется и размывается. */
+  showItem(id: string) {
+    if (G.fast) return; const it = ITEMS[id]; audio.sfx('paper');
+    const m = el('div', 'reveal', `<div class="reveal-card"><img src="${itemIcon(id)}" alt=""><b>${esc(it?.name || id)}</b><span>${esc(it?.desc || '')}</span><small>в инвентаре · I</small></div>`, root());
+    const close = () => { m.classList.add('out'); setTimeout(() => m.remove(), 450); }; setTimeout(close, 2600); m.onclick = close;
+  }
+  showPhoto(img: string, caption: string) {
+    if (G.fast) return; audio.sfx('paper');
+    const m = el('div', 'reveal', `<div class="reveal-card photo-pop" style="--r:-3deg"><img class="ph" src="${img}" alt=""><span class="cap">${esc(caption)}</span><small>снимок в журнале · Tab</small></div>`, root());
+    const close = () => { m.classList.add('out'); setTimeout(() => m.remove(), 450); }; setTimeout(close, 2400); m.onclick = close;
+  }
+  prompt(label: string | null, x = 0, y = 0) { if (!label) { this.promptEl.classList.add('hidden'); return; } this.promptEl.classList.remove('hidden'); if (this.promptEl.dataset.l !== label) { this.promptEl.dataset.l = label; this.promptEl.innerHTML = `<kbd>E</kbd>${esc(label)}`; } this.promptEl.style.left = Math.min(86, Math.max(14, x * 100)) + '%'; this.promptEl.style.top = Math.max(8, y * 100) + '%'; }
   toast(text: string, icon = '✦') { if (G.fast) return; const t = el('div', 'toast', `<b>${icon}</b>${esc(text)}`, this.toasts); setTimeout(() => t.remove(), 4100); }
   place(name: string) { if (this.placeEl) this.placeEl.remove(); if (G.fast) return; const p = this.placeEl = el('div', 'place', `<b>${esc(name)}</b><i></i>`, root()); setTimeout(() => p.remove(), 3700); }
   saved(slot: string) { this.saveEl.textContent = slot === 'auto' ? '✎ автосохранение' : '✎ сохранено'; this.saveEl.classList.add('on'); setTimeout(() => this.saveEl.classList.remove('on'), 1600); }
@@ -106,7 +131,7 @@ class UI {
   /** Письмо, документ, страница сценария. */
   paper(o: { title?: string; body: string; sign?: string; stamp?: string; cls?: string; hand?: boolean; btn?: string }): Promise<void> {
     if (G.fast) return Promise.resolve(); audio.sfx('paper');
-    return new Promise((res) => { const m = this.open(`<div class="paper ${o.cls || ''}">${o.stamp ? `<div class="stamp">${o.stamp}</div>` : ''}${o.title ? `<h3>${o.title}</h3>` : ''}<div class="${o.hand ? 'hand' : ''}">${o.body}</div>${o.sign ? `<div class="sign">${o.sign}</div>` : ''}<button class="btn small ok" data-x>${o.btn || 'Отложить'}</button></div>`, { raw: true, onClose: () => { audio.sfx('paper'); res(); } }); (m.querySelector('.ok') as HTMLElement).focus(); });
+    return new Promise((res) => { const m = this.open(`<div class="paper ${o.cls || ''}">${o.stamp ? `<div class="stamp">${o.stamp}</div>` : ''}${o.title ? `<h3>${o.title}</h3>` : ''}<div class="${o.hand ? 'hand' : ''}">${o.body}</div>${o.sign ? `<div class="sign">${o.sign}</div>` : ''}<button class="btn small ok" data-x>${o.btn || 'Отложить'}</button></div>`, { raw: true, onClose: () => { audio.sfx('paper'); res(); } }); (m.querySelector('.ok') as HTMLElement).focus({ preventScroll: true }); });
   }
   /** Титры-карточки на чёрном. */
   card(lines: (string | [string, string])[], o: { hold?: number } = {}): Promise<void> {
@@ -124,7 +149,7 @@ class UI {
     m.addEventListener('click', (e) => { const t = e.target as HTMLElement; if (t.closest('[data-x]')) { audio.sfx('click'); this.close(m); } });
     return m;
   }
-  close(m: HTMLElement) { const i = this.modals.indexOf(m); if (i < 0) return; this.modals.splice(i, 1); m.remove(); this.modal = this.modals.length > 0; if (!this.modal) input.setUiMode(false); const cb = (m as any).onCloseCb; if (cb) cb(); }
+  close(m: HTMLElement) { const i = this.modals.indexOf(m); if (i < 0) return; this.modals.splice(i, 1); m.classList.add('closing'); setTimeout(() => m.remove(), 280); this.modal = this.modals.length > 0; if (!this.modal) input.setUiMode(false); const cb = (m as any).onCloseCb; if (cb) cb(); }
   closeTop() { const m = this.modals[this.modals.length - 1]; if (m && !(m as any).noClose) { audio.sfx('click'); this.close(m); } }
   confirm(text: string, yes = 'Да', no = 'Отмена'): Promise<boolean> { return new Promise((res) => { let ans = false; const m = this.open(`<h2>Минутку</h2><div class="body"><p>${text}</p></div><div class="foot"><button class="btn small" data-x>${no}</button><button class="btn small red" data-y>${yes}</button></div>`, { cls: 'narrow', onClose: () => res(ans) }); (m.querySelector('[data-y]') as HTMLElement).onclick = () => { ans = true; this.close(m); }; }); }
 
@@ -170,22 +195,24 @@ class UI {
       if (a === 'imp') { const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json,application/json'; inp.onchange = async () => { const file = inp.files?.[0]; if (!file) return; const st = importSave(await file.text()); if (!st) { this.toast('Файл не похож на сохранение этой игры', '⚠'); return; } await writeSave('slot3', st); this.toast('Импортировано в «Слот III»', '✎'); await draw(); }; inp.click(); } });
   }
   closeAll() { while (this.modals.length) { const m = this.modals[this.modals.length - 1]; (m as any).onCloseCb = null; this.close(m); } G.paused = false; }
-  notebook(tab = 'chars') {
-    if (!G.running) return;
-    const m = this.open(`<h2>Блокнот режиссёра <small>В. — «не забыть ничего»</small></h2><div class="tabs">${Object.entries(CATS).map(([k, n]) => `<button class="tab" data-t="${k}">${n}</button>`).join('')}<button class="tab" data-t="photos">Фотоархив</button><button class="tab" data-t="map">План театра</button></div><div class="body" data-b></div><div class="foot"><button class="btn small" data-x>Закрыть</button></div>`);
-    const body = m.querySelector('[data-b]') as HTMLElement;
+  notebook(tab = 'quests') {
+    if (!G.running) return; audio.sfx('paper');
+    const tabs: [string, string][] = [['quests', 'Задания'], ['items', 'Инвентарь'], ['notes', 'Заметки'], ['mech', 'Механики'], ['photos', 'Фото'], ['map', 'План театра'], ['eggs', 'Находки']];
+    const m = this.open(`<h2>Журнал режиссёра <small>«не забыть ничего»</small></h2><div class="tabs">${tabs.map(([k, n]) => `<button class="tab" data-t="${k}">${n}</button>`).join('')}</div><div class="body" data-b></div><div class="foot"><button class="btn small" data-x>Закрыть</button></div>`, { cls: 'journal' });
+    const body = m.querySelector('[data-b]') as HTMLElement; const f = G.state.f;
     const draw = (t: string) => {
       m.querySelectorAll('.tab').forEach((b) => b.classList.toggle('on', (b as HTMLElement).dataset.t === t));
-      if (t === 'map') { body.innerHTML = theaterMap(G.state.room, G.state.f.visited || {}); return; }
+      if (t === 'quests') { const o = objective(G); body.innerHTML = `<div class="q-main"><small>Сейчас</small><h3>${esc(o.main || 'Смотреть спектакль')}</h3>${o.hint ? `<p><i>${esc(o.hint)}</i></p>` : ''}</div>${(o.extra || []).length ? `<h4 class="q-h">Можно сделать</h4><ul class="q-list">${o.extra!.map((e) => `<li>${esc(e)}</li>`).join('')}</ul>` : ''}<h4 class="q-h">Сыграно</h4><ul class="q-list done">${['polina', 'ruben', 'matvey', 'erika', 'liza', 'angelina'].filter((c) => f['done_' + c]).map((c) => `<li>${esc(CHARS[c].name)}: история сыграна</li>`).join('') || '<li><i>пока ничего</i></li>'}</ul>`; return; }
+      if (t === 'items') { body.innerHTML = G.state.inv.length ? `<div class="inv">${G.state.inv.map((id) => `<div class="inv-it"><img src="${itemIcon(id)}" alt=""><b>${esc(ITEMS[id]?.name || id)}</b><span>${esc(ITEMS[id]?.desc || '')}</span></div>`).join('')}</div>` : '<p><i>Карманы пусты.</i></p>'; return; }
+      if (t === 'mech') { const got = Object.keys(f.mech || {}); body.innerHTML = got.length ? got.filter((k) => MECH[k]).map((k) => `<div class="entry noimg"><div><h4>${esc(MECH[k].title)}</h4><p>${esc(MECH[k].text)}</p></div></div>`).join('') : '<p><i>Механики появятся по ходу игры.</i></p>'; return; }
+      if (t === 'eggs') { const e = f.eggs || {}; const all = Object.entries(EGGS); body.innerHTML = `<p class="warn">Найдено ${Object.keys(e).length} из ${all.length}. Пасхалки, отсылки и мелкие радости.</p><div class="eggs">${all.map(([k, v]) => `<div class="egg ${e[k] ? 'on' : ''}"><b>${e[k] ? '★ ' + esc(v.title) : '☆ ???'}</b><span>${e[k] ? esc(v.desc) : 'Где искать: ' + esc(v.hint)}</span></div>`).join('')}</div>`; return; }
+      if (t === 'map') { body.innerHTML = theaterMap(G.state.room, f.visited || {}); return; }
       if (t === 'photos') { body.innerHTML = G.state.photos.length ? `<div class="photos">${G.state.photos.map((p, i) => `<div class="photo" style="--r:${(i * 37 % 7) - 3}deg"><img src="${p.img}" alt=""><span>${esc(p.caption)}</span></div>`).join('')}</div>` : '<p><i>Плёнка пока пуста. Фотоаппарат — клавиша C.</i></p>'; return; }
-      let html = '';
-      if (t === 'items') html = G.state.inv.map((id) => `<div class="entry noimg"><div><h4>${esc(ITEMS[id]?.name || id)}</h4><p>${esc(ITEMS[id]?.desc || '')}</p></div></div>`).join('');
-      html += G.state.notes.map((id) => NOTES[id]).filter((n) => n && n.cat === t).map((n) => { const c = n.char ? CHARS[n.char] : null; return `<div class="entry ${c ? '' : 'noimg'}">${c ? `<img src="${portrait(n.char!, (n.expr || 'neutral') as any)}" alt="">` : ''}<div><h4>${esc(n.title)}</h4>${c?.role ? `<div class="role">${esc(c.role)}</div>` : ''}<p>${n.text}</p></div></div>`; }).join('');
-      body.innerHTML = html || '<p><i>Здесь пока пусто.</i></p>';
+      const sec = (cat: string, title: string) => { const list = G.state.notes.map((id) => NOTES[id]).filter((n) => n && n.cat === cat); if (!list.length) return ''; return `<h4 class="q-h">${title}</h4>` + list.map((n) => { const c = n.char ? CHARS[n.char] : null; return `<div class="entry ${c ? '' : 'noimg'}">${c ? `<img src="${portrait(n.char!, (n.expr || 'neutral') as any)}" alt="">` : ''}<div><h4>${esc(n.title)}</h4>${c?.role ? `<div class="role">${esc(c.role)}</div>` : ''}<p>${n.text}</p></div></div>`; }).join(''); };
+      body.innerHTML = Object.entries(CATS).filter(([k]) => k !== 'items').map(([k, n]) => sec(k, n)).join('') || '<p><i>Здесь пока пусто.</i></p>';
     };
     m.addEventListener('click', (e) => { const t = (e.target as HTMLElement).dataset?.t; if (t) { audio.sfx('paper'); draw(t); } }); draw(tab);
   }
-
   // ---------- главное меню ----------
   private introPlayed = false;
   async mainMenu() {

@@ -10,6 +10,7 @@ const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
 export interface PickRow { id: string; label: string; hint?: string; options: { id: string; text: string; hint?: string }[]; }
 /** Лист с вариантами: правка сценария, план ограбления, выбор образа. */
 export function pick(o: { title: string; sub?: string; intro?: string; rows: PickRow[]; confirm?: string; cls?: string; preset?: Record<string, string> }): Promise<Record<string, string>> {
+  G.mech('pick');
   if (G.fast) { const r: Record<string, string> = {}; for (const row of o.rows) r[row.id] = (G as any).autoPick?.(row) ?? o.preset?.[row.id] ?? row.options[0].id; return Promise.resolve(r); }
   return new Promise((res) => {
     const sel: Record<string, string> = { ...(o.preset || {}) };
@@ -22,6 +23,7 @@ export function pick(o: { title: string; sub?: string; intro?: string; rows: Pic
 }
 /** Кодовый замок из символов. Возвращает введённую комбинацию или null при отмене. */
 export function lock(o: { title: string; hint?: string; symbols: string[]; len: number; answer?: string[] }): Promise<string[] | null> {
+  G.mech('lock');
   if (G.fast) return Promise.resolve(o.answer || null);
   return new Promise((res) => {
     const cur = Array(o.len).fill(0); let out: string[] | null = null;
@@ -34,6 +36,7 @@ export function lock(o: { title: string; hint?: string; symbols: string[]; len: 
 export interface BoardItem { id: string; title: string; text: string; }
 /** Доска расследования: игрок сам сопоставляет показание и улику, которая ему противоречит. */
 export function board(o: { title: string; sub?: string; intro: string; left: { title: string; items: BoardItem[] }; right: { title: string; items: BoardItem[] }; pairs: [string, string, string][]; wrong: string[]; found?: string[]; canLeave?: boolean }): Promise<{ done: boolean; found: string[] }> {
+  G.mech('board');
   if (G.fast) return Promise.resolve({ done: true, found: o.pairs.map((p) => p[0] + '+' + p[1]) });
   return new Promise((res) => {
     const found = new Set(o.found || []); let a: string | null = null, b: string | null = null, wi = 0;
@@ -54,6 +57,7 @@ const LANE_COL = ['#ff5d8f', '#ffd166', '#5fd0c8', '#b48cff'], LANE_LBL = ['D �
 export interface RhythmResult { score: number; hits: number; total: number; maxCombo: number; }
 /** Ритм-сцена, синхронизированная с аудио-временем. Музыка трека запускается внутри. */
 export function rhythm(o: { track: string; part: number; loops?: number; title: string; sub?: string; onBeat?: (beat: number) => void; onHit?: (lane: number, ok: boolean) => void; lyrics?: { t: number; text: string; who?: string }[]; skipFirst?: number; tail?: number }): Promise<RhythmResult> {
+  G.mech('rhythm');
   const loops = o.loops || 2;
   if (G.fast) { return Promise.resolve({ score: 1, hits: 1, total: 1, maxCombo: 1 }); }
   return new Promise((res) => {
@@ -92,6 +96,7 @@ const DIR_SYM: Record<string, string> = { up: '↑', down: '↓', left: '←', r
 /** «Смотри и повтори»: зеркальная хореография, танцевальные связки. */
 const MIR: Record<string, string> = { left: 'right', right: 'left', up: 'up', down: 'down' };
 export function sequence(o: { title: string; sub?: string; rounds: string[][]; mirror?: boolean[]; roundSub?: string[]; onShow?: (dir: string, i: number) => void; onInput?: (dir: string, ok: boolean) => void; bpm?: number }): Promise<boolean> {
+  G.mech('sequence');
   if (G.fast) return Promise.resolve(true);
   return new Promise((res) => {
     const m = el('div', 'mg clear', `<div class="paper" style="transform:none;text-align:center;width:min(30rem,100%);margin-top:auto;margin-bottom:2rem"><h3>${o.title}</h3><div data-st style="min-height:1.6rem;font-style:italic">${o.sub || ''}</div><div data-seq style="font-size:2.6rem;letter-spacing:.5rem;min-height:3.6rem;font-family:'Playfair Display',serif"></div><div style="opacity:.6;font-size:.85rem">стрелки или WASD</div><div class="opts" style="justify-content:center;margin-top:.5rem">${['left', 'down', 'up', 'right'].map((d) => `<button class="opt" data-d="${d}" style="font-size:1.4rem;width:3rem;text-align:center">${DIR_SYM[d]}</button>`).join('')}</div></div>`, document.getElementById('ui')!);
@@ -109,6 +114,7 @@ export function sequence(o: { title: string; sub?: string; rounds: string[][]; m
 }
 /** Тайминг: остановить бегунок в зоне. Возвращает 'perfect' | 'ok' | 'miss'. */
 export function timing(o: { title: string; sub?: string; zone?: number; speed?: number }): Promise<'perfect' | 'ok' | 'miss'> {
+  G.mech('timing');
   if (G.fast) return Promise.resolve('perfect');
   return new Promise((res) => {
     const zone = (o.zone || 0.16) * (settings.rhythmEasy ? 1.8 : 1), z0 = 0.5 + (Math.random() - 0.5) * 0.4;
@@ -134,6 +140,7 @@ export function calibrate(): Promise<number | null> {
 }
 /** Погоня: три полосы, препятствия по ритму трека. Возвращает число столкновений. */
 export function runner(o: { track: string; title: string; sub?: string; duration?: number; lives?: number; skin?: 'bike' | 'carriage'; onDone?: () => void }): Promise<{ hits: number; ok: boolean }> {
+  G.mech('runner');
   if (G.fast) return Promise.resolve({ hits: 0, ok: true });
   return new Promise((res) => {
     const easy = settings.rhythmEasy, dur = o.duration || 34, lives = (o.lives || 4) + (easy ? 3 : 0);

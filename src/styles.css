@@ -199,3 +199,27 @@ body.contrast .dlg .box, body.contrast .sheet, body.contrast .choice { backgroun
 .hn.h1 { font-family: 'Caveat', cursive; color: #8e1830; font-size: 1.35rem; } .hn.h2 { font-family: 'Bad Script', cursive; color: #2a3a8a; font-size: 1rem; transform: rotate(3deg); }
 .hn.h3 { font-family: 'Amatic SC', cursive; font-weight: 700; color: #a0307a; font-size: 1.45rem; transform: rotate(-7deg); } .hn.h4 { font-family: 'Neucha', cursive; color: #3a5a3a; font-size: 1.05rem; transform: rotate(2deg); }
 @media (max-width: 640px) { .paper.sched p { padding-right: 0; } .hn { position: static; display: block; width: auto; margin: .1rem 0 .3rem 1rem; } }
+
+/* ---------- задания, инвентарь, журнал ---------- */
+.questbox { position: absolute; top: 3.4rem; right: .7rem; max-width: min(21rem, 46vw); background: linear-gradient(90deg, rgba(20,8,10,.55), rgba(20,8,10,.82)); border-right: 3px solid var(--gold); padding: .45rem .8rem .5rem; text-align: right; cursor: pointer; }
+.questbox small { display: block; font-family: 'Playfair Display', serif; letter-spacing: .3em; text-transform: uppercase; font-size: .62rem; color: #e2283c; }
+.questbox b { display: block; font-weight: 400; font-family: 'Playfair Display', serif; color: #fff4e0; font-size: .95rem; line-height: 1.3; }
+.questbox i { display: block; color: rgba(240,212,120,.85); font-size: .78rem; margin-top: .15rem; } .questbox em { display: block; font-style: normal; font-size: .72rem; color: rgba(234,223,200,.6); margin-top: .2rem; }
+.questbox.flash { animation: qflash 1.6s ease; } @keyframes qflash { 0% { transform: translateX(1rem); opacity: 0; } 20% { transform: none; opacity: 1; box-shadow: 0 0 1.4rem rgba(240,212,120,.6); } 100% { box-shadow: none; } }
+.hbtn { position: relative; } .hb-n { position: absolute; right: -.35rem; top: -.35rem; background: #8e1830; color: #fff; font-size: .62rem; border-radius: .6rem; padding: 0 .3rem; line-height: 1.1rem; min-width: 1.1rem; }
+.inv { display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: .7rem; } .inv-it { background: rgba(255,255,255,.35); border: 1px solid #b89858; padding: .6rem; text-align: center; } .inv-it img { width: 4rem; height: 4rem; image-rendering: pixelated; display: block; margin: 0 auto .3rem; } .inv-it b { display: block; font-family: 'Playfair Display', serif; color: var(--red2); } .inv-it span { font-size: .82rem; }
+.q-main { border-left: .4rem solid var(--red); padding: .3rem .9rem; background: rgba(255,255,255,.3); } .q-main small { letter-spacing: .3em; text-transform: uppercase; color: var(--red); font-size: .7rem; } .q-main h3 { margin: .2rem 0; font-family: 'Playfair Display', serif; color: var(--ink); }
+.q-h { font-family: 'Playfair Display', serif; color: var(--red2); margin: 1rem 0 .3rem; border-bottom: 1px dotted #b89858; } .q-list { margin: 0; padding-left: 1.2rem; } .q-list li { margin: .2rem 0; } .q-list.done li { color: #5a4a3a; }
+.eggs { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; } .egg { border: 1px dashed #b89858; padding: .45rem .6rem; font-size: .88rem; opacity: .7; } .egg.on { border-style: solid; opacity: 1; background: rgba(240,212,120,.25); } .egg b { display: block; font-family: 'Playfair Display', serif; color: var(--red2); }
+@media (max-width: 640px) { .eggs { grid-template-columns: 1fr; } .questbox { top: auto; bottom: 11rem; max-width: 60vw; } }
+/* ---------- плавное появление бумаг и окон ---------- */
+.modal { backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); animation: mIn .35s ease both; } .modal.closing { animation: mOut .28s ease both; }
+@keyframes mIn { from { background: rgba(8,3,5,0); backdrop-filter: blur(0); } } @keyframes mOut { to { opacity: 0; } }
+.modal .paper, .modal .sheet { animation: paperUp .6s cubic-bezier(.18,.9,.25,1.05) both; } .modal.closing .paper, .modal.closing .sheet { animation: paperDown .28s ease-in both; }
+@keyframes paperUp { from { transform: translateY(70vh) rotate(6deg); opacity: 0; } to { opacity: 1; } } @keyframes paperDown { to { transform: translateY(60vh) rotate(-4deg); opacity: 0; } }
+.reveal { position: absolute; inset: 0; z-index: 45; display: flex; align-items: center; justify-content: center; background: rgba(8,3,5,.45); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); animation: mIn .35s ease both; cursor: pointer; } .reveal.out { animation: mOut .45s ease both; }
+.reveal-card { background: var(--paper); color: var(--ink); width: min(19rem, 86vw); padding: 1.2rem 1.2rem .9rem; text-align: center; box-shadow: 0 1rem 3rem #000; animation: paperUp .7s cubic-bezier(.18,.9,.25,1.05) both; transform: rotate(var(--r, 2deg)); }
+.reveal.out .reveal-card { animation: paperDown .45s ease-in both; }
+.reveal-card img { width: 6rem; height: 6rem; image-rendering: pixelated; display: block; margin: 0 auto .5rem; } .reveal-card img.ph { width: 100%; height: auto; border: .4rem solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.4); }
+.reveal-card b { display: block; font-family: 'Playfair Display', serif; font-size: 1.15rem; color: var(--red2); } .reveal-card span { display: block; font-size: .9rem; margin-top: .3rem; } .reveal-card .cap { font-family: 'Caveat', cursive; font-size: 1.3rem; } .reveal-card small { display: block; margin-top: .5rem; opacity: .55; font-size: .72rem; letter-spacing: .1em; }
+.prompt { max-width: 80vw; } 

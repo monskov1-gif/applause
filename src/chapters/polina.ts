@@ -80,7 +80,7 @@ function hallBuild(R: Builder, G: any) {
     const r = await lock({ title: 'Замок подвала', hint: 'Три диска. Знаки тушью — как на обороте портретов.', symbols: SYMS, len: 3, answer: ANSWER });
     if (!r) return; if (r.join() === ANSWER.join()) { G.sfx('ok'); await G.run(P.lockRight); f.pol_open = 1; await G.goto('pol_basement'); } else { G.sfx('laugh', { n: 7 }); G.shake(0.2); await G.run(P.lockWrong); } } });
   R.sprite(canvasTex(14, 40, (c) => { c.fillStyle = '#3a2a1c'; c.fillRect(0, 0, 14, 40); c.fillStyle = '#e8e0c8'; c.fillRect(2, 2, 10, 10); c.fillStyle = '#111'; c.fillRect(6, 3, 1, 5); c.fillRect(6, 7, 4, 1); c.fillStyle = '#86641c'; c.fillRect(5, 16, 4, 14); }, 'gclock'), 11, -5, { scale: 1.3, solid: 0.5 });
-  R.look('clock', 11, -4, 'Напольные часы', P.clock, { mask: 'none' }); R.look('clockC', 11, -4, 'Часы (кашляют)', P.clockCom, { mask: 'comedy' });
+  R.look('clock', 11, -4, 'Напольные часы', P.clock, { mask: 'none' }); R.look('clockC', 11, -4, 'Часы (кашляют)', P.clockCom, { mask: 'comedy', egg: 'clock13' });
   R.decal(canvasTex(20, 28, (c) => { c.fillStyle = '#86641c'; c.fillRect(0, 0, 20, 28); c.fillStyle = '#5a6a7a'; c.fillRect(2, 2, 16, 24); c.fillStyle = '#7a8a9a'; c.fillRect(4, 3, 2, 22); }, 'hmirror'), { x: -3.5, y: 2.6, w: 1.6, h: 2.3 });
   R.look('hmirror', -3.5, -4.4, 'Зеркало', P.mirrorHall);
   wallpaper(R, -6, true); wallpaper(R, 6, true);
@@ -96,7 +96,7 @@ const hall: RoomDef = {
   },
 };
 async function hide(G: any, actorsToHide: string[] = ['polina']) {
-  const p = G.player;
+  const p = G.player; G.mech('hide');
   if (!p.hidden) { await G.run(P.hideIn); p.hidden = true; for (const id of actorsToHide) { const a = G.actor(id); if (a) a.hidden = true; } G.override = () => {}; G.grade({ vig: 0.95, bright: 0.7 }); }
   else { p.hidden = false; for (const id of actorsToHide) { const a = G.actor(id); if (a) a.hidden = false; } G.override = null; G.grade(G.f.pol_dark ? DARK : GRADE); }
 }

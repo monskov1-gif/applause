@@ -30,7 +30,7 @@ const yard: RoomDef = {
     R.box(-2, -3.6, 1.2, 0.6, 1.1, { tex: 'metal' }); for (let i = 0; i < (f.mat_umb ? 1 : 4); i++) R.sprite('umbrella', -2.4 + i * 0.3, -3.5, { scale: 0.7, y: 0.4 });
     R.inter('umb', -2, -2.6, { label: f.mat_umb ? 'Стойка (один зонт)' : 'Стойка с зонтами', cond: () => !f.mat_s1, fn: async (G) => { if (!f.mat_intro1) { f.mat_intro1 = 1; await G.run(M.s1intro); } if (!f.mat_umb) { f.mat_umb = 1; await G.run(M.s1take); await G.rebuild(); } } });
     R.inter('signal', 13, 1.4, { label: 'Дать знак дождю', cond: () => !!f.mat_umb && !f.mat_s1, fn: rainScene });
-    R.sprite(canvasTex(14, 10, (c) => { c.fillStyle = '#e88a3a'; c.fillRect(2, 3, 10, 6); c.fillRect(1, 1, 4, 4); c.fillStyle = '#111'; c.fillRect(2, 2, 1, 1); c.fillStyle = '#e88a3a'; c.fillRect(11, 1, 2, 4); }, 'cat'), 6, -3, { scale: 1.2 }); R.look('cat', 6, -2.4, 'Кот', M.cat, { r: 1.2 });
+    R.sprite(canvasTex(14, 10, (c) => { c.fillStyle = '#e88a3a'; c.fillRect(2, 3, 10, 6); c.fillRect(1, 1, 4, 4); c.fillStyle = '#111'; c.fillRect(2, 2, 1, 1); c.fillStyle = '#e88a3a'; c.fillRect(11, 1, 2, 4); }, 'cat'), 6, -3, { scale: 1.2 }); R.look('cat', 6, -2.4, 'Кот', M.cat, { r: 1.2, egg: 'cat' });
     if (!f.mat_s1) { R.npc('artemiy', 15.6, 1.8, { dir: 'l', talk: M.artemiy0 }); }
     R.npc('matvey_school', -8.6, 2.4, { id: 'matvey', talk: (G: any) => G.run(f.mat_s1 ? ['matvey: Зонт был в горошек, Варя. В горошек.'] : ['matvey: Артемий у ворот. Он всегда уходит через ворота ровно в 15:40. Я не следил. Я просто… знаю.']) });
     R.npc('student2', 0, 4.6, { talk: ['student2: Ты из какого класса? А, неважно. У нас тут вечно какие-то случайные события. Вчера у ворот трижды шёл дождь. Над воротами.'] }); R.actor('student', -16, -2.6, { dir: 'r' });
@@ -53,7 +53,7 @@ const klass: RoomDef = {
     const f = G.f; R.floor('schoolfloor'); R.walls('schoolwall', { h: 5.5, tint: '#e8e0d0' }); R.ambient(0x9a9ab0, 2.4, 0xfff0e0); R.sun(0xfff0d0, 2, 10, 12, 6);
     R.decal(canvasTex(80, 36, (c) => { c.fillStyle = '#5a4029'; c.fillRect(0, 0, 80, 36); c.fillStyle = '#2e5038'; c.fillRect(2, 2, 76, 32); ptext(c, 'Тема урока:', 6, 5, { size: 8, col: '#e8e8e8' }); ptext(c, '«Не всё, что поставлено, — правда»', 6, 16, { size: 7, col: '#e8e8e8', w: 70 }); }, 'board'), { x: 0, y: 2.7, w: 7, h: 3.1 });
     for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++) R.table(-5.2 + c * 3.4, -1 + r * 2.2, 1.6, 0.9, { tex: 'wood' });
-    R.table(-5, -4, 2.2, 1, { tex: 'darkwood' }); R.sprite('book', -5, -4, { y: 1.15 }); R.sprite('flowerpot', 7.6, -4.6, { scale: 1.4 });
+    R.table(-5, -4, 2.2, 1, { tex: 'darkwood' }); R.sprite('book', -5, -4, { y: 1.15 }); R.sprite('book', -5.8, -4.1, { y: 1.15, scale: 0.9 }); R.look('manga', -6.2, -2.9, 'Томик манги', ['~: Томик манги на учительском столе. «100 шагов к неизбежному». Закладка на сотой странице.', '~: Кто-то подчеркнул карандашом: «Иногда самый важный шаг тот, который делаешь назад».'], { r: 1.0, egg: 'manga' }); R.sprite('flowerpot', 7.6, -4.6, { scale: 1.4 });
     for (const x of [-8.9, 8.9]) R.light(x * 0.8, 3.2, -2, 0xfff4d8, 8, 10);
     R.inter('note', -5, -3, { label: 'Написать записку «от Матвея»', cond: () => !f.mat_s2, fn: noteScene });
     R.door('out', 6, { label: 'Во двор', z: -5.46, col: '#c8aa78', fn: (G) => G.goto('mat_yard', 'back') });

@@ -146,7 +146,7 @@ export class Builder {
     this.room.inters.push(it); if (o.photo) this.photo(id, o.photo, x, z, { cond: o.cond, mask: o.mask }); return it;
   }
   /** Осмотр: объект с репликами. */
-  look(id: string, x: number, z: number, label: string, lines: any[] | ((G: any) => any), o: any = {}) { return this.inter(id, x, z, { label, fn: typeof lines === 'function' ? lines : (G) => G.run(lines), ...o }); }
+  look(id: string, x: number, z: number, label: string, lines: any[] | ((G: any) => any), o: any = {}) { const base = typeof lines === 'function' ? lines : (G: any) => G.run(lines); const fn = o.egg ? async (G: any) => { await base(G); G.egg(o.egg); } : base; const it = this.inter(id, x, z, { label, ...o, fn }); if (o.egg) (it as any).egg = o.egg; return it; }
   npc(charId: string, x: number, z: number, o: any = {}) {
     const a = this.actor(charId, x, z, o); const b = this.collider(x - 0.4, z - 0.25, x + 0.4, z + 0.25); (a as any).box = b;
     if (o.mask) this.room.masked.push({ obj: new THREE.Object3D(), mask: o.mask, box: b });

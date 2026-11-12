@@ -41,7 +41,7 @@ const top: RoomDef = {
     for (let i = 0; i < 10; i++) R.box(-6 + i * 1.3, 2.6 + (i % 3) * 0.6, 1.2, 0.4, 0.3, { color: 0x8c6a45, solid: false, cast: false });
     R.box(4.6, -3, 3, 2, 0.8, { tex: 'velvet', tint: '#b58ad0' }); R.box(4.6, -3.9, 3, 0.3, 2.2, { tex: 'darkwood' });
     R.decal(canvasTex(18, 24, (c) => { c.fillStyle = '#d4ae48'; c.fillRect(0, 0, 18, 24); c.fillStyle = '#c8d8e8'; c.fillRect(2, 2, 14, 20); }, 'lmirror'), { x: 1, y: 2.6, w: 1.4, h: 1.9 });
-    R.look('mirror', 1, -4, 'Зеркальце', L.mirror, { mask: 'none' }); R.look('mirrorC', 1, -4, 'Зеркальце', L.mirror, { mask: 'comedy' }); R.look('mirrorT', 1, -4, 'Зеркальце', L.mirror, { mask: 'tragedy' }); R.look('mirrorDr', 1, -4, 'Зеркальце', L.mirrorDr, { mask: 'drama' });
+    R.look('mirror', 1, -4, 'Зеркальце', L.mirror, { mask: 'none', egg: 'mirror_tale' }); R.look('mirrorC', 1, -4, 'Зеркальце', L.mirror, { mask: 'comedy', egg: 'mirror_tale' }); R.look('mirrorT', 1, -4, 'Зеркальце', L.mirror, { mask: 'tragedy' }); R.look('mirrorDr', 1, -4, 'Зеркальце', L.mirrorDr, { mask: 'drama' });
     // люстра с ключом
     R.box(-1, 0, 2.4, 2.4, 0.2, { tex: 'gold', y: 5.6, solid: false }); R.box(-1, 0, 0.1, 0.1, 1.2, { color: 0x86641c, y: 5.8, solid: false });
     for (const dx of [-1, 0, 1]) R.sprite('candle', -1 + dx, 0, { y: 5.8, glow: true });
