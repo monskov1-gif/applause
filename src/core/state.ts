@@ -19,7 +19,7 @@ export interface GameState {
   savedAt?: number;
 }
 export function newState(): GameState {
-  return { v: SAVE_VERSION, room: 'hub_dressing', spot: 'start', chapter: 'Акт I · Приглашение', f: {}, inv: [], notes: [], photos: [], seen: {}, mask: null, time: 0 };
+  return { v: SAVE_VERSION, room: 'hub_sydney', spot: 'start', chapter: 'Пролог', f: {}, inv: [], notes: [], photos: [], seen: {}, mask: null, time: 0 };
 }
 
 export interface Settings {

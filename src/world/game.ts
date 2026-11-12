@@ -267,7 +267,7 @@ class Game {
       for (const lz of room.lasers) { lz.on = lz.active && ((this.t + lz.phase) % lz.period) < lz.duty * lz.period; lz.mesh.visible = lz.on; if (lz.on && !p.hidden && !(p as any).stealth) { const vx = lz.x1 - lz.x0, vz = lz.z1 - lz.z0, l2 = vx * vx + vz * vz; let u = ((p.x - lz.x0) * vx + (p.z - lz.z0) * vz) / l2; u = clamp(u, 0, 1); if (Math.hypot(p.x - lz.x0 - vx * u, p.z - lz.z0 - vz * u) < 0.4) { this.cut(() => lz.onHit(this)).catch((e) => console.error(e)); break; } } }
     } else { for (const a of room.actors) if (!a.target && a !== p && !this.followers.includes(a)) a.moving = false; }
     for (const fl of room.flick) fl.l.intensity = fl.base * (1 + (Math.sin(this.t * 13 + fl.base) * 0.5 + Math.sin(this.t * 31) * 0.5) * fl.s);
-    for (const oc of room.occluders) { const hide = p.z < oc.z - 0.2 && p.z > oc.z - 7 && p.x > oc.x0 - 0.8 && p.x < oc.x1 + 0.8; const m = oc.mesh.material as THREE.MeshLambertMaterial; const tgt = hide ? 0.18 : 1; m.opacity += (tgt - m.opacity) * Math.min(1, dt * 8); m.depthWrite = m.opacity > 0.9; }
+    for (const oc of room.occluders) { const hide = p.z < oc.z - 0.2 && p.z > oc.z - 12 && p.x > oc.x0 - 0.8 && p.x < oc.x1 + 0.8; const m = oc.mesh.material as THREE.MeshLambertMaterial; const tgt = hide ? 0.18 : 1; m.opacity += (tgt - m.opacity) * Math.min(1, dt * 8); m.depthWrite = m.opacity > 0.9; }
     for (const u of room.updaters) u(dt, this.t);
     if (room.def.update) room.def.update(this, dt, this.t);
     this.questT -= dt; if (this.questT < 0) { this.questT = 0.5; ui.quest(); }

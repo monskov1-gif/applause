@@ -9,7 +9,7 @@ import { chapterIntro, finishChapter, carriedLight, rainy, fog } from './common'
 
 const GRADE = { sat: 0.55, tint: [0.84, 0.92, 1.12], vig: 0.7, bright: 0.95, contrast: 1.08 };
 const DARK = { sat: 0.45, tint: [0.8, 0.88, 1.12], vig: 0.8, bright: 1.0, contrast: 1.12 };
-const PORTRAITS = [
+const PORTRAITS: { id: string; name: string; year: string; sym: string; anom: string }[] = [
   { id: 'cap', name: 'Капитан с трубкой', year: '1902', sym: '✶', anom: '' },
   { id: 'lady', name: 'Дама с веером', year: '1931', sym: '☾', anom: 'в зеркале за дамой её отражение стоит к зрителю спиной' },
   { id: 'kids', name: 'Дети на качелях', year: '1897', sym: '♣', anom: 'качели отбрасывают тень, а дети — нет' },
@@ -77,7 +77,7 @@ function hallBuild(R: Builder, G: any) {
   R.inter('basement', 4.5, -4.3, { label: f.pol_dark ? 'Засов подвала' : 'Дверь в подвал (замок с дисками)', fn: async (G) => {
     if (f.pol_dark) { if (!f.pol_light) return G.run(['~: [Полина] Засов электрический. Над ним лампочка — не горит. Нужен ток.', 'varya: (снизу, глухо) Поль? Ты здесь? Я слышу шаги!', 'polina/worried: Это я! Я… сейчас. Мне надо найти, откуда тут берётся свет.']); return polinaFree(G); }
     if (f.pol_open) return G.goto('pol_basement'); if (!f.pol_book) return G.run(P.basementLocked);
-    const r = await lock({ title: 'Замок подвала', hint: 'Три диска. Знаки тушью — как на обороте портретов.', symbols: SYMS, len: 3, answer: ANSWER });
+    const found = PORTRAITS.filter((p) => p.anom && f['pol_an_' + p.id]).sort((x, y) => +x.year - +y.year); const r = await lock({ title: 'Замок подвала', hint: `Три диска. Знаки с оборота трёх портретов-«лгунов», по году: от самого старого к самому новому.${found.length ? '<br><i>Блокнот: ' + found.map((p) => p.name + ', ' + p.year + ', знак ' + p.sym).join('; ') + '</i>' : ''}`, symbols: SYMS, len: 3, answer: ANSWER });
     if (!r) return; if (r.join() === ANSWER.join()) { G.sfx('ok'); await G.run(P.lockRight); f.pol_open = 1; await G.goto('pol_basement'); } else { G.sfx('laugh', { n: 7 }); G.shake(0.2); await G.run(P.lockWrong); } } });
   R.sprite(canvasTex(14, 40, (c) => { c.fillStyle = '#3a2a1c'; c.fillRect(0, 0, 14, 40); c.fillStyle = '#e8e0c8'; c.fillRect(2, 2, 10, 10); c.fillStyle = '#111'; c.fillRect(6, 3, 1, 5); c.fillRect(6, 7, 4, 1); c.fillStyle = '#86641c'; c.fillRect(5, 16, 4, 14); }, 'gclock'), 11, -5, { scale: 1.3, solid: 0.5 });
   R.look('clock', 11, -4, 'Напольные часы', P.clock, { mask: 'none' }); R.look('clockC', 11, -4, 'Часы (кашляют)', P.clockCom, { mask: 'comedy', egg: 'clock13' });
@@ -117,7 +117,7 @@ const library: RoomDef = {
   },
   async photo(G, subs) {
     const f = G.f; const anoms = PORTRAITS.filter((p) => p.anom && subs.includes(p.id)); const normals = PORTRAITS.filter((p) => !p.anom && subs.includes(p.id));
-    for (const a of anoms) { await G.run(P.anomalyFound(a.anom)); f['pol_an_' + a.id] = 1; } if (!anoms.length && normals.length) await G.run(P.noAnomaly);
+    for (const a of anoms) { await G.run([...P.anomalyFound(a.anom), `~: Запомню: «${a.name}», ${a.year} год, на обороте знак ${a.sym}.`]); f['pol_an_' + a.id] = 1; } if (!anoms.length && normals.length) await G.run(P.noAnomaly);
     if (PORTRAITS.every((p) => !p.anom || f['pol_an_' + p.id]) && !f.pol_photos) { f.pol_photos = 1; G.note('n_pol_photos'); await G.run(['polina: Три лгуна. Капитан и собака честные. Теперь — годы на рамах. От самого давнего.']); }
   },
 };

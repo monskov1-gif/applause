@@ -101,13 +101,23 @@ export function ptext(c: CanvasRenderingContext2D, s: string, x: number, y: numb
 type DC = CanvasRenderingContext2D;
 const r = (c: DC, x: number, y: number, w: number, h: number, col: string) => { c.fillStyle = col; c.fillRect(x, y, w, h); };
 /** Афиша / вывеска / записка. */
-export function poster(title: string, sub = '', o: { bg?: string; fg?: string; w?: number; h?: number; frame?: string; size?: number; face?: string } = {}) {
-  const w = o.w || 40, h = o.h || 56;
+export function poster(title: string, sub = '', o: { bg?: string; fg?: string; w?: number; h?: number; frame?: string; size?: number; face?: string; motif?: string } = {}) {
+  const w = o.w ? Math.max(40, Math.round(o.w * 22)) : 40, h = o.h ? Math.max(56, Math.round(o.h * 22)) : 56;
+  let hsh = 0; for (const ch of title) hsh = (hsh * 31 + ch.charCodeAt(0)) >>> 0; const motif = o.motif || ['mask', 'crown', 'rose', 'dancer', 'moon', 'curtain'][hsh % 6];
   return canvasTex(w, h, (c) => {
-    r(c, 0, 0, w, h, o.frame || '#3a2a14'); r(c, 1, 1, w - 2, h - 2, o.bg || '#e2d5ac');
-    if (o.face) { r(c, w / 2 - 7, 6, 14, 16, o.face); r(c, w / 2 - 9, 4, 18, 6, '#2a1512'); r(c, w / 2 - 9, 8, 3, 16, '#2a1512'); r(c, w / 2 + 6, 8, 3, 16, '#2a1512'); r(c, w / 2 - 6, 22, 12, 6, '#a3122a'); }
-    const y0 = o.face ? 30 : 5; const hh = ptext(c, title, w / 2, y0, { size: o.size || 8, col: o.fg || '#5a0c18', w: w - 6, align: 'center' });
-    if (sub) ptext(c, sub, w / 2, y0 + hh + 2, { size: 6, col: '#3a2a14', w: w - 6, align: 'center', lh: 7 });
+    r(c, 0, 0, w, h, o.frame || '#3a2a14'); const g = c.createLinearGradient(0, 0, 0, h); const bg = o.bg || ['#e2d5ac', '#f0e0c0', '#d8c8a0', '#e8d0c0'][hsh % 4]; g.addColorStop(0, bg); g.addColorStop(1, '#a8906a'); c.fillStyle = g; c.fillRect(1, 1, w - 2, h - 2);
+    c.strokeStyle = 'rgba(90,12,24,.6)'; c.strokeRect(3.5, 3.5, w - 7, h - 7);
+    const cx = w / 2, my = h * 0.38, fg = o.fg || '#5a0c18'; c.fillStyle = fg;
+    if (o.face) { r(c, cx - 7, my - 10, 14, 16, o.face); r(c, cx - 9, my - 12, 18, 6, '#2a1512'); r(c, cx - 10, my - 8, 3, 18, '#2a1512'); r(c, cx + 7, my - 8, 3, 18, '#2a1512'); r(c, cx - 8, my + 6, 16, 9, '#a3122a'); r(c, cx - 4, my - 4, 2, 2, '#2a1512'); r(c, cx + 2, my - 4, 2, 2, '#2a1512'); r(c, cx - 2, my + 1, 4, 1, '#b3122e'); }
+    else if (motif === 'mask') { c.beginPath(); c.ellipse(cx - 4, my, 7, 9, -0.2, 0, 7); c.fill(); c.fillStyle = bg; c.fillRect(cx - 8, my - 3, 3, 2); c.fillRect(cx - 2, my - 3, 3, 2); c.fillStyle = '#b08a2c'; c.beginPath(); c.ellipse(cx + 5, my + 3, 6, 8, 0.3, 0, 7); c.fill(); }
+    else if (motif === 'crown') { c.beginPath(); c.moveTo(cx - 10, my + 6); c.lineTo(cx - 10, my - 6); c.lineTo(cx - 5, my); c.lineTo(cx, my - 9); c.lineTo(cx + 5, my); c.lineTo(cx + 10, my - 6); c.lineTo(cx + 10, my + 6); c.fill(); }
+    else if (motif === 'rose') { for (let k = 0; k < 5; k++) { c.beginPath(); c.arc(cx + Math.cos(k * 1.26) * 4, my + Math.sin(k * 1.26) * 4, 5, 0, 7); c.fill(); } r(c, cx - 1, my + 6, 2, 12, '#2e5038'); }
+    else if (motif === 'dancer') { r(c, cx - 1, my - 10, 3, 3, fg); r(c, cx - 1, my - 7, 3, 9, fg); r(c, cx - 7, my - 9, 6, 1, fg); r(c, cx + 2, my - 12, 1, 6, fg); c.beginPath(); c.ellipse(cx, my + 2, 8, 2, 0, 0, 7); c.fill(); r(c, cx - 1, my + 3, 1, 9, fg); r(c, cx + 1, my + 3, 5, 1, fg); }
+    else if (motif === 'moon') { c.beginPath(); c.arc(cx, my, 9, 0, 7); c.fill(); c.fillStyle = bg; c.beginPath(); c.arc(cx + 4, my - 2, 8, 0, 7); c.fill(); }
+    else { for (let k = 0; k < 6; k++) r(c, 5 + k * ((w - 10) / 6), 5, (w - 10) / 12, h * 0.55, k % 2 ? '#8e1830' : '#5a0c18'); }
+    const y0 = h * 0.6; const hh = ptext(c, title, cx, y0, { size: o.size || 8, col: fg, w: w - 6, align: 'center' });
+    if (sub) ptext(c, sub, cx, y0 + hh + 1, { size: 6, col: '#3a2a14', w: w - 6, align: 'center', lh: 7 });
+    r(c, 6, h - 7, w - 12, 1, 'rgba(58,42,20,.5)'); r(c, 9, h - 5, w - 18, 1, 'rgba(58,42,20,.35)');
   }, 'poster|' + title + sub + JSON.stringify(o));
 }
 // ---------- спрайты реквизита ----------

@@ -1,6 +1,7 @@
 // Мир: комнаты-диорамы, акторы-билборды, построитель локаций, коллизии, интерактивные объекты, стражи.
 import * as THREE from 'three';
 import { tex, canvasTex, propTex, poster, PPU, ptext } from '../gfx/tex';
+import { door3D, swingDoor } from './decor3d';
 import { charSheet, FW, FH, FRAMES } from '../gfx/sprites';
 import { CHARS } from '../data/chars';
 import type { Grade } from '../gfx/render';
@@ -84,6 +85,24 @@ export class Room {
 
 export class Builder {
   constructor(public room: Room, public G: any) {}
+  slots: Record<string, { a0: number; a1: number; y0: number; y1: number; fixed: boolean; obj?: THREE.Object3D; axis?: 'x' | 'z'; follow: THREE.Object3D[] }[]> = { n: [], w: [], e: [] };
+  private overlaps(wall: string, a0: number, a1: number, y0: number, y1: number, skip?: any) { return this.slots[wall].some((q) => q !== skip && a0 < q.a1 - 0.02 && a1 > q.a0 + 0.02 && y0 < q.y1 - 0.02 && y1 > q.y0 + 0.02); }
+  /** Найти свободное место на стене рядом с желаемым; вернуть смещение. */
+  private freeAlong(wall: string, a: number, half: number, y0: number, y1: number, skip?: any) {
+    const lim = (wall === 'n' ? this.w : this.d) / 2 - half - 0.1;
+    for (let k = 0; k < 60; k++) { const d = (k % 2 ? 1 : -1) * Math.ceil(k / 2) * 0.2; const c = Math.max(-lim, Math.min(lim, a + d)); if (!this.overlaps(wall, c - half, c + half, y0, y1, skip)) return c; }
+    return a;
+  }
+  /** Регистрирует предмет на стене. fixed (двери, окна) сдвигают уже стоящий декор. Возвращает итоговую координату вдоль стены. */
+  wallSlot(wall: 'n' | 'w' | 'e', a: number, w: number, y: number, h: number, o: { fixed?: boolean; obj?: THREE.Object3D } = {}) {
+    const half = w / 2, y0 = y - h / 2, y1 = y + h / 2; const list = this.slots[wall]; const axis = wall === 'n' ? 'x' : 'z';
+    if (o.fixed) {
+      const slot = { a0: a - half, a1: a + half, y0, y1, fixed: true, obj: o.obj, axis, follow: [] as THREE.Object3D[] }; list.push(slot as any);
+      for (const q of list) if (q !== slot && !q.fixed && q.a0 < slot.a1 && q.a1 > slot.a0 && q.y0 < y1 && q.y1 > y0) { const c0 = (q.a0 + q.a1) / 2, hw = (q.a1 - q.a0) / 2; const c = this.freeAlong(wall, c0, hw, q.y0, q.y1, q); const dd = c - c0; q.a0 += dd; q.a1 += dd; for (const ob of [q.obj, ...q.follow]) if (ob) (ob.position as any)[axis] += dd; }
+      return a;
+    }
+    const c = this.freeAlong(wall, a, half, y0, y1); const slot = { a0: c - half, a1: c + half, y0, y1, fixed: false, obj: o.obj, axis, follow: [] as THREE.Object3D[] }; list.push(slot as any); if (o.obj) o.obj.userData.slot = slot; return c;
+  }
   get w() { return this.room.def.w; } get d() { return this.room.def.d; }
   private mat(o: any, fallback = 'plaster'): THREE.MeshLambertMaterial {
     if (o.color && !o.tex) return new THREE.MeshLambertMaterial({ color: o.color, emissive: o.emissive || 0, emissiveIntensity: o.ei ?? 1, transparent: o.opacity != null, opacity: o.opacity ?? 1 });
@@ -120,10 +139,11 @@ export class Builder {
     const mat = o.glow ? new THREE.MeshBasicMaterial({ map: t, transparent: true, alphaTest: 0.1, color: o.color || 0xffffff }) : new THREE.MeshLambertMaterial({ map: t, transparent: true, alphaTest: 0.1 });
     if (o.opacity != null) { mat.opacity = o.opacity; mat.alphaTest = 0.01; }
     const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat); const y = (o.y ?? 2.4);
-    if (o.wall === 'w') { m.position.set(-this.w / 2 + 0.03, y, o.at || 0); m.rotation.y = Math.PI / 2; }
-    else if (o.wall === 'e') { m.position.set(this.w / 2 - 0.03, y, o.at || 0); m.rotation.y = -Math.PI / 2; }
+    const onWall = !o.flat && !o.noSlot && (o.wall === 'w' || o.wall === 'e' || (o.z == null || Math.abs(o.z - (-this.d / 2 + 0.03)) < 0.15));
+    if (o.wall === 'w') { m.position.set(-this.w / 2 + 0.03, y, onWall ? this.wallSlot('w', o.at || 0, w, y, h, { obj: m }) : o.at || 0); m.rotation.y = Math.PI / 2; }
+    else if (o.wall === 'e') { m.position.set(this.w / 2 - 0.03, y, onWall ? this.wallSlot('e', o.at || 0, w, y, h, { obj: m }) : o.at || 0); m.rotation.y = -Math.PI / 2; }
     else if (o.flat) { m.position.set(o.x || 0, o.y ?? 0.03, o.z || 0); m.rotation.x = -Math.PI / 2; }
-    else m.position.set(o.x ?? o.at ?? 0, y, o.z ?? (-this.d / 2 + 0.03));
+    else { const x0 = o.x ?? o.at ?? 0; m.position.set(onWall && w < this.w * 0.6 ? this.wallSlot('n', x0, w, y, h, { obj: m }) : x0, y, o.z ?? (-this.d / 2 + 0.03)); }
     if (o.ry) m.rotation.y = o.ry; m.receiveShadow = !o.glow; this.room.group.add(m); this.tag(m, o); return m;
   }
   poster(title: string, sub: string, o: any = {}) { return this.decal(poster(title, sub, o), o); }
@@ -154,18 +174,30 @@ export class Builder {
     return a;
   }
   /** Дверь на задней стене или в произвольном месте. */
-  door(id: string, x: number, o: { to?: string; spot?: string; label: string; cond?: () => boolean; locked?: string | any[]; z?: number; col?: string; fn?: (G: any) => any; fade?: string; mask?: string; sign?: string; glow?: string; w?: number; h?: number; wall?: 'w' | 'e' | 's' }) {
-    const col = o.col || '#45301f', W = o.w || 2.2, H = o.h || 3.4;
-    const t = canvasTex(Math.round(W * PPU), Math.round(H * PPU), (c, w, h) => { c.fillStyle = '#1a120e'; c.fillRect(0, 0, w, h); c.fillStyle = col; c.fillRect(2, 2, w - 4, h - 2); c.fillStyle = 'rgba(0,0,0,0.25)'; c.fillRect(5, 6, w - 10, h * 0.4); c.fillRect(5, h * 0.52, w - 10, h * 0.4); c.fillStyle = 'rgba(255,255,255,0.12)'; c.fillRect(2, 2, 2, h); c.fillStyle = '#d4ae48'; c.fillRect(w - 9, h * 0.5, 3, 3); if (o.sign) { c.fillStyle = '#e2d5ac'; c.fillRect(6, 9, w - 12, 9); ptext(c, o.sign, w / 2, 9, { size: 7, align: 'center', col: '#3a1a14' }); } }, 'door|' + col + W + H + (o.sign || ''));
-    let ix = x, iz: number, m: THREE.Mesh;
-    if (o.wall === 'w' || o.wall === 'e') { m = this.decal(t, { wall: o.wall, at: x, y: H / 2, glow: !!o.glow, color: o.glow, mask: o.mask }); ix = (o.wall === 'w' ? -1 : 1) * (this.w / 2 - 0.9); iz = x; }
-    else if (o.wall === 's') { m = this.decal(canvasTex(32, 32, (c) => { c.fillStyle = 'rgba(240,212,120,0.85)'; c.beginPath(); c.moveTo(16, 30); c.lineTo(4, 14); c.lineTo(11, 14); c.lineTo(11, 2); c.lineTo(21, 2); c.lineTo(21, 14); c.lineTo(28, 14); c.closePath(); c.fill(); }, 'arrowS'), { flat: true, x, z: this.d / 2 - 0.9, y: 0.03, w: 1.4, h: 1.4, glow: true }); iz = this.d / 2 - 0.9; }
-    else { const z = o.z ?? (-this.d / 2 + 0.04); m = this.decal(t, { x, z, y: H / 2, glow: !!o.glow, color: o.glow, mask: o.mask }); iz = z + 0.9; }
-    this.inter(id, ix, iz, { label: o.label, mask: o.mask, y: 3.2, fn: async (G) => {
+  door(id: string, x: number, o: { to?: string; spot?: string; label: string; cond?: () => boolean; locked?: string | any[]; z?: number; col?: string; fn?: (G: any) => any; fade?: string; mask?: string; sign?: string; glow?: string; w?: number; h?: number; wall?: 'w' | 'e' | 's'; double?: boolean }) {
+    const W = o.w || 2.2, H = o.h || 3.4; let ix = x, iz: number; let g: THREE.Object3D;
+    if (o.wall === 's') { g = this.southExit(x, o.sign || o.label); iz = this.d / 2 - 0.9; }
+    else {
+      g = door3D(W, H, o.col || '#5a3a22', o.sign, !!o.double || W > 2.6, o.glow);
+      if (o.wall === 'w' || o.wall === 'e') { const s = o.wall === 'w' ? -1 : 1; const at = this.wallSlot(o.wall, x, W + 0.8, H / 2, H + 0.6, { fixed: true, obj: g }); g.position.set(s * (this.w / 2), 0, at); g.rotation.y = -s * Math.PI / 2; ix = s * (this.w / 2 - 0.9); iz = at; }
+      else { const z = o.z ?? (-this.d / 2); g.position.set(x, 0, z); if (o.z == null) this.wallSlot('n', x, W + 0.8, H / 2, H + 0.6, { fixed: true, obj: g }); iz = z + 0.9; }
+      this.room.group.add(g); this.tag(g, { mask: o.mask });
+    }
+    this.inter(id, ix, iz, { label: o.label, mask: o.mask, y: o.wall === 's' ? 1.6 : 3.2, fn: async (G) => {
       if (o.cond && !o.cond()) { G.sfx('locked'); if (o.locked) await G.run(typeof o.locked === 'string' ? ['~: ' + o.locked] : o.locked); return; }
-      if (o.fn) return o.fn(G); G.sfx(o.wall === 's' ? 'step' : 'door'); await G.goto(o.to!, o.spot || 'start', { fade: o.fade });
+      if (o.fn) return o.fn(G); if (o.wall !== 's') { G.sfx('door'); swingDoor(g); } else G.sfx('step'); await G.goto(o.to!, o.spot || 'start', { fade: o.fade });
     } });
-    return m;
+    return g;
+  }
+  /** Выход у открытой (южной) стороны: проём-арка с табличкой и ступенями, видимый камерой. */
+  southExit(x: number, label: string) {
+    const g = new THREE.Group(); const z = this.d / 2 - 0.25; const wood = new THREE.MeshLambertMaterial({ map: tex('darkwood') }), gold = new THREE.MeshLambertMaterial({ map: tex('gold') });
+    for (const sx of [-1, 1]) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.25, 2.6, 0.25), wood); p.position.set(x + sx * 1.15, 1.3, z); p.castShadow = true; g.add(p); const cap = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.15, 0.4), gold); cap.position.set(x + sx * 1.15, 2.65, z); g.add(cap); }
+    const lint = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.22, 0.3), wood); lint.position.set(x, 2.75, z); g.add(lint);
+    const plate = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 0.42), new THREE.MeshBasicMaterial({ map: canvasTex(88, 16, (c) => { c.fillStyle = '#2a1408'; c.fillRect(0, 0, 88, 16); c.strokeStyle = '#d4ae48'; c.strokeRect(0.5, 0.5, 87, 15); ptext(c, label.length > 22 ? label.slice(0, 21) + '…' : label, 44, 4, { size: 7, col: '#f0d478', align: 'center' }); }, 'sexit' + label) }));
+    plate.position.set(x, 2.75, z + 0.16); g.add(plate);
+    for (let i = 0; i < 3; i++) { const st = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.08, 0.35), wood); st.position.set(x, 0.04 - i * 0.12, z + 0.1 + i * 0.3); g.add(st); }
+    this.room.group.add(g); return g;
   }
   /** Внутренняя стена: коллизия + становится полупрозрачной, когда заслоняет героиню. */
   wall(x0: number, z0: number, x1: number, z1: number, o: any = {}) {
