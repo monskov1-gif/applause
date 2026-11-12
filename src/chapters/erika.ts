@@ -55,7 +55,7 @@ const street: RoomDef = {
 const club: RoomDef = {
   name: 'Джаз-клуб «Синяя нота»', w: 26, d: 12, music: 'noir', amb: 'crowd', step: 'carpet', grade: NOIR,
   build(R, G) {
-    const f = G.f; interior(R, 'wallpaper', 'parquet'); R.light(-6, 3.5, -2, 0xffffff, 12, 10); R.spot(6, 9, 2, 6, -3.4, 0xffffff, 35, { angle: 0.22, cone: 0.07 });
+    const f = G.f; interior(R, 'wallpaper', 'floor'); R.light(-6, 3.5, -2, 0xffffff, 12, 10); R.spot(6, 9, 2, 6, -3.4, 0xffffff, 35, { angle: 0.22, cone: 0.07 });
     R.box(6, -4, 6, 3, 0.6, { tex: 'stage', solid: false }); R.sprite('mic', 6, -3.4, { y: 0.6 }); R.sprite('speaker', 3.4, -4.8, { y: 0.6 }); R.sprite('speaker', 8.6, -4.8, { y: 0.6 });
     R.box(-7, -3.2, 6, 1.2, 1.2, { tex: 'darkwood' }); for (let i = 0; i < 6; i++) R.box(-9.4 + i * 0.9, -5.4, 0.2, 0.2, 0.6, { color: 0x888888, y: 2.4, solid: false });
     for (const [x, z] of [[-2, 2], [2, 3.4], [-6, 3.6]]) { R.table(x, z, 1.4, 1.4); R.sprite('candle', x, z, { y: 1.15 }); }

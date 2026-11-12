@@ -9,7 +9,7 @@ import { chapterIntro, finishChapter } from './common';
 
 const fakeGrade = (n: number) => ({ sat: 1.05 + n * 0.18, tint: [1.04 + n * 0.03, 1.0, 1.02 + n * 0.04], vig: 0.25 + n * 0.08, bright: 0.98, bloom: 0.3 + n * 0.12, wave: n >= 3 ? 0.25 : 0 });
 function schoolFacade(R: Builder, w: number) {
-  R.box(0, -6.3, w, 0.8, 7, { tex: 'schoolwall' }); R.box(0, -6.4, w + 0.6, 1.2, 0.4, { tex: 'concrete', y: 7 });
+  R.box(0, -6.3, w, 0.8, 7, { tex: 'schoolwall' });
   for (let x = -w / 2 + 3; x < w / 2 - 2; x += 4) for (const y of [2.4, 5.2]) R.decal(canvasTex(20, 16, (c) => { c.fillStyle = '#d8d8e0'; c.fillRect(0, 0, 20, 16); c.fillStyle = '#9cc2ee'; c.fillRect(2, 2, 16, 12); c.fillStyle = '#d8d8e0'; c.fillRect(9, 2, 2, 12); c.fillStyle = '#f8f8ff'; c.fillRect(3, 3, 3, 5); }, 'swin'), { x, y, z: -5.88, w: 2, h: 1.6 });
   R.decal(canvasTex(48, 10, (c) => { c.fillStyle = '#2c3550'; c.fillRect(0, 0, 48, 10); ptext(c, 'ШКОЛА № 100', 24, 1, { size: 8, col: '#f0f0f0', align: 'center' }); }, 'schoolsign'), { x: -6, y: 6.1, z: -5.86, w: 4.8, h: 1 });
 }
@@ -18,7 +18,7 @@ const yard: RoomDef = {
   build(R, G) {
     const f = G.f; R.room.group.userData.bg = 0x9cc2ee; R.floor('grass'); R.floor('schoolfloor', { w: 34, d: 4, z: -3.6, y: 0.01, tex: 'concrete' }); R.floor('concrete', { w: 4, d: 10, x: -6, z: 1, y: 0.012 });
     R.ambient(0x7a7a90, 1.7, 0xfff0f8); R.sun(0xfff0e0, 1.5, 8, 14, 10); schoolFacade(R, 34);
-    R.particles('petals', { count: 110 + (f.mat_fake || 0) * 60, top: 8 });
+    R.particles('petals', { count: 110 + (f.mat_fake || 0) * 60, top: 8 }); R.sprite('sakura', 15, -2.4, { scale: 1.1, solid: 0.4 });
     const rain = R.particles('rain', { count: 400, top: 9, name: 'rain' }); rain.visible = false;
     for (const [x, z] of [[-14, 2], [-12, 5.2], [3, 4.6], [9, 3], [14, 5]]) R.sprite('sakura', x, z, { scale: 1.2, solid: 0.4 });
     // ворота
@@ -73,7 +73,7 @@ async function noteScene(G: any) {
 const fest: RoomDef = {
   name: 'Школьный фестиваль', w: 50, d: 14, music: 'school', amb: 'crowd', step: 'stone', grade: { ...fakeGrade(2), tint: [1.0, 0.9, 1.08], bright: 0.95, bloom: 0.7 },
   build(R, G) {
-    const f = G.f; R.room.group.userData.bg = 0x0c0818; R.floor('concrete'); R.ambient(0x2a2040, 1.4, 0x7060a0); schoolFacade(R, 50);
+    const f = G.f; R.room.group.userData.bg = 0x0c0818; R.floor('concrete'); R.ambient(0x3a2c50, 1.9, 0x8070b0); schoolFacade(R, 50); for (const x of [-20, -12, -4, 6, 14]) R.light(x, 3, 3, 0xffa070, 6, 9);
     R.particles('petals', { count: 80, top: 8 });
     for (let x = -23; x <= 23; x += 2.4) { const on = !f.mat_arch_down || Math.abs(x - 2) > 4; if (on) R.sprite('lantern', x, -4.2, { y: 4.4 + Math.sin(x * 0.7) * 0.25, glow: true }); if (on && Math.round(x * 10) % 48 === 0) R.light(x, 4, -3, 0xff9a70, 6, 9); }
     for (const x of [-18, -10, 10]) { R.sprite('stall', x, -3.6, { scale: 1.3, solid: 1.6 }); R.light(x, 3, -2.6, 0xffb070, 10, 8); }

@@ -84,6 +84,7 @@ const stage: RoomDef = {
     const f = G.f; R.room.group.userData.bg = 0x05030a; R.floor('stage', { d: 8, z: -3 }); R.floor('black', { d: 6, z: 4 }); R.walls('led', { h: 8 }); R.ambient(0x3a2a4a, 1.8, 0xc0a0e0);
     screen(R, -8, 4.4, 6, 3.8, f.ang_done ? 'АНГЕЛИНА' : 'ANGEL♡'); screen(R, 8, 4.4, 6, 3.8, f.ang_done ? 'АНГЕЛИНА' : 'ANGEL♡');
     R.spot(0, 10, 2, 0, -3, 0xffe0f0, 32, { angle: 0.3, cone: 0.06, name: 'main' }); R.spot(-8, 9, 3, -2, -2, 0xff4fa0, 40, { angle: 0.35, cone: 0.05, shadow: false }); R.spot(8, 9, 3, 2, -2, 0x40e0d0, 40, { angle: 0.35, cone: 0.05, shadow: false });
+    for (let x = -12; x <= 12; x += 4) { R.box(x, 1.2, 3, 0.15, 0.08, { color: x % 8 ? 0xff4fa0 : 0x40e0d0, emissive: x % 8 ? 0xff4fa0 : 0x40e0d0, solid: false }); R.light(x, 0.6, 3, x % 8 ? 0xff4fa0 : 0x40e0d0, 3, 6); }
     R.sprite('mic', 0, -2.4, { scale: 1.2 }); for (const x of [-12, 12]) R.sprite('speaker', x, -4.6, { scale: 1.8 });
     R.table(11, 2.6, 3, 1.4, { tex: 'metal' }); for (let i = 0; i < 6; i++) R.box(10 + i * 0.4, 2.6, 0.2, 0.8, 0.08, { color: i % 2 ? 0xff4fa0 : 0x40e0d0, y: 1.15, solid: false });
     R.actor(angelChar(G), 0, -3, { id: 'angelina' }); R.actor('stylist', -13, -4.4, { id: 'stylist', dir: 'r' }); R.actor('glyants', -11.6, -4.6, { id: 'glyants', dir: 'r' });

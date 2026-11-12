@@ -20,6 +20,9 @@ const base: RoomDef = {
     R.box(4, -3.6, 5, 4, 14, { tex: 'paperstone' }); R.box(4, -3.6, 6, 5, 1.2, { tex: 'carpet', tint: '#4a6aa0', y: 14 });
     R.decal(canvasTex(16, 20, (c) => { c.fillStyle = '#3a2a14'; c.fillRect(0, 0, 16, 20); c.fillStyle = '#f0d0a0'; c.fillRect(2, 2, 12, 16); c.fillStyle = '#3a2a14'; c.fillRect(7, 2, 2, 16); }, 'twin2'), { x: 4, y: 10, z: -1.55, w: 1.6, h: 2 });
     if (f.liz_hair) R.box(4.3, -1.4, 0.5, 0.5, 9.4, { color: 0xf0d98a, y: 0, solid: false });
+    const hill = (col: string, key: string) => canvasTex(96, 32, (c) => { c.fillStyle = col; c.beginPath(); c.moveTo(0, 32); for (let x = 0; x <= 96; x += 8) c.lineTo(x, 14 + Math.sin(x / 13 + key.length) * 7); c.lineTo(96, 32); c.fill(); c.strokeStyle = '#3a2a14'; c.lineWidth = 1; c.beginPath(); for (let x = 0; x <= 96; x += 8) c.lineTo(x, 14 + Math.sin(x / 13 + key.length) * 7); c.stroke(); for (let i = 0; i < 40; i++) { c.fillStyle = 'rgba(58,42,20,.25)'; c.fillRect((i * 37) % 96, 22 + (i * 7) % 10, 3, 1); } }, 'hill' + key);
+    R.sprite(hill('#8aa070', 'a'), -6, -5.8, { scale: 3.4 }); R.sprite(hill('#a8b888', 'bb'), 12, -5.9, { scale: 3 }); R.sprite(hill('#7a9a68', 'ccc'), -16, -5.7, { scale: 2.6 });
+    R.decal(canvasTex(40, 30, (c) => { c.fillStyle = '#3a2a14'; c.fillRect(0, 0, 40, 30); c.fillStyle = '#efe0b8'; c.fillRect(2, 2, 36, 26); ptext(c, 'Глава I', 20, 6, { size: 8, col: '#5a0c18', align: 'center', font: '"Marck Script", cursive' }); ptext(c, 'в которой ждут', 20, 17, { size: 6, col: '#3a2a14', align: 'center' }); }, 'chap1'), { x: -10, y: 4.2, z: -5.9, w: 3, h: 2.2 });
     for (const [x, z, s] of [[-12, -3, 1.2], [-8, 3, 1], [12, -3, 1.3], [13, 3.2, 1]] as any) R.sprite('tree', x, z, { scale: s, solid: 0.4 });
     for (let i = 0; i < 8; i++) R.sprite('bush', -14 + i * 4, 5.2 - (i % 2), { scale: 1.2 });
     ink(R, 'облака', -6, 8, 4); ink(R, 'башня (очень высокая)', 4, 15.4, 8);
@@ -53,7 +56,7 @@ const mid: RoomDef = {
   build(R, G) {
     const f = G.f; R.room.group.userData.bg = 0x1a1208; R.floor('paper', { tint: '#c8b07a', x: -8.5, w: 11 }); R.floor('paper', { tint: '#c8b07a', x: 7.5, w: 13 }); R.walls('stone', { h: 7 }); R.ambient(0x6a5a40, 1.7, 0xfff0d0); R.particles('dust', { count: 60, top: 6, color: 0xb89858 }); R.light(-8, 4, -1, 0xffe0b0, 12, 12); R.light(8, 4, -1, 0xffe0b0, 12, 12);
     // провал
-    R.box(-1, 0, 4, 10, 0.1, { color: 0x140e08, solid: false, y: -3 }); for (const x of [-3, 1]) R.box(x, 0, 0.1, 10, 3, { tex: 'stone', y: -3, solid: false, cast: false }); R.collider(-3, -5, 1, -1.1); R.collider(-3, 1.1, 1, 5); const mid = R.collider(-3, -1.1, 1, 1.1); mid.on = !f.liz_bridge;
+    R.box(-1, 0, 4, 10, 0.1, { color: 0x3a6aa0, emissive: 0x18304a, solid: false, y: -2.2 }); R.light(-1, -1, 0, 0x6aa0e0, 6, 5); for (const x of [-3, 1]) R.box(x, 0, 0.1, 10, 3, { tex: 'stone', y: -3, solid: false, cast: false }); R.collider(-3, -5, 1, -1.1); R.collider(-3, 1.1, 1, 5); const mid = R.collider(-3, -1.1, 1, 1.1); mid.on = !f.liz_bridge;
     R.box(1.4, -4.4, 0.3, 0.3, 0.3, { tex: 'metal', y: 2 }); R.sprite('hook', 1.5, -4.2, { y: 1.6, scale: 1.4 });
     if (f.liz_bridge) R.box(-1, 0, 4.4, 1.2, 0.18, { color: 0xf0d98a, y: 0.02, solid: false });
     R.inter('gap', -3.8, 0, { label: f.liz_bridge ? 'Мост из косы' : 'Провал', fn: async (G) => { if (f.liz_bridge) return G.run(['liza_long: Не наступай на пробор!']); await G.run(L.gap); await G.run(L.bridge); G.sfx('rope'); f.liz_bridge = 1; await G.rebuild(); } });

@@ -95,7 +95,8 @@ export class Builder {
   }
   private tag(obj: THREE.Object3D, o: any, box?: Box) { if (o.mask) this.room.masked.push({ obj, mask: o.mask, box }); if (o.name) this.room.named[o.name] = obj; }
   floor(t = 'floor', o: any = {}) {
-    const m = this.texBox(o.w || this.w, 0.4, o.d || this.d, { tex: t, ...o }); m.position.set(o.x || 0, -0.2 + (o.y || 0), o.z || 0); m.receiveShadow = true; this.room.group.add(m); this.tag(m, o); return m;
+    const apron = o.apron ?? (o.d == null && o.z == null && !o.y ? 7 : 0); // продлеваем пол к зрителю (визуально, без коллизий)
+    const m = this.texBox(o.w || this.w, 0.4, (o.d || this.d) + apron, { tex: t, ...o }); m.position.set(o.x || 0, -0.2 + (o.y || 0), (o.z || 0) + apron / 2); m.receiveShadow = true; this.room.group.add(m); this.tag(m, o); return m;
   }
   /** Стены-«разрез»: задняя и боковые, передняя — открыта к камере. */
   walls(t = 'plaster', o: any = {}) {

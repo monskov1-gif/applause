@@ -87,6 +87,7 @@ class Game {
       this.player = new Actor(this.state.f.playerChar || 'varya', 'player');
       def.build(B, this);
       room.actors.push(this.player); room.group.add(this.player.group);
+      const key = new THREE.PointLight(0xfff0dc, 2.2, 4.5, 1.5); key.position.set(0.6, 2.4, 1.6); this.player.group.add(key);
       const sp = room.spawns[spot] || room.spawns.start || { x: 0, z: 0, dir: 'f' };
       if (!room.spawns[spot] && spot !== 'start') console.warn(`[game] в ${id} нет точки появления ${spot}`);
       if (o.load && this.state.room === id && this.state.px != null && !this.hits(this.state.px, this.state.pz!)) this.player.place(this.state.px, this.state.pz!, 'f'); else this.player.place(sp.x, sp.z, sp.dir);

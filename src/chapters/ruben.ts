@@ -48,10 +48,10 @@ const casino: RoomDef = {
     R.light(0, 5, 3, 0xffe0b0, 14, 16);
     R.decal(neonSign('ФОРТУНА', '#f2c230', 96), { x: 0, y: 6, w: 8, h: 1.2, glow: true });
     for (const x of [-18, -16, -14, 14, 16, 18]) R.sprite('slot', x, -7, { scale: 1.5, solid: 0.5, emissive: 0x220022 });
-    for (const [x, z] of [[-9, 2], [9, 2], [-9, -3], [9, -3]]) { R.box(x, z, 3, 1.6, 1, { tex: 'velvet', tint: '#3aa070' }); R.sprite('chair', x - 2, z, { scale: 0.9 }); R.sprite('chair', x + 2, z, { scale: 0.9 }); }
+    for (const [x, z] of [[-9, 2], [9, 2], [-9, -3], [9, -3]]) { R.box(x, z, 3, 1.6, 1, { color: 0x1f6a45 }); R.sprite('chair', x - 2, z, { scale: 0.9 }); R.sprite('chair', x + 2, z, { scale: 0.9 }); }
     R.sprite('holo', -4, -7.3, { scale: 2, glow: true }); R.sprite('holo', 4, -7.3, { scale: 2, glow: true });
     // хозяйка зала — Алла Ева в роли Леди Фортуны
-    R.box(0, -2.5, 4, 1.8, 1, { tex: 'velvet', tint: '#3aa070' }); const host = R.npc('hostess', 0, -4.2, { talk: async (G: any) => { await G.run(D.fortuna); if (!f.rub_fort) { f.rub_fort = 1; await G.run(D.fortunaAfter); } } }); R.spot(0, 8, -1, 0, -4.2, 0xffe0a0, 60, { angle: 0.25, cone: 0.06, shadow: false });
+    R.box(0, -2.5, 4, 1.8, 1, { color: 0x1f6a45 }); const host = R.npc('hostess', 0, -4.2, { talk: async (G: any) => { await G.run(D.fortuna); if (!f.rub_fort) { f.rub_fort = 1; await G.run(D.fortunaAfter); } } }); R.spot(0, 8, -1, 0, -4.2, 0xffe0a0, 60, { angle: 0.25, cone: 0.06, shadow: false });
     R.photo('fortuna', 'Леди Фортуна', 0, -4.2);
     // пост охраны и карта
     R.box(17, 4, 2.4, 1.6, 1.2, { tex: 'metal' });

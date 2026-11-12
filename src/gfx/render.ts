@@ -46,7 +46,7 @@ export class Renderer {
     const rt = new THREE.WebGLRenderTarget(this.W, this.H, { type: THREE.HalfFloatType });
     this.composer = new EffectComposer(this.r, rt);
     this.composer.addPass(new RenderPass(this.scene, this.cam));
-    this.bloom = new UnrealBloomPass(new THREE.Vector2(this.W, this.H), 0.45, 0.6, 0.82);
+    this.bloom = new UnrealBloomPass(new THREE.Vector2(this.W, this.H), 0.45, 0.5, 0.9);
     this.bloom.enabled = settings.quality !== 'low'; this.composer.addPass(this.bloom);
     this.composer.addPass(new OutputPass());
     this.grade = new ShaderPass(GradeShader); this.composer.addPass(this.grade);
@@ -59,7 +59,7 @@ export class Renderer {
     this.flash = Math.max(0, this.flash - dt * 2.5);
     const u = this.grade.uniforms; u.uSat.value = c.sat; u.uTint.value.set(c.tint[0], c.tint[1], c.tint[2]); u.uVig.value = c.vig; u.uGlitch.value = settings.reduceFlash ? Math.min(c.glitch, 0.25) : c.glitch;
     u.uBright.value = c.bright; u.uContrast.value = c.contrast * (settings.contrast ? 1.12 : 1); u.uWave.value = c.wave; u.uTime.value = this.time; u.uFlash.value = settings.reduceFlash ? this.flash * 0.25 : this.flash;
-    this.bloom.strength = c.bloom;
+    this.bloom.strength = c.bloom * 0.65;
     this.composer.render(dt);
   }
   /** Снимок кадра для фотоархива. */
