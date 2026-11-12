@@ -162,7 +162,7 @@ const party: RoomDef = {
     R.table(0, -2.4, 9, 1.6, { tex: 'paper' }); R.sprite(f.cake_out ? 'cakeout' : 'cake', 0, -2.4, { y: 1.15, scale: 1.4 }); R.sprite('bouquet', 3, -2.4, { y: 1.15, scale: 1.5 });
     if (!f.cake_out) R.light(0, 2.4, -1.6, 0xffc060, 1.5, 3, { flicker: 0.15 });
     R.inter('cake', 0, -1, { label: f.cake_out ? 'Торт (желание загадано)' : 'Торт с 18 свечами', fn: async (G) => { if (f.cake_out) return G.run(['~: Свечи погасли. Желание, моё. Даже себе не скажу.']); await G.run(F.cake); await G.run(F.cakeWish); G.sfx('candle'); f.cake_out = 1; await G.rebuild(); await G.run(F.cakeAfter); G.sfx('applause', { dur: 3 }); } });
-    const fam: [string, number, number, any[]][] = [['maxim', -9, 1, ['maxim: А знаешь, почему у королевы был такой длинный шлейф? Чтобы никто не наступил ей на пятки! …Нет? Настя, скажи, что смешно.', 'nastya: (улыбаясь) Смешно.']], ['nastya', -7.8, 1.6, ['nastya: Ты очень выросла. Не ростом. Голосом.']], ['natasha', -5.4, 1.2, ['natasha: Я никогда не видела, чтобы ты так спокойно отпускала людей на сцене. Как будто доверяешь им больше, чем плану.']], ['sasha', -4, 2, ['sasha: Я так и не понял, чем кончилось. Но я хлопал. Громко. Это считается?']], ['vasya', 6, 1.4, ['vasya: Можно я тоже буду режиссёром? Я уже командую Катей.', 'katya: (тихо) Не командует.']], ['sofa', 8, 0.8, ['sofa: Можно я накрашу тебя на следующую премьеру? Я уже придумала. Это будет шедевр.', 'varya/smile: Если я буду похожа на себя.', 'sofa: Ты будешь похожа на себя, только громче.']], ['katya', 9.4, 1.6, ['katya: Можно… с тобой сфотографироваться? Если нельзя, ничего. Если можно, то я тут постою.']]];
+    const fam: [string, number, number, any[]][] = [['matvey_bro', -8.4, 2.4, ['matvey_bro: …', '~: Матвейка молчит и держит меня за палец. Светлые кудряшки, серьёзные глаза. Самый красивый ребёнок на свете, и это не обсуждается.', 'nastya: Он весь вечер ждал, когда ты подойдёшь.']], ['vanya', -4.6, 2.8, ['vanya: Варя! А Рубен меня поднимет? А Матвей покажет фокус? А Полина ещё раз засмеётся?', '~: Ваня, маленькая копия Саши. Любит всех моих друзей сразу и Матвейку больше всех.', 'vanya: Матвейка, иди сюда! Тут торт!']], ['maxim', -9, 1, ['maxim: А знаешь, почему у королевы был такой длинный шлейф? Чтобы никто не наступил ей на пятки! …Нет? Настя, скажи, что смешно.', 'nastya: (улыбаясь) Смешно.']], ['nastya', -7.8, 1.6, ['nastya: Ты очень выросла. Не ростом. Голосом.']], ['natasha', -5.4, 1.2, ['natasha: Я никогда не видела, чтобы ты так спокойно отпускала людей на сцене. Как будто доверяешь им больше, чем плану.']], ['sasha', -4, 2, ['sasha: Я так и не понял, чем кончилось. Но я хлопал. Громко. Это считается?']], ['vasya', 6, 1.4, ['vasya: Можно я тоже буду режиссёром? Я уже командую Катей.', 'katya: (тихо) Не командует.']], ['sofa', 8, 0.8, ['sofa: Можно я накрашу тебя на следующую премьеру? Я уже придумала. Это будет шедевр.', 'varya/smile: Если я буду похожа на себя.', 'sofa: Ты будешь похожа на себя, только громче.']], ['katya', 9.4, 1.6, ['katya: Можно… с тобой сфотографироваться? Если нельзя, ничего. Если можно, то я тут постою.']]];
     for (const [id, x, z, talk] of fam) R.npc(id, x, z, { talk });
     const echo: Record<string, () => string> = {
       polina: () => f.pol_cmd ? 'polina: И, Варь… спасибо, что потом перестала командовать. Я заметила.' : 'polina: Ты тогда спросила, что я вижу. Я до сих пор об этом думаю.',
@@ -174,12 +174,12 @@ const party: RoomDef = {
     };
     FRIENDS.forEach((id, i) => R.npc(FCHAR[id], -10 + i * 1.6, -0.2 + (i % 2) * 0.4 + 3.6, { id, talk: (G: any) => G.run([...F.paths[id as keyof typeof F.paths], echo[id]()]) }));
     TROUPE.forEach((id, i) => R.npc(id, 5 + i * 1.4, 4.4, { talk: [`${id}: С днём рождения, Варя!`] }));
-    R.photo('group', 'Общее фото', 0, 2.4);
+    R.photo('group', 'Общее фото', 0, 2.4, { any: true });
     R.inter('end', 11.2, -4, { label: 'Закончить вечер', cond: () => !!f.cake_out && !!f.group_photo, fn: ending });
     R.door('d', 11.2, { label: 'Выход', col: '#5a4029', fn: async (G) => { if (!f.cake_out || !f.group_photo) return G.run(['~: Рано уходить. Ещё торт. И общее фото, Василиса не простит.']); await ending(G); } });
     R.spawn('start', 0, 3.6, 'b');
   },
-  async enter(G) { if (!G.f.party0) { G.f.party0 = 1; await G.ui.card([['ЭПИЛОГ', 'act'], ['Восемнадцать', 'big']]); await G.run(F.party0); await G.run(F.groupPhoto); G.toast('Общее фото: C: фотоаппарат', '◉'); } },
+  async enter(G) { if (!G.f.party0) { G.f.party0 = 1; await G.ui.card([['ЭПИЛОГ', 'act'], ['Восемнадцать', 'big']]); await G.run(F.party0); await G.run(F.groupPhoto); await gather(G); G.toast('Общее фото: C поднимает камеру, E снимает', '◉'); } },
   async photo(G, subs) { if (subs.includes('group') && !G.f.group_photo) { G.f.group_photo = 1; G.sfx('shutter'); await G.run(F.groupPhotoAfter); } },
 };
 async function ending(G: any) {
@@ -192,11 +192,18 @@ const bedroom: RoomDef = {
     R.floor('parquet'); R.walls('plaster', { h: 5, tint: '#d8c8b0' }); R.ambient(0x8a7a70, 2.4, 0xfff4e0); R.sun(0xfff0d0, 1.8, 6, 10, 6);
     R.decal(canvasTex(20, 24, (c) => { c.fillStyle = '#e8e0d0'; c.fillRect(0, 0, 20, 24); c.fillStyle = '#9cc2ee'; c.fillRect(2, 2, 16, 20); c.fillStyle = '#ffe0a0'; c.fillRect(12, 4, 4, 4); }, 'sydwin'), { x: -2.6, y: 2.8, w: 2.2, h: 2.6, glow: true });
     R.box(3.4, -2.6, 3, 2, 0.7, { tex: 'velvet', tint: '#8aa0c8' }); R.box(1.2, -3.6, 0.8, 0.8, 0.8, { tex: 'wood' }); R.sprite(canvasTex(12, 6, (c) => { c.fillStyle = '#d8ccb2'; c.fillRect(0, 0, 12, 6); c.fillStyle = '#a3122a'; c.fillRect(1, 1, 3, 4); }, 'ticketsm'), 1.2, -3.6, { y: 0.8, glow: true });
-    R.inter('ticket', 1.2, -2.6, { label: 'Билет на тумбочке', fn: (G) => G.run(F.wake.slice(3, 4)) });
+    R.inter('ticket', 1.2, -2.6, { label: 'Билет на тумбочке', fn: (G) => G.run(F.wake.slice(3, 4)) }); R.box(-2.2, -2.8, 2.6, 1.8, 0.65, { tex: 'velvet', tint: '#c8a0b0' }); R.box(-2.2, -3.55, 2.6, 0.3, 1.2, { tex: 'wood' }); const sis = R.actor('vasya', -2.2, -2.8, { id: 'vasya' }); sis.pose = 'lie'; sis.y = 0.65; R.look('sis', -2.2, -1.4, 'Вася спит', ['~: Вася спит, натянув одеяло до носа. Мы делим комнату с тех пор, как я себя помню, и я ни разу не видела, чтобы она просыпалась раньше будильника.', '~: Сегодня можно не будить. Я сама.']);
     R.decal(canvasTex(16, 28, (c) => { c.fillStyle = '#86641c'; c.fillRect(0, 0, 16, 28); c.fillStyle = '#c8d8e8'; c.fillRect(2, 2, 12, 24); }, 'bedmirror'), { x: -5.96, wall: 'w', at: 0, y: 2.4, w: 1.4, h: 2.4 });
-    R.inter('mirror', -5, 0, { label: 'Зеркало', fn: async (G) => { await G.run(F.wake.slice(4)); G.sfx('note'); await G.wait(1); await G.ui.card([['THE OTHER ME: APPLAUSE, PLEASE!', 'act'], ['Конец.', 'big'], ['Или начало. Тут уж как поставить.', 'sm']]); G.set('game_done', 1); await G.save('auto'); await G.ui.credits(true); G.stopToMenu(); G.ui.mainMenu(); } });
+    R.inter('mirror', -5, 0, { label: 'Зеркало', fn: async (G) => { await G.run(F.wake.slice(4)); G.sfx('note'); await G.wait(1); G.ui.black(true); await G.ui.card([['THE OTHER ME: APPLAUSE, PLEASE!', 'act'], ['Конец.', 'big'], ['Или начало. Тут уж как поставить.', 'sm']]); G.set('game_done', 1); await G.save('auto'); G.ui.black(true); await G.ui.credits(true); G.stopToMenu(); G.ui.mainMenu(); G.ui.black(false); } });
     R.spawn('start', 0, 1, 'f');
   },
   async enter(G) { if (!G.f.wake0) { G.f.wake0 = 1; G.sfx('bell'); await G.run(F.wake.slice(0, 3)); const w = G.f.wish; await G.run([w === 'near' ? '*: Телефон вибрирует. Шесть сообщений подряд: «С днём рождения!», от Полины, Рубена, Матвея, Эрики, Лизы и Ангелины. Все, в 07:00 ровно.' : w === 'own' ? '*: Телефон вибрирует. Полина: «Записалась на фото!» Рубен: «Подал документы». Лиза: «Я уже в поезде». И ни одного «как ты хочешь, чтобы мы…».' : '*: Телефон молчит. Ещё рано. Это хорошая тишина, как в зале перед первым звонком.']); } },
 };
 export const rooms: Record<string, RoomDef> = { fin_diva: diva, fin_collapse: collapse, fin_backstage: backstage, fin_musical: musical, fin_party: party, fin_bedroom: bedroom };
+/** Все гости собираются в одну группу перед тортом, лицом к камере, чтобы Варя сделала общее фото. */
+async function gather(G: any) {
+  const room = G.room; const ppl = room.actors.filter((a: any) => a !== G.player && !a.hidden); const n = ppl.length, per = Math.ceil(n / 3);
+  const walks = ppl.map((a: any, i: number) => { const row = Math.floor(i / per), col = i % per, cols = Math.min(per, n - row * per); const x = (col - (cols - 1) / 2) * 1.25 + (row % 2) * 0.3, z = -0.4 + row * 1.1; a.box && (a.box.on = false); return a.walkTo(x, z, 3.2).then(() => { a.face(0, 9); if (a.box) { a.box.x0 = x - 0.4; a.box.x1 = x + 0.4; a.box.z0 = z - 0.25; a.box.z1 = z + 0.25; a.box.on = true; } const it = room.inters.find((q: any) => q.id === a.id); if (it) { it.x = x; it.z = z + 0.2; } }); });
+  G.player.walkTo(0, 5.4, 3); await Promise.all(walks); G.player.face(0, 0);
+}
+

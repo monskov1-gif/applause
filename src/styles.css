@@ -242,3 +242,5 @@ body.contrast .dlg .box, body.contrast .sheet, body.contrast .choice { backgroun
 .paper.help .help-goal { font-family: 'Playfair Display', serif; font-size: 1.15rem; color: #8e1830; margin: 0 0 .6rem; } .paper.help .help-steps { padding-left: 1.3rem; line-height: 1.55; } .paper.help .help-steps li { margin: .35rem 0; } .paper.help .help-foot { font-size: .8rem; opacity: .65; margin-top: .8rem; }
 
 .dlg .port.art img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 22%; image-rendering: auto; } .dlg .port.noir img { filter: grayscale(1) contrast(1.15); }
+
+#blackout { position: fixed; inset: 0; background: #000; z-index: 57; opacity: 0; pointer-events: none; transition: opacity .6s ease; } #blackout.on { opacity: 1; }

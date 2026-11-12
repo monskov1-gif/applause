@@ -148,6 +148,7 @@ class UI {
     return new Promise((res) => { const m = this.open(`<div class="paper ${o.cls || ''}">${o.stamp ? `<div class="stamp">${o.stamp}</div>` : ''}${o.title ? `<h3>${o.title}</h3>` : ''}<div class="${o.hand ? 'hand' : ''}">${o.body}</div>${o.sign ? `<div class="sign">${o.sign}</div>` : ''}<button class="btn small ok" data-x>${o.btn || 'Отложить'}</button></div>`, { raw: true, onClose: () => { audio.sfx('paper'); res(); } }); (m.querySelector('.ok') as HTMLElement).focus({ preventScroll: true }); });
   }
   /** Титры-карточки на чёрном. */
+  black(on: boolean) { let b = document.getElementById('blackout'); if (!b) { b = el('div', '', '', root()); b.id = 'blackout'; } b.classList.toggle('on', on); }
   card(lines: (string | [string, string])[], o: { hold?: number } = {}): Promise<void> {
     if (G.fast) return Promise.resolve();
     return new Promise((res) => {
@@ -251,6 +252,7 @@ class UI {
       if (a === 'exit') { audio.music(null); audio.sfx('curtain'); const c = el('div', 'card', '<p class="act">ЗАНАВЕС</p><p>Спасибо, что заглянули в гримёрку.</p><p class="sm">Закройте вкладку, или нажмите, чтобы вернуться.</p>', root()); c.onclick = () => { c.remove(); audio.music('musicbox'); }; } });
   }
   credits(final: boolean): Promise<void> {
+    if (final) { try { localStorage.setItem('tom-done', '1'); } catch { /* приватный режим */ } audio.music('fin_bows', { restart: true }); }
     return new Promise((res) => {
       const sec = (h: string, ps: string[]) => `<h3>${h}</h3>${ps.map((p) => `<p>${p}</p>`).join('')}`;
       const c = el('div', 'credits', `<div class="roll" style="--dur:${final ? 70 : 55}s"><div class="cred-logo">${logoSVG('c')}</div>

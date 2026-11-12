@@ -204,7 +204,7 @@ class Game {
       const k = await this.key(['act', 'camera', 'pause']);
       if (k === 'act') {
         const room = this.room!; const m = room.def.noMasks ? null : this.state.mask;
-        const subs = room.photos.filter((s) => { if (s.cond && !s.cond()) return false; if (s.mask && (s.mask === 'none' ? !!m : s.mask !== m)) return false; const dx = s.x - p.x, dz = s.z - p.z, l = Math.hypot(dx, dz); if (l < 1.8) return true; return l < 8 && (dx * v.x + dz * v.z) / l > 0.6; });
+        const subs = room.photos.filter((s) => { if (s.cond && !s.cond()) return false; if ((s as any).any) return true; if (s.mask && (s.mask === 'none' ? !!m : s.mask !== m)) return false; const dx = s.x - p.x, dz = s.z - p.z, l = Math.hypot(dx, dz); if (l < 1.8) return true; return l < 8 && (dx * v.x + dz * v.z) / l > 0.6; });
         ui.viewfinder(false); const img = this.R.snapshot(); this.sfx('shutter'); this.flash(0.8);
         const caption = subs.length ? subs.map((s) => s.name).join(', ') : room.def.name;
         this.state.photos.push({ id: 'p' + Date.now().toString(36), img, caption, subjects: subs.map((s) => s.id), room: room.id });

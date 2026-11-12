@@ -247,7 +247,7 @@ export class Builder {
     if (o.name) this.room.named[o.name] = l; if (o.mask) this.room.masked.push({ obj: l, mask: o.mask }); return l;
   }
   trigger(x0: number, z0: number, x1: number, z1: number, fn: (G: any) => any, once = true) { const t = { x0, z0, x1, z1, fn, once, done: false, inside: false }; this.room.triggers.push(t); return t; }
-  photo(id: string, name: string, x: number, z: number, o: any = {}) { this.room.photos.push({ id, name, x, z, cond: o.cond, mask: o.mask }); }
+  photo(id: string, name: string, x: number, z: number, o: any = {}) { this.room.photos.push({ id, name, x, z, cond: o.cond, mask: o.mask, any: o.any } as any); }
   onUpdate(fn: (dt: number, t: number) => void) { this.room.updaters.push(fn); }
   /** Частицы: пыль в лучах, дождь, лепестки, искры, снег. */
   particles(kind: 'dust' | 'rain' | 'petals' | 'sparks' | 'snow' | 'confetti' | 'glitch', o: any = {}) {

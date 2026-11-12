@@ -239,7 +239,7 @@ export class DressingRoom {
     if (s === 'reveal') audio.sfx('mechtick');
     if (s === 'insert') audio.sfx('scrape', { dur: 0.9 });
     if (s === 'lights') { this.root.traverse((o: any) => { if (o.isMesh) o.visible = true; }); audio.sfx('lighton'); this.R.flash = 0.55; this.camFrom.copy(this.camPos); this.lookFrom.copy(this.look); }
-    if (s === 'menu') { this.root.traverse((o: any) => { if (o.isMesh) o.visible = true; }); this.spinning = true; if (instant) { this.setLights(1); this.speed = 1; this.camPos.copy(this.finalCam); this.look.copy(this.finalLook); this.key.position.x = 0.13; } audio.music('musicbox'); audio.ambience('hall'); }
+    if (s === 'menu') { this.root.traverse((o: any) => { if (o.isMesh) o.visible = true; }); this.spinning = true; if (instant) { this.setLights(1); this.speed = 1; this.camPos.copy(this.finalCam); this.look.copy(this.finalLook); this.key.position.x = 0.13; } audio.music(menuTheme()); audio.ambience('hall'); }
   }
   isKeyPart(o: THREE.Object3D) { let p: THREE.Object3D | null = o; while (p) { if (p === this.key) return true; p = p.parent; } return false; }
   placeKeyCam(dist: number) { this.root.updateMatrixWorld(true); const k = new THREE.Vector3(); this.key.getWorldPosition(k); k.add(new THREE.Vector3(Math.cos(0.5), 0, Math.sin(0.5)).multiplyScalar(-0.1)); const n = new THREE.Vector3(-Math.sin(0.5), 0, Math.cos(0.5)); this.camPos.copy(k).addScaledVector(n, dist).add(new THREE.Vector3(0, 0.07, 0)); this.look.copy(k); }
@@ -267,7 +267,7 @@ export class DressingRoom {
       case 'lights': {
         const k = Math.min(1, st / 3.4); this.setLights(k < 0.06 ? 1.15 : 0.3 + 0.7 * ease(k)); this.bulbs.forEach((b, i) => { const on = st > 0.15 + i * 0.07; (b.material as Mat).emissiveIntensity = on ? 1.3 : 0; if (on && st - dt <= 0.15 + i * 0.07) audio.sfx('mechtick'); });
         const c = ease(Math.min(1, st / 3.4)); const ctrl = new THREE.Vector3((this.camFrom.x + this.finalCam.x) / 2 + 0.6, Math.max(this.camFrom.y, this.finalCam.y) + 0.6, Math.max(this.camFrom.z, this.finalCam.z) + 1.2); const a1 = new THREE.Vector3().lerpVectors(this.camFrom, ctrl, c), a2 = new THREE.Vector3().lerpVectors(ctrl, this.finalCam, c); this.camPos.lerpVectors(a1, a2, c); this.look.lerpVectors(this.lookFrom, this.finalLook, c); this.keySpot.intensity *= 0.95;
-        if (st > 0.6) { this.spinning = true; this.speed = Math.min(1, (st - 0.6) / 2); } if (st > 0.8 && audio.musicId() !== 'musicbox') { audio.music('musicbox', { fade: 2 }); audio.ambience('hall'); }
+        if (st > 0.6) { this.spinning = true; this.speed = Math.min(1, (st - 0.6) / 2); } if (st > 0.8 && audio.musicId() !== menuTheme()) { audio.music(menuTheme(), { fade: 2 }); audio.ambience('hall'); }
         if (st > 3.3) this.enter('logo'); break; }
       case 'logo': if (st > 1.0) this.enter('menu'); break;
       case 'menu': break;
@@ -299,3 +299,5 @@ export class DressingRoom {
     this.R.scene.environment = null; this.envTex?.dispose(); this.R.baseFov = this.prevFov; this.R.cam.near = 1; this.R.cam.far = 200; this.R.setup({ pixelH: 0, dof: false }); audio.ambience(null);
   }
 }
+/** После прохождения в меню звучит тема финальных титров. */
+export function menuTheme() { try { return localStorage.getItem('tom-done') ? 'fin_bows' : 'musicbox'; } catch { return 'musicbox'; } }

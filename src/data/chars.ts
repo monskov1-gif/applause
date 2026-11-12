@@ -42,6 +42,8 @@ const C: CharDef[] = [
   { id: 'sasha', name: 'Саша', color: '#c0d6e8', pitch: 220, skin: FAIR, hair: '#9a7a58', style: 'short', eyes: '#4a5a6a', h: 39, build: 'mid', top: '#4a5a4a', bottom: '#2c2c34', brows: 'soft' },
   { id: 'maxim', name: 'Папа Максим', color: '#ffc070', pitch: 250, skin: TAN2, hair: '#1d1512', style: 'curlyMid', eyes: '#3b2416', h: 33, build: 'mid', top: '#c2452d', bottom: '#2d3440', brows: 'arch' },
   { id: 'nastya', name: 'Настя', color: '#d8c8e8', pitch: 440, skin: FAIR, hair: '#9a7a58', style: 'long', eyes: '#5b3a1e', h: 37, build: 'thin', top: '#b8a8c8', bottom: '#4a4458', skirt: 'long', brows: 'soft' },
+  { id: 'matvey_bro', name: 'Матвейка', color: '#fff0b0', pitch: 760, skin: FAIR, hair: '#f0dca0', style: 'short', eyes: '#5b6b8a', h: 21, build: 'mid', top: '#a8d0f0', bottom: '#f0f0f0', brows: 'soft' },
+  { id: 'vanya', name: 'Ваня', color: '#c8f0c0', pitch: 740, skin: FAIR, hair: '#9a7a58', style: 'short', eyes: '#4a5a6a', h: 21, build: 'mid', top: '#4a7a4a', bottom: '#2c3a5a', brows: 'soft' },
   { id: 'vasya', name: 'Вася', color: '#a8e0ff', pitch: 620, skin: FAIR, hair: '#6a4630', style: 'bob', eyes: '#5b3a1e', h: 30, build: 'thin', top: '#e8884a', bottom: '#3a4a6a', brows: 'soft' },
   { id: 'sofa', name: 'Софа', color: '#ffc0e0', pitch: 540, skin: FAIR, hair: '#a88a5a', style: 'longStyled', eyes: '#5a6a7a', h: 33, build: 'thin', top: '#e8b0c8', bottom: '#f0e8e8', skirt: 'short', acc: ['earrings'], brows: 'arch', lips: '#c84a6a', shadow: '#b86a9a' },
   { id: 'katya', name: 'Катя', color: '#ffb090', pitch: 560, skin: FAIR, hair: '#c8602a', style: 'bobLong', eyes: '#5a7a5a', h: 37, build: 'big', top: '#6a9a7a', bottom: '#4a4a5a', brows: 'soft' },
