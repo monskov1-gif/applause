@@ -23,7 +23,7 @@ function theaterMap(cur: string, visited: Record<string, 1>) {
   const rooms = MAP.map(([id, n, x, y, w, h]) => { const v = visited[id] || id === cur, here = id === cur; return `<g><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${here ? '#8e1830' : v ? '#efe0b8' : '#d8cba8'}" stroke="#5a4029" stroke-width="${here ? 2 : 1}" ${v ? '' : 'stroke-dasharray="3 2"'}/><text x="${x + w / 2}" y="${y + h / 2 + 3}" text-anchor="middle" font-family="Lora" font-size="8.5" fill="${here ? '#fff4e0' : v ? '#2a1a14' : '#9a8a6a'}">${v ? n : '?'}</text></g>`; }).join('');
   const links = [[150, 60, 150, 160], [262, 60, 262, 240], [250, 274, 250, 370], [210, 230, 210, 370], [85, 230, 85, 240], [270, 200, 280, 200], [55, 274, 55, 282], [145, 274, 145, 282], [228, 274, 228, 282], [65, 60, 65, 70], [132, 60, 132, 70], [187, 60, 187, 70], [242, 60, 242, 70]].map(([a, b, c, d]) => `<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" stroke="#a3122a" stroke-width="1.5" stroke-dasharray="2 2"/>`).join('');
   const inPrimary = MAP.some((m) => m[0] === cur);
-  return `<svg viewBox="0 0 360 420" style="width:100%;max-height:62vh;display:block" xmlns="http://www.w3.org/2000/svg">${label(14, 'ЭТАЖ 2 · БЕЛЬЭТАЖ')}${label(150, 'ЭТАЖ 1 · ПАРТЕР')}${label(362, 'ПОД СЦЕНОЙ')}${links}${rooms}</svg><p class="warn">Пунктир — переходы и лестницы. «?» — там вы ещё не были.${inPrimary ? '' : ' Сейчас вы за пределами театра — в чужой пьесе.'}</p>`;
+  return `<svg viewBox="0 0 360 420" style="width:100%;max-height:62vh;display:block" xmlns="http://www.w3.org/2000/svg">${label(14, 'ЭТАЖ 2 · БЕЛЬЭТАЖ')}${label(150, 'ЭТАЖ 1 · ПАРТЕР')}${label(362, 'ПОД СЦЕНОЙ')}${links}${rooms}</svg><p class="warn">Пунктир, переходы и лестницы. «?», там вы ещё не были.${inPrimary ? '' : ' Сейчас вы за пределами театра, в чужой пьесе.'}</p>`;
 }
 const fmtTime = (s: number) => `${Math.floor(s / 3600)}:${String(Math.floor(s / 60) % 60).padStart(2, '0')}`;
 import { logoSVG } from './logo';
@@ -39,7 +39,7 @@ class UI {
     this.hudEl = el('div', 'hud hidden', '', r); this.maskRow = el('div', 'masks', '', this.hudEl); this.hudR = el('div', 'hud-r', '', this.hudEl);
     this.toasts = el('div', 'toasts', '', r); this.promptEl = el('div', 'prompt hidden', '', r); this.saveEl = el('div', 'savemark', '✎ сохранено', r); this.lyricEl = el('div', 'lyric hidden', '', r);
     this.dlg = el('div', 'dlg hidden', '<div class="port"><img alt=""></div><div class="box"><div class="name"></div><div class="tools"><button data-a="hist">История</button><button data-a="auto">Авто</button><button data-a="skip">Пропуск</button></div><div class="text"></div><div class="more">▼</div></div>', r);
-    this.vf = el('div', 'viewfinder hidden', '<b>● REC</b><span>E / Enter — снимок · C / Esc — убрать камеру</span>', r);
+    this.vf = el('div', 'viewfinder hidden', '<b>● REC</b><span>E / Enter, снимок · C / Esc, убрать камеру</span>', r);
     this.loadingEl = el('div', 'savemark', 'Меняем декорации…', r); this.loadingEl.style.right = 'auto'; this.loadingEl.style.left = '.8rem';
     this.dlg.addEventListener('click', (e) => { const a = (e.target as HTMLElement).dataset?.a; if (a === 'hist') this.history(); else if (a === 'auto') { this.auto = !this.auto; (e.target as HTMLElement).style.background = this.auto ? '#8e1830' : ''; if (this.auto && this.advance) this.advance(); } else if (a === 'skip') { this.skipping = true; if (this.advance) this.advance(); } else if (this.advance) this.advance(); });
     input.onAction((a) => { if (this.modal) { if (a === 'pause') this.closeTop(); return; } if (a === 'act' && this.advance) this.advance(); });
@@ -95,7 +95,7 @@ class UI {
     (this.hudR.children[0] as HTMLElement).classList.toggle('hidden', !G.has('camera') || !!G.room?.def.noCamera);
     const inv = this.hudR.children[1] as HTMLElement; inv.classList.toggle('hidden', !G.state.inv.length); (inv.querySelector('.hb-n') as HTMLElement).textContent = String(G.state.inv.length); this.quest();
   }
-  /** Текущее задание в углу экрана. При смене — короткая подсветка и звук карандаша. */
+  /** Текущее задание в углу экрана. При смене, короткая подсветка и звук карандаша. */
   quest() {
     if (!G.running || !this.questEl) return; const o = objective(G); const room = G.room;
     const left = room ? room.inters.filter((it: any) => it.enabled && !(it.cond && !it.cond()) && !it.quiet && !/^(d_|door|out|back|up|stair|stairs|lift|front)/.test(it.id) && !(G.state.f.used || {})[room.id + ':' + it.id]).length : 0;
@@ -179,20 +179,20 @@ class UI {
     const chk = (k: string) => `<input type="checkbox" data-k="${k}" ${(s as any)[k] ? 'checked' : ''}>`;
     const m = this.open(`<h2>Настройки <small>пульт помрежа</small></h2><div class="body">
       ${row('Музыка', rng('music', 0, 1, 0.05))}${row('Эффекты', rng('sfx', 0, 1, 0.05))}${row('Голоса', rng('voice', 0, 1, 0.05), 'звуковой сигнал реплик; все реплики идут с субтитрами')}
-      ${row('Скорость текста', rng('textSpeed', 0, 120, 5), '0 — мгновенно')}${row('Масштаб интерфейса', rng('uiScale', 0.8, 1.5, 0.05))}
+      ${row('Скорость текста', rng('textSpeed', 0, 120, 5), '0: мгновенно')}${row('Масштаб интерфейса', rng('uiScale', 0.8, 1.5, 0.05))}
       ${row('Качество графики', `<select data-k="quality"><option value="low">Низкое (без bloom и теней)</option><option value="med">Среднее</option><option value="high">Высокое</option></select>`)}
       ${row('Меньше вспышек', chk('reduceFlash'), 'приглушает вспышки и глитч-эффекты')}${row('Без тряски камеры', chk('reduceShake'))}${row('Повышенный контраст текста', chk('contrast'))}
       ${row('Облегчённые ритм-сцены', chk('rhythmEasy'), 'широкие окна попадания, меньше нот, нельзя проиграть')}${row('Задержка звука, мс', rng('rhythmOffset', -200, 200, 5) + ' <span data-off></span>', 'для ритм-сцен')}
       ${row('', '<button class="btn small" data-a="calib">Калибровка задержки</button>')}
-      ${row('Сенсорное управление', chk('touch'), 'экспериментально: джойстик и кнопки на экране')}${row('Вступление при каждом запуске', chk('introAlways'), 'иначе — только при первом запуске')}
-      <p class="warn">Управление: WASD или стрелки — ходьба, Shift — быстрее, E / Enter / Пробел — действие, 1–3 — маски, Q — снять маску, C — фотоаппарат, Tab — блокнот, H — история, Ctrl — пропуск прочитанного, Esc — пауза.</p></div>
+      ${row('Сенсорное управление', chk('touch'), 'экспериментально: джойстик и кнопки на экране')}${row('Вступление при каждом запуске', chk('introAlways'), 'иначе, только при первом запуске')}
+      <p class="warn">Управление: WASD или стрелки, ходьба, Shift, быстрее, E / Enter / Пробел, действие, 1–3, маски, Q: снять маску, C: фотоаппарат, Tab, блокнот, H: история, Ctrl, пропуск прочитанного, Esc, пауза.</p></div>
       <div class="foot"><button class="btn small" data-x>Готово</button></div>`);
     (m.querySelector('[data-k=quality]') as HTMLSelectElement).value = s.quality; const offL = m.querySelector('[data-off]')!; offL.textContent = s.rhythmOffset + '';
     m.addEventListener('input', (e) => { const t = e.target as HTMLInputElement, k = t.dataset.k; if (!k) return; (s as any)[k] = t.type === 'checkbox' ? t.checked : t.tagName === 'SELECT' ? t.value : parseFloat(t.value); offL.textContent = s.rhythmOffset + ''; saveSettings(); this.applySettings(); if (k === 'quality') G.R.setup(); if (k === 'sfx') audio.sfx('click'); });
     m.addEventListener('click', async (e) => { if ((e.target as HTMLElement).dataset?.a === 'calib') { const { calibrate } = await import('./minigames'); const v = await calibrate(); if (v != null) { s.rhythmOffset = v; saveSettings(); (m.querySelector('[data-k=rhythmOffset]') as HTMLInputElement).value = String(v); offL.textContent = v + ''; } } });
   }
   async saveLoad(mode: 'save' | 'load') {
-    const m = this.open(`<h2>${mode === 'save' ? 'Сохранить' : 'Загрузить'} <small>журнал спектакля</small></h2><div class="body"><div data-list>…</div><p class="warn">Сохранения хранятся только в этом браузере (IndexedDB). Очистка данных сайта или режим инкогнито удалят прогресс — для надёжности экспортируйте файл.</p></div><div class="foot"><button class="btn small" data-a="imp">Импорт из файла</button>${G.running ? '<button class="btn small" data-a="exp">Экспорт в файл</button>' : ''}<button class="btn small" data-x>Закрыть</button></div>`);
+    const m = this.open(`<h2>${mode === 'save' ? 'Сохранить' : 'Загрузить'} <small>журнал спектакля</small></h2><div class="body"><div data-list>…</div><p class="warn">Сохранения хранятся только в этом браузере (IndexedDB). Очистка данных сайта или режим инкогнито удалят прогресс, для надёжности экспортируйте файл.</p></div><div class="foot"><button class="btn small" data-a="imp">Импорт из файла</button>${G.running ? '<button class="btn small" data-a="exp">Экспорт в файл</button>' : ''}<button class="btn small" data-x>Закрыть</button></div>`);
     const list = m.querySelector('[data-list]') as HTMLElement;
     const draw = async () => {
       const rows = await Promise.all(SLOTS.map(async (s) => ({ s, ...(await readSave(s).catch((e) => { console.warn(e); return { state: null, broken: true }; })) })));
@@ -219,7 +219,7 @@ class UI {
       if (t === 'mech') { const got = Object.keys(f.mech || {}); body.innerHTML = got.length ? got.filter((k) => MECH[k]).map((k) => `<div class="entry noimg"><div><h4>${esc(MECH[k].title)}</h4><p>${esc(MECH[k].text)}</p></div></div>`).join('') : '<p><i>Механики появятся по ходу игры.</i></p>'; return; }
       if (t === 'eggs') { const e = f.eggs || {}; const all = Object.entries(EGGS); body.innerHTML = `<p class="warn">Найдено ${Object.keys(e).length} из ${all.length}. Пасхалки, отсылки и мелкие радости.</p><div class="eggs">${all.map(([k, v]) => `<div class="egg ${e[k] ? 'on' : ''}"><b>${e[k] ? '★ ' + esc(v.title) : '☆ ???'}</b><span>${e[k] ? esc(v.desc) : 'Где искать: ' + esc(v.hint)}</span></div>`).join('')}</div>`; return; }
       if (t === 'map') { body.innerHTML = theaterMap(G.state.room, f.visited || {}); return; }
-      if (t === 'photos') { body.innerHTML = G.state.photos.length ? `<div class="photos">${G.state.photos.map((p, i) => `<div class="photo" style="--r:${(i * 37 % 7) - 3}deg"><img src="${p.img}" alt=""><span>${esc(p.caption)}</span></div>`).join('')}</div>` : '<p><i>Плёнка пока пуста. Фотоаппарат — клавиша C.</i></p>'; return; }
+      if (t === 'photos') { body.innerHTML = G.state.photos.length ? `<div class="photos">${G.state.photos.map((p, i) => `<div class="photo" style="--r:${(i * 37 % 7) - 3}deg"><img src="${p.img}" alt=""><span>${esc(p.caption)}</span></div>`).join('')}</div>` : '<p><i>Плёнка пока пуста. Фотоаппарат, клавиша C.</i></p>'; return; }
       const sec = (cat: string, title: string) => { const list = G.state.notes.map((id) => NOTES[id]).filter((n) => n && n.cat === cat); if (!list.length) return ''; return `<h4 class="q-h">${title}</h4>` + list.map((n) => { const c = n.char ? CHARS[n.char] : null; return `<div class="entry ${c ? '' : 'noimg'}">${c ? `<img src="${portrait(n.char!, (n.expr || 'neutral') as any)}" alt="">` : ''}<div><h4>${esc(n.title)}</h4>${c?.role ? `<div class="role">${esc(c.role)}</div>` : ''}<p>${n.text}</p></div></div>`; }).join(''); };
       body.innerHTML = Object.entries(CATS).filter(([k]) => k !== 'items').map(([k, n]) => sec(k, n)).join('') || '<p><i>Здесь пока пусто.</i></p>';
     };
@@ -235,7 +235,7 @@ class UI {
     const withIntro = !this.introPlayed && (!seen || settings.introAlways) && !G.fast; this.introPlayed = true;
     const { DressingRoom } = await import('../menu/dressing');
     if (G.menuScene) G.menuScene.dispose(); const scene = G.menuScene = new DressingRoom(G.R, withIntro);
-    const scr = el('div', 'menu-screen m3d' + (withIntro ? ' intro' : ' ready'), `<div class="m3d-left"><div class="menu-logo">${LOGO}</div><nav class="menu-list"><button class="btn" data-a="cont" ${latest ? '' : 'disabled'}>Продолжить</button><button class="btn" data-a="new">Новая игра</button><button class="btn" data-a="load">Загрузить</button><button class="btn" data-a="set">Настройки</button><button class="btn" data-a="cred">Создатели</button><button class="btn" data-a="exit">Выход</button></nav></div><div class="m3d-hint">нажмите или кликните, чтобы повернуть ключ</div><div class="m3d-skip">Esc — пропустить вступление</div>`, root());
+    const scr = el('div', 'menu-screen m3d' + (withIntro ? ' intro' : ' ready'), `<div class="m3d-left"><div class="menu-logo">${LOGO}</div><nav class="menu-list"><button class="btn" data-a="cont" ${latest ? '' : 'disabled'}>Продолжить</button><button class="btn" data-a="new">Новая игра</button><button class="btn" data-a="load">Загрузить</button><button class="btn" data-a="set">Настройки</button><button class="btn" data-a="cred">Создатели</button><button class="btn" data-a="exit">Выход</button></nav></div><div class="m3d-hint">нажмите или кликните, чтобы повернуть ключ</div><div class="m3d-skip">Esc, пропустить вступление</div>`, root());
     scene.onState = (s: string) => { scr.classList.toggle('await', s === 'await'); if (s === 'logo') scr.classList.add('logo-in'); if (s === 'menu') { scr.classList.remove('intro'); scr.classList.add('ready', 'logo-in'); try { localStorage.setItem('tom-intro-seen', '1'); } catch (e) { console.warn(e); } (scr.querySelector(latest ? '[data-a=cont]' : '[data-a=new]') as HTMLElement)?.focus({ preventScroll: true }); } };
     scene.build();
     const introKey = (e: KeyboardEvent | PointerEvent) => { if (scene.state === 'menu' || this.modal) return; audio.init(); const esc = (e as KeyboardEvent).code === 'Escape'; scene.input(esc ? 'skip' : 'act'); if (e.type === 'keydown') e.preventDefault(); };
@@ -246,18 +246,18 @@ class UI {
       if (a === 'cont' && latest) { cleanup(); await G.start(latest); }
       if (a === 'new') { if (latest && !(await this.confirm('Начать новую игру? Автосохранение будет перезаписано, ручные слоты останутся.', 'Начать'))) return; cleanup(); await G.start(newState()); }
       if (a === 'load') this.saveLoad('load'); if (a === 'set') this.settings(); if (a === 'cred') this.credits(false);
-      if (a === 'exit') { audio.music(null); audio.sfx('curtain'); const c = el('div', 'card', '<p class="act">ЗАНАВЕС</p><p>Спасибо, что заглянули в гримёрку.</p><p class="sm">Закройте вкладку — или нажмите, чтобы вернуться.</p>', root()); c.onclick = () => { c.remove(); audio.music('musicbox'); }; } });
+      if (a === 'exit') { audio.music(null); audio.sfx('curtain'); const c = el('div', 'card', '<p class="act">ЗАНАВЕС</p><p>Спасибо, что заглянули в гримёрку.</p><p class="sm">Закройте вкладку, или нажмите, чтобы вернуться.</p>', root()); c.onclick = () => { c.remove(); audio.music('musicbox'); }; } });
   }
   credits(final: boolean): Promise<void> {
     return new Promise((res) => {
       const sec = (h: string, ps: string[]) => `<h3>${h}</h3>${ps.map((p) => `<p>${p}</p>`).join('')}`;
       const c = el('div', 'credits', `<div class="roll" style="--dur:${final ? 70 : 55}s"><div class="cred-logo">${logoSVG('c')}</div>
-        ${sec('В РОЛЯХ', ['Варя<small>режиссёрка, Молодая Девушка, Королева — и всё это одновременно</small>', 'Полина · Рубен · Матвей · Эрика · Лиза · Ангелина<small>в ролях самих себя, наконец-то по собственному выбору</small>', 'Артемий<small>школьный кот одобряет</small>'])}
-        ${sec('ТРУППА ТЕАТРА', ['Василиса · Дана · Нина · Аня · Оля<small>второй состав, гастроли «Снежной королевы»; рекомендательные письма — их рук дело</small>'])}
+        ${sec('В РОЛЯХ', ['Варя<small>режиссёрка, Молодая Девушка, Королева, и всё это одновременно</small>', 'Полина · Рубен · Матвей · Эрика · Лиза · Ангелина<small>в ролях самих себя, наконец-то по собственному выбору</small>', 'Артемий<small>школьный кот одобряет</small>'])}
+        ${sec('ТРУППА ТЕАТРА', ['Василиса · Дана · Нина · Аня · Оля<small>второй состав, гастроли «Снежной королевы»; рекомендательные письма, их рук дело</small>'])}
         ${sec('В ЗРИТЕЛЬНОМ ЗАЛЕ', ['Мама Наташа и Саша', 'Папа Максим и Настя', 'Вася', 'Софа · Катя'])}
         ${sec('ХУДОЖЕСТВЕННЫЙ РУКОВОДИТЕЛЬ', ['Кукольник<small>просил не указывать. Указан.</small>'])}
         ${sec('МУЗЫКА, ДЕКОРАЦИИ, СВЕТ', ['Вся музыка, спрайты, портреты и текстуры созданы процедурно специально для этой игры', 'Three.js · TypeScript · Vite'])}
-        ${sec('ШРИФТЫ ЛОГОТИПА', ['Aurelia Diamond · Cintarini · Highcrest · Lombardina Initial One<small>лицензии «для личного некоммерческого использования»; игра — подарок, не продукт</small>', 'Lora · Playfair Display · Marck Script · Pixelify Sans<small>SIL Open Font License</small>'])}
+        ${sec('ШРИФТЫ ЛОГОТИПА', ['Aurelia Diamond · Cintarini · Highcrest · Lombardina Initial One<small>лицензии «для личного некоммерческого использования»; игра, подарок, не продукт</small>', 'Lora · Playfair Display · Marck Script · Pixelify Sans<small>SIL Open Font License</small>'])}
         ${sec('ОСОБАЯ БЛАГОДАРНОСТЬ', ['Третьему ряду.<small>Вас видно. Правда.</small>'])}
         <h3>С ДНЁМ РОЖДЕНИЯ, ВАРЯ</h3><p style="margin-top:3rem;opacity:.6">нажмите, чтобы закрыть</p></div>`, root());
       const fin = () => { off(); c.remove(); res(); }; const off = input.onAction((a) => { if (a === 'act' || a === 'pause') fin(); }); const t0 = performance.now(); c.onclick = () => { if (performance.now() - t0 > 600) fin(); };

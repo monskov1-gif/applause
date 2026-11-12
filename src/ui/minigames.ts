@@ -104,7 +104,7 @@ export function sequence(o: { title: string; sub?: string; rounds: string[][]; m
     const want = () => o.mirror?.[round] ? o.rounds[round].map((d) => MIR[d]) : o.rounds[round];
     const show = async () => { listening = false; st.textContent = o.roundSub?.[round] || (round === 0 ? 'Смотри…' : 'Ещё раз. Смотри…'); sq.textContent = ''; const seq = o.rounds[round]; await new Promise((r) => setTimeout(r, 500));
       for (let i = 0; i < seq.length; i++) { sq.innerHTML = seq.slice(0, i + 1).map((d, j) => `<span style="color:${j === i ? '#8e1830' : '#b89858'}">${DIR_SYM[d]}</span>`).join(''); audio.sfx('hit', { f: { up: 880, down: 523, left: 660, right: 784 }[seq[i]] }); o.onShow?.(seq[i], i); await new Promise((r) => setTimeout(r, beat)); }
-      sq.textContent = '· '.repeat(seq.length); st.textContent = o.mirror?.[round] ? 'Теперь ты — зеркально.' : 'Теперь ты.'; pos = 0; listening = true; };
+      sq.textContent = '· '.repeat(seq.length); st.textContent = o.mirror?.[round] ? 'Теперь ты, зеркально.' : 'Теперь ты.'; pos = 0; listening = true; };
     const inp = (d: string) => { if (!listening || ui.modal) return; const seq = want();
       if (seq[pos] === d) { pos++; audio.sfx('hit', { f: { up: 880, down: 523, left: 660, right: 784 }[d] }); o.onInput?.(d, true); sq.innerHTML = seq.map((x, j) => j < pos ? `<span style="color:#2f7f82">${DIR_SYM[x]}</span>` : '·').join(' ');
         if (pos >= seq.length) { listening = false; round++; if (round >= o.rounds.length) { st.textContent = 'Идеально.'; setTimeout(() => { off(); m.remove(); res(true); }, 700); } else setTimeout(show, 800); } }
@@ -129,13 +129,13 @@ export function timing(o: { title: string; sub?: string; zone?: number; speed?: 
 export function calibrate(): Promise<number | null> {
   return new Promise((res) => {
     let out: number | null = null; const taps: number[] = []; const beat = 0.6; let start = 0, timer: any;
-    const m = ui.open(`<h2>Калибровка задержки</h2><div class="body"><p>Прозвучит 8 ударов метронома. Нажимайте <b>пробел</b> (или кнопку) ровно в такт — игра измерит задержку звука на вашем устройстве.</p><p data-st style="font-size:1.4rem;text-align:center">—</p><div style="text-align:center"><button class="btn" data-tap>Тук</button></div></div><div class="foot"><button class="btn small" data-x>Отмена</button><button class="btn small red" data-go>Начать</button></div>`, { cls: 'narrow', onClose: () => { clearTimeout(timer); window.removeEventListener('keydown', kd, true); res(out); } });
+    const m = ui.open(`<h2>Калибровка задержки</h2><div class="body"><p>Прозвучит 8 ударов метронома. Нажимайте <b>пробел</b> (или кнопку) ровно в такт, игра измерит задержку звука на вашем устройстве.</p><p data-st style="font-size:1.4rem;text-align:center">, </p><div style="text-align:center"><button class="btn" data-tap>Тук</button></div></div><div class="foot"><button class="btn small" data-x>Отмена</button><button class="btn small red" data-go>Начать</button></div>`, { cls: 'narrow', onClose: () => { clearTimeout(timer); window.removeEventListener('keydown', kd, true); res(out); } });
     const st = m.querySelector('[data-st]')!;
     const tap = () => { if (!start) return; const t = audio.now() - start; const k = Math.round(t / beat); if (k >= 0 && k < 8) { taps.push((t - k * beat) * 1000); st.textContent = '♪ '.repeat(taps.length); } };
     const kd = (e: KeyboardEvent) => { if (e.code === 'Space') { e.preventDefault(); e.stopPropagation(); tap(); } }; window.addEventListener('keydown', kd, true);
     (m.querySelector('[data-tap]') as HTMLElement).onclick = tap;
     (m.querySelector('[data-go]') as HTMLElement).onclick = () => { audio.init(); if (!audio.ctx) { st.textContent = 'Звук недоступен'; return; } taps.length = 0; start = audio.now() + 0.6; for (let i = 0; i < 8; i++) audio.voice('drums', 'r', start + i * beat, 0.1, 1.6, audio.bSfx); st.textContent = 'слушайте…';
-      timer = setTimeout(() => { if (taps.length < 4) { st.textContent = 'Мало нажатий — попробуйте ещё раз'; start = 0; return; } taps.sort((a, b) => a - b); const med = taps[Math.floor(taps.length / 2)]; out = Math.max(-200, Math.min(200, Math.round(med / 5) * 5)); st.textContent = `Поправка: ${out} мс`; start = 0; setTimeout(() => ui.close(m), 1200); }, (8 * beat + 1) * 1000); };
+      timer = setTimeout(() => { if (taps.length < 4) { st.textContent = 'Мало нажатий, попробуйте ещё раз'; start = 0; return; } taps.sort((a, b) => a - b); const med = taps[Math.floor(taps.length / 2)]; out = Math.max(-200, Math.min(200, Math.round(med / 5) * 5)); st.textContent = `Поправка: ${out} мс`; start = 0; setTimeout(() => ui.close(m), 1200); }, (8 * beat + 1) * 1000); };
   });
 }
 /** Погоня: три полосы, препятствия по ритму трека. Возвращает число столкновений. */

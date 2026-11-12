@@ -1,6 +1,6 @@
-// Логотип THE OTHER ME: APPLAUSE, PLEASE! — по авторскому референсу (references/logo_reference.png).
-// Буквы — из шрифтов проекта (Aurelia Diamond, буквицы Highcrest, каллиграфия Cintarini),
-// орнамент — нарисован вручную в SVG: арка с занавесом, рука кукловода, маска, лилия, мак, плёнка, бинокль, билет.
+// Логотип THE OTHER ME: APPLAUSE, PLEASE!, по авторскому референсу (references/logo_reference.png).
+// Буквы, из шрифтов проекта (Aurelia Diamond, буквицы Highcrest, каллиграфия Cintarini),
+// орнамент, нарисован вручную в SVG: арка с занавесом, рука кукловода, маска, лилия, мак, плёнка, бинокль, билет.
 const IV = '#eadfc8', IV2 = '#b9a888', GOLD = '#c9a35a', RED = '#b3142c', RED2 = '#6e0a18', INK = '#120c0d';
 const star = (x: number, y: number, r: number, col = IV, w = 0.16) => `<path d="M${x},${y - r} L${x + r * w},${y - r * w} L${x + r},${y} L${x + r * w},${y + r * w} L${x},${y + r} L${x - r * w},${y + r * w} L${x - r},${y} L${x - r * w},${y - r * w}Z" fill="${col}"/>`;
 const burst = (x: number, y: number, r: number, col = GOLD) => { let p = ''; for (let i = 0; i < 16; i++) { const a = i * Math.PI / 8, l = i % 2 ? r * 0.55 : r, s = 0.06; p += `<path d="M${x},${y} L${x + Math.cos(a - s) * 6},${y + Math.sin(a - s) * 6} L${x + Math.cos(a) * l},${y + Math.sin(a) * l} L${x + Math.cos(a + s) * 6},${y + Math.sin(a + s) * 6}Z" fill="${col}"/>`; } return p + `<circle cx="${x}" cy="${y}" r="${r * 0.17}" fill="${col}" stroke="${INK}" stroke-width="1.5"/>`; };

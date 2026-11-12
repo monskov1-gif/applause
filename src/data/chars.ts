@@ -1,4 +1,4 @@
-// Персонажи: внешность — единый источник для спрайтов и портретов. Описания героев и близких Вари заданы автором
+// Персонажи: внешность, единый источник для спрайтов и портретов. Описания героев и близких Вари заданы автором
 // проекта и здесь не переосмысляются; жанровые персонажи (экипаж, свидетели, сказочные фигуры) придуманы для глав.
 export interface CharDef {
   id: string; name: string; color: string; pitch: number;
@@ -11,11 +11,11 @@ export interface CharDef {
 const TAN = '#d9a878', TAN2 = '#c08458', FAIR = '#f0cdb0', FAIR2 = '#eac4a4', OLIVE = '#d9a77e';
 const C: CharDef[] = [
   { id: 'varya', name: 'Варя', color: '#5fd0c8', pitch: 520, skin: TAN, hair: '#5a341f', style: 'bob', eyes: '#5b3a1e', h: 31, build: 'thin', top: '#c41e3a', bottom: '#2a2430', shoes: '#1c1620', brows: 'soft', acc: ['offshoulder'],
-    role: 'Режиссёрка', bio: 'Завтра ей восемнадцать. На ней красный лонгслив без плеч: Матвей подарил на прошлый день рождения. Умеет собрать людей вместе — и очень не любит, когда что-то идёт не по плану.' },
+    role: 'Режиссёрка', bio: 'Завтра ей восемнадцать. На ней красный лонгслив без плеч: Матвей подарил на прошлый день рождения. Умеет собрать людей вместе, и очень не любит, когда что-то идёт не по плану.' },
   { id: 'alla', name: 'Алла Ева', color: '#ff5d6c', pitch: 500, skin: TAN, hair: '#2a1512', style: 'curls', eyes: '#5b3a1e', h: 31, build: 'thin', top: '#a3122a', bottom: '#8a0f24', skirt: 'long', trim: '#e8c36a', shoes: '#3a0a12', acc: ['pearls'], brows: 'arch', lips: '#b3122e', shadow: '#6b2a55',
     role: 'Прима', bio: 'Ведущая актриса театра. Опаздывает, требует лучшую гримёрку и знает о Варе подозрительно много.' },
   { id: 'kukolnik', name: 'Кукольник', color: '#d8b56a', pitch: 180, skin: '#000', hair: '#000', style: 'none', eyes: '#000', h: 38, build: 'mid', top: '#111', bottom: '#111',
-    role: 'Художественный руководитель', bio: 'Его никто не видел. Он оставляет письма, пометки на полях и распоряжения — всегда вовремя.' },
+    role: 'Художественный руководитель', bio: 'Его никто не видел. Он оставляет письма, пометки на полях и распоряжения, всегда вовремя.' },
   { id: 'polina', name: 'Полина', color: '#c9a7ff', pitch: 610, skin: FAIR, hair: '#f0d98a', style: 'fluffy', eyes: '#3f9b57', h: 32, build: 'thin', top: '#8f7fc4', bottom: '#3b4a6b', shoes: '#eeeeee', brows: 'soft',
     role: 'Подруга', bio: 'Боится почти всего и смеётся, когда страшно. Замечает то, что другие пропускают.' },
   { id: 'ruben', name: 'Рубен', color: '#ffb057', pitch: 240, skin: TAN2, hair: '#1d1512', style: 'curlyMid', eyes: '#3b2416', h: 40, build: 'strong', top: '#26262e', bottom: '#2d3440', trim: '#ff9a3c', shoes: '#111', brows: 'strict',
@@ -23,12 +23,12 @@ const C: CharDef[] = [
   { id: 'matvey', name: 'Матвей', color: '#ff8fd0', pitch: 400, skin: FAIR2, hair: '#6a4326', style: 'curlyShort', eyes: '#5b3a1e', h: 37, build: 'thin', top: '#f2c230', bottom: '#3a62c9', trim: '#e84a6f', shoes: '#e84a6f', acc: ['freckles', 'scarf', 'bracelets', 'pins'], brows: 'soft',
     role: 'Друг', bio: 'Яркий снаружи, осторожный внутри. Сто раз отрепетирует фразу и так её и не скажет.' },
   { id: 'erika', name: 'Эрика', color: '#9fc3e8', pitch: 430, skin: FAIR, hair: '#6b452a', style: 'ponytail', eyes: '#5b3a1e', h: 34, build: 'mid', top: '#8a7a5c', bottom: '#2b2f3a', shoes: '#22201f', brows: 'soft',
-    role: 'Подруга', bio: 'Спокойная. Сначала слушает, потом задаёт один вопрос — обычно самый неудобный.' },
+    role: 'Подруга', bio: 'Спокойная. Сначала слушает, потом задаёт один вопрос, обычно самый неудобный.' },
   { id: 'liza', name: 'Лиза', color: '#ffe27a', pitch: 640, skin: FAIR, hair: '#8c6a45', style: 'long', bangs: true, eyes: '#6b7f9a', h: 31, build: 'thin', top: '#7ec4a4', bottom: '#f3ead8', skirt: 'short', shoes: '#8a5a3a', brows: 'soft',
-    role: 'Подруга', bio: 'Лёгкая и упрямая. Если ей сказать «так положено», обязательно спросит — кем.' },
+    role: 'Подруга', bio: 'Лёгкая и упрямая. Если ей сказать «так положено», обязательно спросит, кем.' },
   { id: 'liza_long', name: 'Лиза', color: '#ffe27a', pitch: 640, skin: FAIR, hair: '#8c6a45', style: 'rapunzel', bangs: true, eyes: '#6b7f9a', h: 31, build: 'thin', top: '#c9a0dc', bottom: '#b58ad0', skirt: 'long', shoes: '#8a5a3a', brows: 'soft' },
   { id: 'angelina', name: 'Ангелина', color: '#ff7ab8', pitch: 470, skin: OLIVE, hair: '#0f0d12', style: 'longStyled', eyes: '#2a1a14', h: 37, build: 'thin', top: '#16141c', bottom: '#5a1f3d', skirt: 'short', trim: '#d9d9e8', shoes: '#111', acc: ['earrings'], brows: 'arch', lips: '#b0405a',
-    role: 'Подруга', bio: 'Точная, собранная, с идеальной укладкой. Поёт так, как считает нужным, — и это не обсуждается.' },
+    role: 'Подруга', bio: 'Точная, собранная, с идеальной укладкой. Поёт так, как считает нужным,, и это не обсуждается.' },
   { id: 'artemiy', name: 'Артемий', color: '#9ab0c8', pitch: 260, skin: FAIR, hair: '#9a7450', style: 'short', eyes: '#2a1a14', h: 39, build: 'mid', top: '#2c3550', bottom: '#2a2a33', trim: '#f0f0f0', shoes: '#111', brows: 'strict',
     role: 'Одноклассник Матвея', bio: 'Выглядит так, будто сейчас сделает замечание. На деле подкармливает школьного кота.' },
   // ----- труппа театра (второй состав, на гастролях) -----

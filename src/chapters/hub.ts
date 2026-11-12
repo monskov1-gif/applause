@@ -51,7 +51,7 @@ const dressing: RoomDef = {
     R.inter('recs', 5.6, 1.4, { label: 'Рекомендательный лист', fn: async () => { await G.ui.paper(PAPERS.recs); if (!f.read_recs) { f.read_recs = 1; await G.run(D.recsAfter); } } });
     // шкаф, на нём камера Василисы
     wardrobe(R, 4, -4.4, { w: 2, h: 2.6 });
-    if (!G.has('camera')) { R.sprite('cam', 4, -4.3, { y: 2.62, name: 'camSpr' }); R.inter('cam', 4, -3.6, { label: 'Фотоаппарат с запиской', fn: async () => { await G.ui.paper(PAPERS.camnote); await G.run(D.camAfter); G.toast('C — достать фотоаппарат, E — снимок', '◉'); G.room.named.camSpr.visible = false; G.room.inter('cam').enabled = false; G.ui.hud(); } }); }
+    if (!G.has('camera')) { R.sprite('cam', 4, -4.3, { y: 2.62, name: 'camSpr' }); R.inter('cam', 4, -3.6, { label: 'Фотоаппарат с запиской', fn: async () => { await G.ui.paper(PAPERS.camnote); await G.run(D.camAfter); G.toast('C: достать фотоаппарат, E: снимок', '◉'); G.room.named.camSpr.visible = false; G.room.inter('cam').enabled = false; G.ui.hud(); } }); }
     coatStand(R, -7.2, 2.6, [0x2f2a3a, 0xc41e3a]);
     R.look('rack', -7.2, 3.1, 'Вешалка', ['~: Вешалка. Чужая шляпа и красный лонгслив без плеч. Мой. Матвей подарил на прошлый день рождения, и я в нём сейчас. Тогда чей этот?', '~: Бирка изнутри: «А. Е.». Ладно. Совпадение. Таких лонгсливов много.'], { mask: 'none', r: 1.3 });
     R.look('rackCom', -7.2, 3.1, 'Шляпа (она шевелится)', D.rackCom, { mask: 'comedy', r: 1.3, egg: 'hat' });
@@ -62,7 +62,7 @@ const dressing: RoomDef = {
     R.poster('ЗАВТРА', 'премьера', { x: 2.4, y: 3.6, w: 1.5, h: 2.1 });
     R.inter('journal', 2.2, -4.0, { label: 'Журнал помрежа (сохранить)', y: 1.4, fn: () => G.ui.saveLoad('save') });
     R.sprite('book', 2.2, -4.5, { y: 0, scale: 1.4 });
-    R.door('door', 6, { to: 'hub_corridor', spot: 'dressing', label: 'В коридор', cond: () => !!f.read_invite, locked: 'Сначала — конверт на столе. Не люблю выходить, не зная, куда.' });
+    R.door('door', 6, { to: 'hub_corridor', spot: 'dressing', label: 'В коридор', cond: () => !!f.read_invite, locked: 'Сначала, конверт на столе. Не люблю выходить, не зная, куда.' });
     R.spawn('start', -5.4, -2); R.spawn('door', 6, -3.4);
   },
   async enter(G) {
@@ -71,7 +71,7 @@ const dressing: RoomDef = {
     G.audio.music(null);
     G.sfx('knock', { n: 3 }); await G.wait(2.4); await G.ui.card([['АКТ I', 'act'], ['THE INVITATION', 'big'], ['Три удара в пол. Так начинают спектакли.', 'sm']]);
     G.audio.music('backstage'); G.applyGrade(); await G.wait(1.6);
-    p.pose = null; p.y = 0; p.place(-5.4, -2, 'f'); await G.run(D.wake); f.woke = 1; G.toast('WASD / стрелки — ходить · E — действие · Esc — пауза', '✦');
+    p.pose = null; p.y = 0; p.place(-5.4, -2, 'f'); await G.run(D.wake); f.woke = 1; G.toast('WASD / стрелки, ходить · E: действие · Esc, пауза', '✦');
   },
 };
 
@@ -150,7 +150,7 @@ const stage: RoomDef = {
     R.door('d_cor', STZ + 4, { wall: 'w', to: 'hub_corridor', spot: 'stage', label: 'В служебный коридор', col: '#2a1c14', fade: 'curtain' });
     R.door('d_foyer', 19, { wall: 'w', to: 'hub_foyer', spot: 'stalls', label: 'Двери в фойе', sign: 'ФОЙЕ', col: '#6a1a22' });
     R.door('d_foyer2', 19, { wall: 'e', to: 'hub_foyer', spot: 'stalls2', label: 'Двери в фойе', sign: 'ФОЙЕ', col: '#6a1a22' });
-    R.door('d_back', 12, { label: 'За кулисы', sign: 'ЗА КУЛИСЫ', col: '#4a2a1a', cond: () => !!f.act1, locked: 'Сначала разберусь с тем, что на сцене.' }); R.light(12, 4.4, -21.8, 0xffd890, 6, 6); sconce(R, 9.6, 4, -22.96, {}); sconce(R, 14.4, 4, -22.96, {});
+    R.door('d_back', 12, { to: 'hub_backstage', label: 'За кулисы', sign: 'ЗА КУЛИСЫ', col: '#4a2a1a', cond: () => !!f.act1, locked: 'Сначала разберусь с тем, что на сцене.' }); R.light(12, 4.4, -21.8, 0xffd890, 6, 6); sconce(R, 9.6, 4, -22.96, {}); sconce(R, 14.4, 4, -22.96, {});
     R.inter('hatch', 5.4, -7.2, { label: 'Люк в полу сцены', cond: () => !!f.act1, y: 1, fn: (G) => G.goto('hub_trap', 'hatch', { fade: 'fade' }) }); R.decal(canvasTex(16, 16, (c) => { c.fillStyle = '#1a120c'; c.fillRect(0, 0, 16, 16); c.fillStyle = '#3a2a1a'; c.fillRect(1, 1, 14, 14); c.fillStyle = '#86641c'; c.fillRect(6, 7, 4, 2); }, 'hatchd'), { flat: true, x: 5.4, z: -7.6, y: 0.03, w: 1.6, h: 1.6 });
     // режиссёрский столик
     R.table(-10, -5.5, 2.6, 1.3); R.sprite('book', -10.3, -5.4, { y: 1.15 }); R.sprite('lamp', -9.1, -5.8, { y: 1.1, scale: 0.4 }); R.light(-9.7, 2.2, -5.3, 0xffd090, 6, 6);
@@ -212,7 +212,7 @@ async function rehearsal(G: any) {
 async function casting(G: any) {
   const f = G.f; await G.run(D.castIntro);
   const todo = FRIENDS.filter((x) => G.done(x) && !f['cast_' + x]);
-  const res = await pick({ title: 'Распределение ролей', sub: "The Queen's Last Curtain", intro: 'Напротив каждого имени — либо роль, которую ты выбрала сама, либо пометка «спросить».', rows: todo.map((x) => ({ id: x, label: CHARS[x].name, options: [{ id: 'assigned', text: `Вписать: «${ROLES[x][0]}»`, hint: 'я лучше знаю, где он(а) смотрится' }, { id: 'asked', text: 'Оставить пустым и спросить', hint: 'пусть выберет сам(а)' }] })), confirm: 'В работу' });
+  const res = await pick({ title: 'Распределение ролей', sub: "The Queen's Last Curtain", intro: 'Напротив каждого имени, либо роль, которую ты выбрала сама, либо пометка «спросить».', rows: todo.map((x) => ({ id: x, label: CHARS[x].name, options: [{ id: 'assigned', text: `Вписать: «${ROLES[x][0]}»`, hint: 'я лучше знаю, где он(а) смотрится' }, { id: 'asked', text: 'Оставить пустым и спросить', hint: 'пусть выберет сам(а)' }] })), confirm: 'В работу' });
   let a = 0, q = 0; for (const x of todo) { f['cast_' + x] = res[x]; if (res[x] === 'asked') q++; else a++; }
   if (a) await G.run(D.cast_assigned); if (q) await G.run(D.cast_asked); G.note('casting');
 }
@@ -230,11 +230,11 @@ async function act4(G: any) {
 
 const DOORS: { id: string; x: number; to: string; label: string; col: string; sign: string; fade: string; glow?: number; ask: string }[] = [
   { id: 'polina', x: 1.5, to: 'pol_porch', label: 'Мокрая дверь', col: '#2a3a34', sign: '', fade: 'fade', ask: '' },
-  { id: 'ruben', x: 5.5, to: 'rub_hideout', label: 'Двери лифта с неоновой рамкой', col: '#1c2438', sign: '↑↓', fade: 'glitch', glow: 0x40e0d0, ask: 'Лифт гудит. На табло вместо этажа — «ПЛАН Б». Изнутри пахнет озоном и чужими деньгами.' },
+  { id: 'ruben', x: 5.5, to: 'rub_hideout', label: 'Двери лифта с неоновой рамкой', col: '#1c2438', sign: '↑↓', fade: 'glitch', glow: 0x40e0d0, ask: 'Лифт гудит. На табло вместо этажа, «ПЛАН Б». Изнутри пахнет озоном и чужими деньгами.' },
   { id: 'matvey', x: 9.5, to: 'mat_yard', label: 'Раздвижная школьная дверь', col: '#c8aa78', sign: '2-Б', fade: 'flash', glow: 0xffc0dc, ask: 'За дверью звенит школьный звонок и падают лепестки. Слишком красиво падают. Как по команде.' },
-  { id: 'erika', x: 13.5, to: 'eri_office', label: 'Дверь с матовым стеклом', col: '#3a3a3a', sign: 'СЫСК', fade: 'iris', ask: 'За стеклом — силуэт в шляпе и дождь. Цвета вокруг двери выцветают, как на старой плёнке.' },
-  { id: 'liza', x: 17.5, to: 'liz_base', label: 'Огромная книга на подставке', col: '#b89858', sign: 'ЖИЛА-БЫЛА', fade: 'page', glow: 0xffe9a0, ask: 'Книга в рост человека. На обложке — башня. Страницы шелестят сами, будто их кто-то торопит.' },
-  { id: 'angelina', x: 20.8, to: 'ang_lobby', label: 'Гримёрное зеркало с лампами', col: '#ff9ad8', sign: 'DEBUT', fade: 'mirror', glow: 0xff80c0, ask: 'В зеркале вместо отражения — коридор агентства. Белый, глянцевый, с экранами. На каждом — одно и то же улыбающееся лицо. Не Ангелины.' },
+  { id: 'erika', x: 13.5, to: 'eri_office', label: 'Дверь с матовым стеклом', col: '#3a3a3a', sign: 'СЫСК', fade: 'iris', ask: 'За стеклом, силуэт в шляпе и дождь. Цвета вокруг двери выцветают, как на старой плёнке.' },
+  { id: 'liza', x: 17.5, to: 'liz_base', label: 'Огромная книга на подставке', col: '#b89858', sign: 'ЖИЛА-БЫЛА', fade: 'page', glow: 0xffe9a0, ask: 'Книга в рост человека. На обложке, башня. Страницы шелестят сами, будто их кто-то торопит.' },
+  { id: 'angelina', x: 20.8, to: 'ang_lobby', label: 'Гримёрное зеркало с лампами', col: '#ff9ad8', sign: 'DEBUT', fade: 'mirror', glow: 0xff80c0, ask: 'В зеркале вместо отражения, коридор агентства. Белый, глянцевый, с экранами. На каждом, одно и то же улыбающееся лицо. Не Ангелины.' },
 ];
 const backstage: RoomDef = {
   name: 'Карман сцены', w: 46, d: 12, music: 'backstage', amb: 'hall', step: 'wood', grade: { tint: [0.92, 0.96, 1.08], vig: 0.6 },
@@ -256,7 +256,7 @@ const backstage: RoomDef = {
     else R.look('ptable', -12.5, -3.2, 'Реквизиторский стол', ['~: Стол реквизитора. Всё подписано: «кинжал (не настоящий)», «яд (чай)», «корона (не трогать, Алла Ева)».'], { quiet: true });
     R.sprite('bust', -9.2, -4.8, { scale: 1.5, mask: 'none', solid: 0.5 }); R.sprite('bust', -9.2, -4.8, { scale: 1.5, mask: 'tragedy' }); R.sprite('bust', -9.2, -4.8, { scale: 1.5, mask: 'drama' }); R.sprite('bustfun', -9.2, -4.8, { scale: 1.5, mask: 'comedy' });
     R.look('bust', -9.2, -3.8, 'Бюст основателя', D.bust, { mask: 'none' }); R.look('bustCom', -9.2, -3.8, 'Бюст (он подмигивает)', D.bustCom, { mask: 'comedy' });
-    R.decal(canvasTex(72, 20, (c) => { ptext(c, 'Тени здесь держат.', 2, 1, { size: 8, col: '#cfe0ff' }); ptext(c, 'Проверено. — К.', 2, 10, { size: 8, col: '#cfe0ff' }); }, 'chalk'), { x: -7.2, y: 2.6, w: 4.5, h: 1.25, mask: 'tragedy', glow: true });
+    R.decal(canvasTex(72, 20, (c) => { ptext(c, 'Тени здесь держат.', 2, 1, { size: 8, col: '#cfe0ff' }); ptext(c, 'Проверено., К.', 2, 10, { size: 8, col: '#cfe0ff' }); }, 'chalk'), { x: -7.2, y: 2.6, w: 4.5, h: 1.25, mask: 'tragedy', glow: true });
     R.decal(canvasTex(48, 12, (c) => { c.fillStyle = '#9ad0ff'; for (let i = 0; i < 6; i++) { c.fillRect(2 + i * 8, i % 2 ? 2 : 7, 4, 2); c.fillRect(2 + i * 8, i % 2 ? 5 : 10, 2, 1); } }, 'steps'), { flat: true, x: -4.6, z: 0, y: 0.04, w: 4.6, h: 1.1, mask: 'tragedy', glow: true });
     R.look('wallTr', -6.9, -1.6, 'Надпись мелом и следы', D.wallTr, { mask: 'tragedy', photo: 'Следы на тени' });
     R.sprite(canvasTex(12, 5, (c) => { c.fillStyle = '#c9a7ff'; c.fillRect(0, 1, 12, 3); c.fillStyle = '#8f7fc4'; c.fillRect(5, 0, 3, 5); }, 'scarf'), -7.3, 3.4, { mask: 'drama', glow: true, y: 0.1 }); R.look('scarf', -7.3, 3.6, 'Шарф', D.scarfDr, { mask: 'drama', r: 1.3 });
@@ -278,7 +278,7 @@ const backstage: RoomDef = {
     for (const d of DOORS) {
       if (d.id !== 'polina' && !G.done('polina')) continue; const done = G.done(d.id);
       R.door('w_' + d.id, d.x, { label: done ? d.label + ' (история сыграна)' : d.label, col: d.col, sign: d.sign, glow: undefined, fn: async (G) => {
-        if (done) return G.run(['~: Эта история сыграна. Дверь тёплая на ощупь и больше не открывается — как книга, которую дочитали.']);
+        if (done) return G.run(['~: Эта история сыграна. Дверь тёплая на ощупь и больше не открывается, как книга, которую дочитали.']);
         if (d.id === 'polina') { await G.run(D.polinaDoor); if (!f.go) return; } else { await G.run(['~: ' + d.ask, { c: [['Войти', [{ set: { go: 1 } }]], ['Позже', [{ set: { go: 0 } }]]] }]); if (!f.go) return; }
         if (G.state.mask) G.setMask(G.state.mask); G.sfx(d.id === 'polina' ? 'thunder' : 'door');
         try { await G.goto(d.to, 'start', { fade: d.fade }); } catch (e) { console.warn('[hub] глава ещё не собрана', d.id, e); await G.run(['~: Ручка поворачивается, но дверь не поддаётся. Изнутри слышно, как кто-то торопливо двигает декорации.', '~: За этой дверью ещё репетируют.']); } } });
@@ -326,7 +326,7 @@ const archive: RoomDef = {
     R.table(0, 1, 4.4, 1.8); R.sprite('lamp', 1.8, 0.7, { y: 1.1, scale: 0.45 }); R.sprite('typewriter', -1.4, 0.9, { y: 1.15 });
     const doc = (id: string, x: number, z: number, label: string, paper: any, after: any[], note: string) => R.inter(id, x, z, { label, fn: async (G) => { await G.ui.paper(paper); if (!f['a_' + id]) { f['a_' + id] = 1; await G.run(after); G.note(note); } } });
     doc('ledger', -0.6, 2.1, 'Протокол собрания труппы', PAPERS.ledger, ['varya/worried: «Не могу голосовать за себя».', '~: Худрук воздержался, потому что голосовали… за него? За неё?', '~: Оля не поняла шутку. Кажется, я тоже не хочу её понимать.'], 'ledger');
-    doc('contract', 1.2, 2.1, 'Ангажемент Аллы Евы', PAPERS.contract, ['~: Две подписи. Размашистая «Алла Ева» и скромная «К.».', '~: Чернила одни. Нажим один. Наклон один. Разные только росчерки — как если бы человек расписался дважды, очень стараясь, чтобы было непохоже.'], 'contract');
+    doc('contract', 1.2, 2.1, 'Ангажемент Аллы Евы', PAPERS.contract, ['~: Две подписи. Размашистая «Алла Ева» и скромная «К.».', '~: Чернила одни. Нажим один. Наклон один. Разные только росчерки, как если бы человек расписался дважды, очень стараясь, чтобы было непохоже.'], 'contract');
     doc('program', -7, -3.3, 'Программка', PAPERS.program, ['varya/scared: «На сцене стоит один человек».', '~: Программка завтрашней премьеры. С финалом, который я ещё не поставила.'], 'program');
     doc('seating', -3.4, -3.3, 'Папка «Утренники»', PAPERS.seating, ['varya/sad: «Рот открывать, звук не давать».', '~: Я помню, кто это сказал. Не со зла. Просто чтобы хор звучал ровнее.', '~: Дальше не помню. Как будто кто-то вырезал кусок плёнки.'], 'seating');
     R.decal(photoTex('choir', (c) => { for (let r = 0; r < 3; r++) people(c, ['#fff', '#fff', '#fff', '#fff', r === 2 ? '#2f7f82' : '#fff'], 3 + r * 5); }), { x: 3.4, y: 2.6, w: 1.6, h: 1.25 }); R.look('choir', 3.4, -3.6, 'Школьная фотография', D.archPhoto, { photo: 'Хор: третий ряд' });

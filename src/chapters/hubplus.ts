@@ -84,7 +84,7 @@ const mezz: RoomDef = {
     // проём над фойе: балюстрада и люстра внизу
     balustrade(R, -19, 3, -4, 3); balustrade(R, 4, 3, 19, 3); const pit = R.box(0, 6, 38, 6, 0.1, { tex: 'checker', y: -4, solid: false }); R.light(0, -1, 6, 0xffd8a0, 10, 10); for (const x of [-12, -6, 6, 12]) R.box(x, 6, 0.8, 0.8, 4, { tex: 'white', tint: '#e8d8c8', y: -4, solid: false }); R.collider(-19, 3.2, 19, 8);
     chandelier(R, -9, -0.6, 6, 1.1, { light: 8 }); chandelier(R, 9, -0.6, 6, 1.1, { light: 8 });
-    R.inter('down', 0, 2.2, { label: 'Парадная лестница — вниз, в фойе', fn: (G) => G.goto('hub_foyer', 'stairs', { fade: 'fade' }) }); R.stairs(0, 5.4, 6, 4, { runner: true }).position.y = -1.2;
+    R.inter('down', 0, 2.2, { label: 'Парадная лестница, вниз, в фойе', fn: (G) => G.goto('hub_foyer', 'stairs', { fade: 'fade' }) }); R.stairs(0, 5.4, 6, 4, { runner: true }).position.y = -1.2;
     // портреты постановок и бюст основателя
     ['ЧАЙКА', 'ГАМЛЕТ', 'СИРАНО', 'САД'].forEach((t, i) => R.decal(portrait(t, i), { x: -15 + i * 2.2, y: 3.4, w: 1.7, h: 2.3 }));
     R.look('portraits', -11.7, -6.6, 'Портреты постановок', T.portraits); R.sprite('bust', 15, -6.4, { scale: 1.6, solid: 0.5 }); R.look('bust2', 15, -5.4, 'Бюст основателя', T.bust, { egg: 'matias' });
@@ -98,7 +98,7 @@ const mezz: RoomDef = {
     else {
       R.decal(canvasTex(40, 60, (c) => { c.fillStyle = '#5a4010'; c.fillRect(0, 0, 40, 60); c.fillStyle = '#3a6244'; c.fillRect(2, 2, 36, 56); c.fillStyle = '#d4ae48'; for (let i = 0; i < 6; i++) c.fillRect(6 + (i % 2) * 14, 6 + i * 9, 14, 3); c.fillStyle = '#8e1830'; c.fillRect(14, 22, 12, 18); }, 'tapestry'), { wall: 'w', at: -2, y: 2.6, w: 2.6, h: 3.9, mask: 'none' });
       R.decal(canvasTex(40, 60, (c) => { c.fillStyle = '#0c0808'; c.fillRect(0, 0, 40, 60); c.strokeStyle = '#6a8ad0'; c.strokeRect(2.5, 2.5, 35, 57); c.fillStyle = '#6a8ad0'; c.fillRect(17, 28, 6, 9); c.fillRect(15, 30, 10, 3); }, 'officedoor'), { wall: 'w', at: -2, y: 2.6, w: 2.6, h: 3.9, mask: 'tragedy', glow: true });
-      R.look('tap', -18.1, -2, 'Гобелен', ['~: Гобелен. Охота, олень, все довольны, кроме оленя. Висит немного криво — будто его часто отодвигают.'], { mask: 'none' });
+      R.look('tap', -18.1, -2, 'Гобелен', ['~: Гобелен. Охота, олень, все довольны, кроме оленя. Висит немного криво, будто его часто отодвигают.'], { mask: 'none' });
       R.inter('officeTr', -18.1, -2, { label: 'Дверь за гобеленом', mask: 'tragedy', fn: async (G) => { await G.run(D.officeFind); if (!G.has('marionette')) return G.run(D.officeNoKey); await G.run(D.officeOpen); f.office_open = 1; await G.goto('hub_office'); } });
     }
     for (const x of [-14, 13]) { R.box(x, -6.6, 3, 0.8, 0.9, { tex: 'velvet' }); }
@@ -171,8 +171,8 @@ const trap: RoomDef = {
     R.box(0, 4, 2.4, 2.4, 0.3, { tex: 'metal', tint: '#8a7a6a' }); for (const dx of [-1.1, 1.1]) R.box(dx, 4, 0.15, 0.15, 6, { tex: 'metal', solid: false });
     R.look('lift', 0, 5.6, 'Подъёмник люка', T.lift);
     R.decal(canvasTex(48, 24, (c) => { for (let i = 0; i < 18; i++) { c.fillStyle = 'rgba(160,20,30,.75)'; c.fillRect(4 + i * 2.3, 12 + Math.sin(i * 0.8) * 6 + (i % 2) * 2, 2, 1.5); } }, 'paintsteps'), { flat: true, x: 9, z: 4.4, y: 0.03, w: 9, h: 4.5 }); R.look('paint', 9, 5.4, 'Следы красной краски', T.paint);
-    R.inter('hatch', 0, 3, { label: 'Подъёмник — наверх, на сцену', fn: async (G) => { G.sfx('gear'); await G.goto('hub_stage', 'hatch', { fade: 'fade' }); } });
-    R.door('stairs', 15, { wall: 's', to: 'hub_corridor', spot: 'trap', label: 'Лестница — наверх, в коридор' });
+    R.inter('hatch', 0, 3, { label: 'Подъёмник, наверх, на сцену', fn: async (G) => { G.sfx('gear'); await G.goto('hub_stage', 'hatch', { fade: 'fade' }); } });
+    R.door('stairs', 15, { wall: 's', to: 'hub_corridor', spot: 'trap', label: 'Лестница, наверх, в коридор' });
     R.spawn('start', 15, 6, 'b'); R.spawn('stairs', 15, 6, 'b'); R.spawn('hatch', 0, 5.6);
   },
   async enter(G) { if (!G.f.trap0) { G.f.trap0 = 1; await G.run(T.trapFirst); } },
@@ -183,7 +183,7 @@ const sydney: RoomDef = {
   card: (G) => G.f.syd0 ? null : (G.f.syd0 = 1, [['ПРОЛОГ', 'act'], 'Сидней. Без девятнадцати полночь.', ['Завтра Варе восемнадцать.', 'sm']]),
   build(R, G) {
     R.room.group.userData.bg = 0x0a1028; R.floor('stone', { tint: '#b8a898' }); R.ambient(0x2a3458, 1.8, 0x8aa0d8);
-    // квартира — западная стена с окном и дверью; балкон смотрит на север, на залив
+    // квартира, западная стена с окном и дверью; балкон смотрит на север, на залив
     R.walls('plaster', { h: 6, tint: '#d8c8b8', n: false, e: false }); window3D(R, -1.6, { wall: 'w', y: 3.2, w: 2, h: 3, curtains: true }); R.door('home', 2.4, { wall: 'w', label: 'Комната', col: '#e8e0d0', fn: (G) => G.run(['~: Ещё рано. Пять минут на воздухе.']) });
     R.light(-7.4, 3, -1.6, 0xffd8a0, 8, 8);
     const sky = canvasTex(160, 60, (c) => { const g = c.createLinearGradient(0, 0, 0, 60); g.addColorStop(0, '#060a1e'); g.addColorStop(0.7, '#1a2a5a'); g.addColorStop(1, '#3a3a6a'); c.fillStyle = g; c.fillRect(0, 0, 160, 60); c.fillStyle = '#fff'; for (let i = 0; i < 70; i++) c.fillRect((i * 53) % 160, (i * 29) % 36, 1, 1); c.fillStyle = '#f4ecd0'; c.beginPath(); c.arc(130, 12, 5, 0, 7); c.fill();

@@ -1,4 +1,4 @@
-// Глава Рубена — THE LAST HEIST. Футуристическое ограбление.
+// Глава Рубена, THE LAST HEIST. Футуристическое ограбление.
 // Механики: доска плана (выбор маршрута/гаджета/времени влияет на прохождение), скрытность против охраны с конусами зрения,
 // гаджеты (G), коридор лазеров по ритму, слом плана в хранилище (решение принимает Рубен), погоня на ховербайке.
 import type { RoomDef, Builder } from '../world/room';
@@ -26,16 +26,16 @@ const hideout: RoomDef = {
     R.inter('plan', 0, 0.3, { label: f.rub_plan ? 'Доска плана (утверждено)' : 'Доска плана', fn: async (G) => {
       if (f.rub_plan) return G.run(['~: План утверждён. ' + f.rub_route_t + ', ' + f.rub_gadget_t + ', ' + f.rub_time_t + '. Красиво. Как сценарий.']);
       await G.run(D.planIntro);
-      const r = await pick({ title: 'План ограбления', sub: 'казино «Фортуна»', intro: 'Ты предлагаешь — Рубен утверждает.', rows: [
+      const r = await pick({ title: 'План ограбления', sub: 'казино «Фортуна»', intro: 'Ты предлагаешь, Рубен утверждает.', rows: [
         { id: 'route', label: 'Маршрут', options: [{ id: 'vent', text: 'Вентиляция', hint: 'тихо, тесно, мимо главного поста' }, { id: 'service', text: 'Служебный вход', hint: 'через кухню, меньше охраны' }, { id: 'front', text: 'Парадный зал', hint: 'нагло, на виду у хозяйки' }] },
         { id: 'gadget', label: 'Гаджет', options: [{ id: 'emp', text: 'Глушилка Ноля', hint: 'ослепить визоры охраны' }, { id: 'holo', text: 'Голо-маска', hint: 'на пару секунд стать невидимой' }, { id: 'key', text: 'Магнитный ключ', hint: 'лифт без ключ-карты' }] },
         { id: 'time', label: 'Время', options: [{ id: 'shift', text: 'Пересменка', hint: 'охрана медленнее' }, { id: 'show', text: 'Во время шоу', hint: 'хозяйка занята на сцене' }] }], confirm: 'Предложить Рубену' });
       const RT: any = { vent: D.routeVent, service: D.routeService, front: D.routeFront }, GT: any = { emp: 'глушилка', holo: 'голо-маска', key: 'магнитный ключ' }, TT: any = { shift: 'в пересменку', show: 'во время шоу' };
       G.set({ rub_plan: 1, rub_route: r.route, rub_gadget: r.gadget, rub_time: r.time, rub_route_t: RT[r.route], rub_gadget_t: GT[r.gadget], rub_time_t: TT[r.time], rub_charges: r.gadget === 'emp' ? 3 : r.gadget === 'holo' ? 2 : 0 });
       await G.run(D.planAfter(RT[r.route], GT[r.gadget], TT[r.time])); G.toast(D.gadgetHint[r.gadget as 'emp'], '⚙'); G.mech('gadget'); } });
-    R.npc('ruben_heist', -2.4, -2.6, { id: 'ruben', talk: (G: any) => G.run(f.rub_plan ? ['ruben: Готова? Лифт до «Фортуны» — за дверью. Если что — я в наушнике.'] : ['ruben: Сначала план. Потом лифт. Потом — от чего отступать.']) });
+    R.npc('ruben_heist', -2.4, -2.6, { id: 'ruben', talk: (G: any) => G.run(f.rub_plan ? ['ruben: Готова? Лифт до «Фортуны», за дверью. Если что, я в наушнике.'] : ['ruben: Сначала план. Потом лифт. Потом, от чего отступать.']) });
     R.npc('nol', 2.6, -2.8, { talk: ['nol: Я взломала камеры казино. Все показывают одно и то же: женщину в золотой полумаске. Она смотрит прямо в объектив.', 'nol: Это не запись. Она смотрит на меня сейчас.'] });
-    R.npc('kasseta', 8.4, 0.6, { dir: 'l', talk: ['kasseta: Байк заправлен. Плейлист собран. Если начнётся погоня — я включу что-нибудь, под что приятно уворачиваться.'] });
+    R.npc('kasseta', 8.4, 0.6, { dir: 'l', talk: ['kasseta: Байк заправлен. Плейлист собран. Если начнётся погоня, я включу что-нибудь, под что приятно уворачиваться.'] });
     R.door('lift', -8, { label: 'Лифт в «Фортуну»', col: '#1c2438', sign: '↑ 88', glow: '#40e0d0', cond: () => !!f.rub_plan, locked: D.planNo, fn: async (G) => { G.sfx('engine'); await G.goto('rub_casino', f.rub_route, { fade: 'glitch' }); } });
     R.spawn('start', 4, 3, 'b');
   },
@@ -51,7 +51,7 @@ const casino: RoomDef = {
     for (const x of [-18, -16, -14, 14, 16, 18]) R.sprite('slot', x, -7, { scale: 1.5, solid: 0.5, emissive: 0x220022 });
     for (const [x, z] of [[-9, 2], [9, 2], [-9, -3], [9, -3]]) { R.box(x, z, 3, 1.6, 1, { color: 0x1f6a45 }); R.sprite('chair', x - 2, z, { scale: 0.9 }); R.sprite('chair', x + 2, z, { scale: 0.9 }); }
     R.sprite('holo', -4, -7.3, { scale: 2, glow: true }); R.sprite('holo', 4, -7.3, { scale: 2, glow: true });
-    // хозяйка зала — Алла Ева в роли Леди Фортуны
+    // хозяйка зала, Алла Ева в роли Леди Фортуны
     R.box(0, -2.5, 4, 1.8, 1, { color: 0x1f6a45 }); const host = R.npc('hostess', 0, -4.2, { talk: async (G: any) => { await G.run(D.fortuna); if (!f.rub_fort) { f.rub_fort = 1; await G.run(D.fortunaAfter); } } }); R.spot(0, 8, -1, 0, -4.2, 0xffe0a0, 60, { angle: 0.25, cone: 0.06, shadow: false });
     R.photo('fortuna', 'Леди Фортуна', 0, -4.2);
     // пост охраны и карта
@@ -106,10 +106,10 @@ async function vaultScene(G: any) {
   await G.run(D.vault.slice(0, 4)); G.room.named.puppet.visible = false; G.give('marionette', true);
   G.sfx('switch'); G.grade({ bright: 0.5, tint: [1.3, 0.5, 0.55], sat: 1.4 }); G.sfx('alarm'); G.shake(0.3); G.audio.music('chase');
   await G.run(D.vault.slice(4)); await G.run(D.vaultChoice);
-  await G.ui.card([['КРЫША «ФОРТУНЫ»', 'act'], ['план ушёл — люди остались', 'sm']]);
+  await G.ui.card([['КРЫША «ФОРТУНЫ»', 'act'], ['план ушёл, люди остались', 'sm']]);
   await G.run(D.chaseIntro);
-  let ok = false; while (!ok) { const r = await runner({ track: 'chase', title: 'Погоня', sub: '← → или A / D — уворачиваться от дронов', duration: 32 }); ok = r.ok; if (!ok) await G.run(D.chaseLose); }
+  let ok = false; while (!ok) { const r = await runner({ track: 'chase', title: 'Погоня', sub: '← → или A / D: уворачиваться от дронов', duration: 32 }); ok = r.ok; if (!ok) await G.run(D.chaseLose); }
   G.audio.music('heist'); await G.run(D.end); G.sfx('applause', { dur: 3 });
-  await finishChapter(G, 'ruben', [['THE LAST HEIST', 'act'], 'Рубен отказался от золота и от чужого плана.', ['Самое ценное в сейфе — то, что выходит из него живым.', 'sm']]);
+  await finishChapter(G, 'ruben', [['THE LAST HEIST', 'act'], 'Рубен отказался от золота и от чужого плана.', ['Самое ценное в сейфе, то, что выходит из него живым.', 'sm']]);
 }
 export const rooms: Record<string, RoomDef> = { rub_hideout: hideout, rub_casino: casino, rub_lasers: lasers, rub_vault: vault };

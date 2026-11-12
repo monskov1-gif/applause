@@ -1,6 +1,6 @@
-// Глава Матвея — 100 STEPS TO THE INEVITABLE. Школьная дорама.
+// Глава Матвея, 100 STEPS TO THE INEVITABLE. Школьная дорама.
 // Механики: постановка сцен (убрать зонты + тайминг дождя; записка с выбором фраз; расставить героев под аркой
-// и поймать «идеальный кадр» камерой), растущая «фальшь» мира, кульминация — сто шагов назад (Варя уходит сама).
+// и поймать «идеальный кадр» камерой), растущая «фальшь» мира, кульминация, сто шагов назад (Варя уходит сама).
 import type { RoomDef, Builder } from '../world/room';
 import { canvasTex, ptext } from '../gfx/tex';
 import { M } from '../data/dialogue/matvey';
@@ -24,8 +24,8 @@ const yard: RoomDef = {
     for (const [x, z] of [[-14, 2], [-12, 5.2], [3, 4.6], [9, 3], [14, 5]]) R.sprite('sakura', x, z, { scale: 1.2, solid: 0.4 });
     // ворота
     for (const x of [11, 15]) R.box(x, -1, 0.5, 0.5, 2.6, { tex: 'concrete' }); R.box(13, -1, 4.5, 0.3, 0.3, { tex: 'metal', y: 2.6, solid: false });
-    R.door('school', -6, { label: 'В школу', z: -5.86, col: '#c8aa78', sign: 'ВХОД', cond: () => !!f.mat_s1, locked: ['~: Сначала сцена у ворот. Порядок важен — я же режиссёр.'], fn: (G) => G.goto('mat_class') });
-    R.door('fest', 13, { label: 'К фестивалю (вечер)', z: -1.2, col: '#e8888a', sign: 'МАЦУРИ', cond: () => !!f.mat_s2, locked: ['~: Фестиваль вечером. Сначала — кабинет литературы.'], fn: (G) => G.goto('mat_fest', 'start', { fade: 'iris' }) });
+    R.door('school', -6, { label: 'В школу', z: -5.86, col: '#c8aa78', sign: 'ВХОД', cond: () => !!f.mat_s1, locked: ['~: Сначала сцена у ворот. Порядок важен, я же режиссёр.'], fn: (G) => G.goto('mat_class') });
+    R.door('fest', 13, { label: 'К фестивалю (вечер)', z: -1.2, col: '#e8888a', sign: 'МАЦУРИ', cond: () => !!f.mat_s2, locked: ['~: Фестиваль вечером. Сначала, кабинет литературы.'], fn: (G) => G.goto('mat_fest', 'start', { fade: 'iris' }) });
     // стойка с зонтами
     R.box(-2, -3.6, 1.2, 0.6, 1.1, { tex: 'metal' }); for (let i = 0; i < (f.mat_umb ? 1 : 4); i++) R.sprite('umbrella', -2.4 + i * 0.3, -3.5, { scale: 0.7, y: 0.4 });
     R.inter('umb', -2, -2.6, { label: f.mat_umb ? 'Стойка (один зонт)' : 'Стойка с зонтами', cond: () => !f.mat_s1, fn: async (G) => { if (!f.mat_intro1) { f.mat_intro1 = 1; await G.run(M.s1intro); } if (!f.mat_umb) { f.mat_umb = 1; await G.run(M.s1take); await G.rebuild(); } } });
@@ -51,7 +51,7 @@ const klass: RoomDef = {
   name: 'Кабинет литературы', w: 18, d: 11, music: 'school_soft', amb: null, step: 'wood', grade: fakeGrade(1),
   build(R, G) {
     const f = G.f; R.floor('schoolfloor'); R.walls('schoolwall', { h: 5.5, tint: '#e8e0d0' }); R.ambient(0x9a9ab0, 2.4, 0xfff0e0); R.sun(0xfff0d0, 2, 10, 12, 6);
-    R.decal(canvasTex(80, 36, (c) => { c.fillStyle = '#5a4029'; c.fillRect(0, 0, 80, 36); c.fillStyle = '#2e5038'; c.fillRect(2, 2, 76, 32); ptext(c, 'Тема урока:', 6, 5, { size: 8, col: '#e8e8e8' }); ptext(c, '«Не всё, что поставлено, — правда»', 6, 16, { size: 7, col: '#e8e8e8', w: 70 }); }, 'board'), { x: 0, y: 2.7, w: 7, h: 3.1 });
+    R.decal(canvasTex(80, 36, (c) => { c.fillStyle = '#5a4029'; c.fillRect(0, 0, 80, 36); c.fillStyle = '#2e5038'; c.fillRect(2, 2, 76, 32); ptext(c, 'Тема урока:', 6, 5, { size: 8, col: '#e8e8e8' }); ptext(c, '«Не всё, что поставлено,, правда»', 6, 16, { size: 7, col: '#e8e8e8', w: 70 }); }, 'board'), { x: 0, y: 2.7, w: 7, h: 3.1 });
     for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++) R.table(-5.2 + c * 3.4, -1 + r * 2.2, 1.6, 0.9, { tex: 'wood' });
     R.table(-5, -4, 2.2, 1, { tex: 'darkwood' }); R.sprite('book', -5, -4, { y: 1.15 }); R.sprite('book', -5.8, -4.1, { y: 1.15, scale: 0.9 }); R.look('manga', -6.2, -2.9, 'Томик манги', ['~: Томик манги на учительском столе. «100 шагов к неизбежному». Закладка на сотой странице.', '~: Кто-то подчеркнул карандашом: «Иногда самый важный шаг тот, который делаешь назад».'], { r: 1.0, egg: 'manga' }); R.sprite('flowerpot', 7.6, -4.6, { scale: 1.4 });
     for (const x of [-8.9, 8.9]) R.light(x * 0.8, 3.2, -2, 0xfff4d8, 8, 10);
@@ -114,6 +114,6 @@ async function stepsEnd(G: any) {
   await G.run(M.stepsDone.slice(0, 2)); mat.pose = 'point'; await G.wait(0.6); mat.pose = null; await G.run(M.stepsDone.slice(2, 3)); G.sfx('pickup'); await G.run(M.stepsDone.slice(3));
   G.unfocus(); await mat.walkTo(G.player.x + 1.4, G.player.z, 5); mat.face(G.player.x, G.player.z); G.player.face(mat.x, mat.z);
   G.audio.music('school'); await G.run(M.end); G.give('lantern', true); G.sfx('applause', { dur: 3 });
-  await finishChapter(G, 'matvey', [['100 STEPS TO THE INEVITABLE', 'act'], 'Матвей сделал шаг сам. Варя — сто шагов назад.', ['Иногда лучшая режиссура — уйти из кадра.', 'sm']]);
+  await finishChapter(G, 'matvey', [['100 STEPS TO THE INEVITABLE', 'act'], 'Матвей сделал шаг сам. Варя, сто шагов назад.', ['Иногда лучшая режиссура, уйти из кадра.', 'sm']]);
 }
 export const rooms: Record<string, RoomDef> = { mat_yard: yard, mat_class: klass, mat_fest: fest };

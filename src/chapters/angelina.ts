@@ -1,6 +1,6 @@
-// Глава Ангелины — DEBUT: THE IDOL PROJECT. K-pop / индустриальная драма.
+// Глава Ангелины, DEBUT: THE IDOL PROJECT. K-pop / индустриальная драма.
 // Механики: концепт агентства, танцевальная связка (повтори), вокальная ритм-сцена, выбор образа (решает Ангелина),
-// микшерный пульт — живое сведение её собственного трека, дебют: решение о фонограмме и ритм-сцена с текстом песни.
+// микшерный пульт, живое сведение её собственного трека, дебют: решение о фонограмме и ритм-сцена с текстом песни.
 import type { RoomDef, Builder } from '../world/room';
 import { canvasTex, ptext } from '../gfx/tex';
 import { A } from '../data/dialogue/angelina';
@@ -25,8 +25,8 @@ const lobby: RoomDef = {
     R.decal(canvasTex(20, 28, (c) => { c.fillStyle = '#fff0f8'; c.fillRect(0, 0, 20, 28); c.fillStyle = '#ff9ad8'; c.fillRect(2, 2, 16, 10); ptext(c, 'КОНЦЕПТ', 10, 15, { size: 5, col: '#a03060', align: 'center' }); }, 'cposter'), { x: -4, y: 2.2, w: 1.3, h: 1.8 });
     R.npc('glyants', 4, -1, { talk: ['glyants: Мы не продаём музыку, стажёр. Мы продаём ощущение, что музыка тебя любит. Это разные бизнесы.'] });
     R.npc('stylist', 6.4, 1, { talk: async (G: any) => { if (!f.ang_assist && f.ang_photo) { f.ang_assist = 1; return G.run(A.assist); } await G.run(['stylist/smirk: Не стой столбом, дорогуша. Столбы у нас тоже по контракту.']); } });
-    R.npc(angelChar(G), -1.2, 1, { id: 'angelina', talk: (G: any) => G.run(f.ang_mix ? ['angelina: Дебют. Сцена за последней дверью. Пульт будет справа.'] : ['angelina: Тренировка, запись, фото. Делаем всё честно — чтобы потом никто не сказал, что я не старалась.']) });
-    const D = [['ang_practice', -12.6, 'Зал тренировок', 'DANCE', () => !!f.ang_concept, 'Сначала — концепт на стене.'], ['ang_photo', 9.6, 'Фотостудия', 'PHOTO', () => !!f.ang_vocal, 'Сначала тренировка и запись.'], ['ang_record', 13, 'Студия звукозаписи (ночь)', 'REC', () => !!f.ang_photo, 'Студия занята до ночи.'], ['ang_stage', 4, 'Сцена шоукейса', 'DEBUT', () => !!f.ang_mix, 'Шоукейс завтра.']] as const;
+    R.npc(angelChar(G), -1.2, 1, { id: 'angelina', talk: (G: any) => G.run(f.ang_mix ? ['angelina: Дебют. Сцена за последней дверью. Пульт будет справа.'] : ['angelina: Тренировка, запись, фото. Делаем всё честно, чтобы потом никто не сказал, что я не старалась.']) });
+    const D = [['ang_practice', -12.6, 'Зал тренировок', 'DANCE', () => !!f.ang_concept, 'Сначала, концепт на стене.'], ['ang_photo', 9.6, 'Фотостудия', 'PHOTO', () => !!f.ang_vocal, 'Сначала тренировка и запись.'], ['ang_record', 13, 'Студия звукозаписи (ночь)', 'REC', () => !!f.ang_photo, 'Студия занята до ночи.'], ['ang_stage', 4, 'Сцена шоукейса', 'DEBUT', () => !!f.ang_mix, 'Шоукейс завтра.']] as const;
     for (const [to, x, label, sg, cond, lk] of D) R.door(to, x, { label, z: -5.96, col: '#f0e8f0', sign: sg, cond, locked: '~: ' + lk, fn: (G) => G.goto(to, 'start', { fade: 'mirror' }) });
     R.spawn('start', 0, 3.6, 'b'); for (const [to, x] of D) R.spawn(to, x, -4.4);
   },
@@ -38,9 +38,9 @@ const practice: RoomDef = {
     const f = G.f; R.room.group.userData.bg = 0x100810; R.floor('parquet'); R.walls('mirror', { h: 6 }); R.ambient(0x9a8aa0, 2.2, 0xfff0fa); R.light(0, 5, 0, 0xffffff, 16, 14);
     R.box(0, -4.6, 22, 0.15, 0.15, { tex: 'metal', y: 1.2, solid: false });
     const an = R.npc(angelChar(G), -2, -1.6, { id: 'angelina', talk: ['angelina: В зеркале проще. Видишь сразу, где врёшь телом.'] });
-    R.npc('trainer', 2, -2.4, { talk: async (G: any) => { if (f.ang_dance) return G.run(['trainer: Связка выучена. Теперь — вокальная будка, справа.']); await G.run(A.trainer0); const ok = await sequence({ title: 'Танцевальная связка', sub: 'повтори за Ангелиной', bpm: 128, rounds: [['left', 'right', 'up', 'down'], ['up', 'up', 'left', 'right', 'down', 'up'], ['left', 'down', 'right', 'up', 'left', 'left', 'down', 'up']], onShow: (d) => { an.pose = 'dance'; an.danceBeat++; an.dir = d === 'left' ? 'l' : d === 'right' ? 'r' : 'f'; }, onInput: () => { G.player.pose = 'dance'; G.player.danceBeat++; } }); an.pose = null; G.player.pose = null; if (ok) { f.ang_dance = 1; await G.run(A.danceOk); } } });
+    R.npc('trainer', 2, -2.4, { talk: async (G: any) => { if (f.ang_dance) return G.run(['trainer: Связка выучена. Теперь, вокальная будка, справа.']); await G.run(A.trainer0); const ok = await sequence({ title: 'Танцевальная связка', sub: 'повтори за Ангелиной', bpm: 128, rounds: [['left', 'right', 'up', 'down'], ['up', 'up', 'left', 'right', 'down', 'up'], ['left', 'down', 'right', 'up', 'left', 'left', 'down', 'up']], onShow: (d) => { an.pose = 'dance'; an.danceBeat++; an.dir = d === 'left' ? 'l' : d === 'right' ? 'r' : 'f'; }, onInput: () => { G.player.pose = 'dance'; G.player.danceBeat++; } }); an.pose = null; G.player.pose = null; if (ok) { f.ang_dance = 1; await G.run(A.danceOk); } } });
     R.box(8, -3, 4, 3.6, 3.4, { tex: 'gloss', tint: '#c8b0d0' }); R.sprite('mic', 8, -0.7, { scale: 1.2 });
-    R.inter('vocal', 8, -0.6, { label: 'Вокальная будка', cond: () => !!f.ang_dance, fn: async (G) => { await G.run(A.vocal0); const r = await rhythm({ track: 'idol_agency', part: 4, loops: 2, title: '«Sugar Sugar Heart»', sub: 'D F J K или стрелки — держи ритм для Ангелины', onBeat: () => { an.danceBeat++; an.pose = 'dance'; } }); an.pose = null; G.audio.music('idol_agency'); f.ang_vocal = 1; await G.run(A.vocalAfter(r.score > 0.6)); } });
+    R.inter('vocal', 8, -0.6, { label: 'Вокальная будка', cond: () => !!f.ang_dance, fn: async (G) => { await G.run(A.vocal0); const r = await rhythm({ track: 'idol_agency', part: 4, loops: 2, title: '«Sugar Sugar Heart»', sub: 'D F J K или стрелки, держи ритм для Ангелины', onBeat: () => { an.danceBeat++; an.pose = 'dance'; } }); an.pose = null; G.audio.music('idol_agency'); f.ang_vocal = 1; await G.run(A.vocalAfter(r.score > 0.6)); } });
     R.door('out', -8, { label: 'В холл', z: -4.96, col: '#f0e8f0', fn: (G) => G.goto('ang_lobby', 'ang_practice', { fade: 'mirror' }) }); R.spawn('start', -8, -3.4);
   },
 };
@@ -54,7 +54,7 @@ const photo: RoomDef = {
     R.npc('stylist', 6.4, -2, { talk: async (G: any) => { if (f.ang_photo) return G.run(['stylist: Снято. Иди. Не мешай свет.']); await G.run(A.photo0); const r = await pick({ ...A.look, confirm: 'Ангелина утверждает' } as any, ); const own = ['hair', 'outfit', 'name'].filter((k) => r[k] === 'own').length; f.ang_look_own = own >= 2 ? 1 : 0; f.ang_look = r; an.setChar(angelChar(G)); G.sfx('shutter'); G.flash(0.6); await G.run(own >= 2 ? A.lookAfterOwn : A.lookAfterMix); f.ang_photo = 1; } });
     R.door('out', -6.6, { label: 'В холл', z: -4.96, col: '#f0e8f0', fn: (G) => G.goto('ang_lobby', 'ang_photo', { fade: 'mirror' }) }); R.spawn('start', -6.6, -3.4);
   },
-  async photo(G, subs) { if (subs.includes('angelina')) await G.run(['angelina: Этот снимок — мой. Не отдавай его агентству.']); },
+  async photo(G, subs) { if (subs.includes('angelina')) await G.run(['angelina: Этот снимок, мой. Не отдавай его агентству.']); },
 };
 const TAGS: [string, string][] = [['drums', 'Барабаны'], ['bass', 'Бас'], ['keys', 'Клавиши'], ['arp', 'Арпеджио'], ['lead', 'Голос / сакс-соло']];
 const record: RoomDef = {
@@ -74,7 +74,7 @@ function mixer(G: any): Promise<void> {
   return new Promise((res) => {
     const m = G.ui.open(`<h2>Микшерный пульт <small>демо Ангелины</small></h2><div class="body"><p>Песня играет по кругу. Включай дорожки, пока она не зазвучит как правда. Ангелина слушает.</p><div class="opts" style="gap:.6rem">${TAGS.map(([t, n]) => `<button class="opt" data-t="${t}" style="min-width:8rem;text-align:center">${n}<small>выкл</small></button>`).join('')}</div><p data-msg style="font-style:italic;min-height:2.6rem;margin-top:1rem"></p></div><div class="foot"><button class="btn small red" data-ok>Записать демо</button></div>`, { noClose: true });
     const msg = m.querySelector('[data-msg]') as HTMLElement; const CMT: Record<string, string> = { drums: 'Ангелина начинает отстукивать ногой.', bass: '«Вот. Теперь у неё есть пол под ногами».', keys: '«Это как свет в окне. Оставь».', arp: '«Это мои автобусы. Я так слышала город».', lead: 'Ангелина закрывает глаза и беззвучно поёт вместе с записью.' };
-    m.addEventListener('click', (e: Event) => { const b = (e.target as HTMLElement).closest('[data-t]') as HTMLElement | null; if (!b) return; const t = b.dataset.t!; on[t] = !on[t]; b.classList.toggle('on', on[t]); b.querySelector('small')!.textContent = on[t] ? 'вкл' : 'выкл'; G.sfx('switch'); msg.textContent = on[t] ? CMT[t] : '«Без этого — пусто. Но решай».'; });
+    m.addEventListener('click', (e: Event) => { const b = (e.target as HTMLElement).closest('[data-t]') as HTMLElement | null; if (!b) return; const t = b.dataset.t!; on[t] = !on[t]; b.classList.toggle('on', on[t]); b.querySelector('small')!.textContent = on[t] ? 'вкл' : 'выкл'; G.sfx('switch'); msg.textContent = on[t] ? CMT[t] : '«Без этого, пусто. Но решай».'; });
     (m.querySelector('[data-ok]') as HTMLElement).onclick = async () => { if (!on.drums || !on.bass || !on.lead) { msg.textContent = 'Ангелина: «Без барабанов, баса и голоса это не песня, а настроение»'; G.sfx('error'); return; } G.ui.close(m); G.audio.partFilter = null; f.ang_mix = Object.keys(on).filter((k) => on[k]).join(','); G.sfx('stamp'); await G.run(A.mixerDone); res(); };
     if (G.fast) { for (const k in on) on[k] = true; (m.querySelector('[data-ok]') as HTMLElement).click(); }
   });
@@ -99,9 +99,9 @@ async function showcase(G: any) {
   const f = G.f, an = G.actor('angelina'); G.player.place(11, 3.8, 'l');
   await G.run(A.showChoice.slice(0, 1)); G.audio.music(null); G.sfx('switch'); an.setChar('angelina_own'); await G.run(A.showChoice.slice(1));
   G.focus(0, -1, 18); G.R.flash = 0.5;
-  const r = await rhythm({ track: 'idol_own', part: 4, loops: 2, title: 'Своя песня', sub: 'держи ритм у пульта — D F J K или стрелки', lyrics: A.lyrics as any, onBeat: (b) => { an.pose = 'dance'; an.danceBeat++; if (b % 4 === 0) G.flash(0.08); } });
+  const r = await rhythm({ track: 'idol_own', part: 4, loops: 2, title: 'Своя песня', sub: 'держи ритм у пульта, D F J K или стрелки', lyrics: A.lyrics as any, onBeat: (b) => { an.pose = 'dance'; an.danceBeat++; if (b % 4 === 0) G.flash(0.08); } });
   an.pose = 'arms'; G.room.named.conf.visible = true; G.sfx('applause', { dur: 5, dens: 70 }); f.ang_done = 1; G.audio.music('idol_own');
   await G.run(A.after(r.score > 0.55)); G.unfocus(); an.pose = 'bow';
-  await finishChapter(G, 'angelina', [['DEBUT: THE IDOL PROJECT', 'act'], 'Ангелина выступила на своих условиях.', ['Фонограмма — это когда поют за тебя. Она — спела сама.', 'sm']]);
+  await finishChapter(G, 'angelina', [['DEBUT: THE IDOL PROJECT', 'act'], 'Ангелина выступила на своих условиях.', ['Фонограмма, это когда поют за тебя. Она, спела сама.', 'sm']]);
 }
 export const rooms: Record<string, RoomDef> = { ang_lobby: lobby, ang_practice: practice, ang_photo: photo, ang_record: record, ang_stage: stage };

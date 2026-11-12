@@ -1,4 +1,4 @@
-// Глава Лизы — THE TOWER IS NOT A HOME. Сказка, книжная фактура, иллюстрации тушью.
+// Глава Лизы, THE TOWER IS NOT A HOME. Сказка, книжная фактура, иллюстрации тушью.
 // Механики: волосы как верёвка (подъём), лассо (тайминг), мост через провал, перенос груза волосами,
 // противовес-лифт с недостающей шестерней; Лиза сама решает уйти из башни. Принц опаздывает.
 import type { RoomDef, Builder } from '../world/room';
@@ -27,7 +27,7 @@ const base: RoomDef = {
     for (const [x, z, s] of [[-12, -3, 1.2], [-8, 3, 1], [12, -3, 1.3], [13, 3.2, 1]] as any) R.sprite('tree', x, z, { scale: s, solid: 0.4 });
     for (let i = 0; i < 8; i++) R.sprite('bush', -14 + i * 4, 5.2 - (i % 2), { scale: 1.2 });
     ink(R, 'облака', -6, 8, 4); ink(R, 'башня (очень высокая)', 4, 15.4, 8);
-    R.npc('fairy', -3, 1.4, { talk: ['fairy: Ждать — это искусство, милочка. Я жду принца для принцессы уже двести страниц. И ничего, держусь.'] });
+    R.npc('fairy', -3, 1.4, { talk: ['fairy: Ждать, это искусство, милочка. Я жду принца для принцессы уже двести страниц. И ничего, держусь.'] });
     R.inter('call', 4, -0.6, { label: f.liz_hair ? 'Подняться по косе' : 'Позвать Лизу', fn: async (G) => { if (!f.liz_hair) { await G.run(L.call); f.liz_hair = 1; G.sfx('rope'); await G.rebuild(); return; } await G.run(L.climb); G.sfx('rope'); await G.goto('liz_top', 'start', { fade: 'page' }); } });
     R.spawn('start', -12, 3, 'r'); R.spawn('ground', 4, 1.4);
   },
@@ -46,8 +46,8 @@ const top: RoomDef = {
     R.box(-1, 0, 2.4, 2.4, 0.2, { tex: 'gold', y: 5.6, solid: false }); R.box(-1, 0, 0.1, 0.1, 1.2, { color: 0x86641c, y: 5.8, solid: false });
     for (const dx of [-1, 0, 1]) R.sprite('candle', -1 + dx, 0, { y: 5.8, glow: true });
     if (!G.has('tower_key')) R.sprite('key', -0.4, 0.4, { y: 5.0, scale: 1.4, name: 'keySpr', glow: true });
-    R.inter('lasso', -1, 1.4, { label: 'Ключ на люстре', cond: () => !G.has('tower_key'), fn: async (G) => { await G.run(L.lassoAsk); const r = await timing({ title: 'Лассо из косы', sub: 'Лиза бросает — скажи «сейчас!»', zone: 0.2, speed: 1.1 }); if (r === 'miss') { G.sfx('crash'); return G.run(L.lassoMiss); } G.sfx('rope'); G.room.named.keySpr.visible = false; G.give('tower_key'); await G.run(L.lassoOk); } });
-    R.door('down', 5.6, { label: 'Дверь вниз', z: -4.96, col: '#6a4a2a', cond: () => G.has('tower_key'), locked: ['~: Заперто. Ключ — на люстре.'], fn: async (G) => { await G.run(L.door); G.sfx('door'); await G.goto('liz_mid', 'start', { fade: 'page' }); } });
+    R.inter('lasso', -1, 1.4, { label: 'Ключ на люстре', cond: () => !G.has('tower_key'), fn: async (G) => { await G.run(L.lassoAsk); const r = await timing({ title: 'Лассо из косы', sub: 'Лиза бросает, скажи «сейчас!»', zone: 0.2, speed: 1.1 }); if (r === 'miss') { G.sfx('crash'); return G.run(L.lassoMiss); } G.sfx('rope'); G.room.named.keySpr.visible = false; G.give('tower_key'); await G.run(L.lassoOk); } });
+    R.door('down', 5.6, { label: 'Дверь вниз', z: -4.96, col: '#6a4a2a', cond: () => G.has('tower_key'), locked: ['~: Заперто. Ключ, на люстре.'], fn: async (G) => { await G.run(L.door); G.sfx('door'); await G.goto('liz_mid', 'start', { fade: 'page' }); } });
     lizaNPC(R, G, -2.6, 1.6); R.spawn('start', -4, 2.4, 'b');
   },
   async enter(G) { if (!G.f.liz_top) { G.f.liz_top = 1; await G.run(L.top); } },
@@ -78,7 +78,7 @@ const ground: RoomDef = {
   name: 'Нижний ярус', w: 26, d: 11, music: 'fairy', amb: 'wind', step: 'stone', grade: BOOK,
   build(R, G) {
     const f = G.f; bookRoom(R, 'stone'); R.light(0, 4, 0, 0xfff0d0, 16, 14);
-    R.door('exit', 0, { label: f.liz_cut ? 'Наружу' : 'Дверь «Только принцам»', col: '#6a4a2a', w: 3.2, h: 4.4, sign: 'ПРИНЦАМ', cond: () => !!f.liz_cut, locked: ['liza_long: С этими волосами я не пролезу. Но сначала — поговорим с Феей.'], fn: outside });
+    R.door('exit', 0, { label: f.liz_cut ? 'Наружу' : 'Дверь «Только принцам»', col: '#6a4a2a', w: 3.2, h: 4.4, sign: 'ПРИНЦАМ', cond: () => !!f.liz_cut, locked: ['liza_long: С этими волосами я не пролезу. Но сначала, поговорим с Феей.'], fn: outside });
     ink(R, 'ВЫХОД ТОЛЬКО ПРИНЦАМ', 0, 5.5, 8);
     R.npc('fairy', 4, -1.4, { talk: async (G: any) => { if (f.liz_cut) return G.run(['fairy/worried: Ох. Ох-ох. Двести страниц ожидания, и ради чего? Ради… ради прекрасной стрижки, вообще-то. Тебе идёт.']); await groundScene(G); } });
     R.sprite('basket', 5, -0.6, { scale: 1.2 });
@@ -97,6 +97,6 @@ async function outside(G: any) {
   await G.wait(0.4); G.sfx('engine'); const t0 = performance.now();
   await new Promise<void>((res) => { const tick = () => { const k = Math.min(1, (performance.now() - t0) / 1800); horse.position.x = -18 + k * 16; pr.x = horse.position.x; if (k < 1) requestAnimationFrame(tick); else res(); }; tick(); });
   pr.face(lz.x, lz.z); await G.run(L.prince); G.unfocus(); G.sfx('applause', { dur: 3 });
-  await finishChapter(G, 'liza', [['THE TOWER IS NOT A HOME', 'act'], 'Лиза вышла сама. Принц опоздал — спасать было некого.', ['Не всякая башня — дом. Даже если она очень красивая.', 'sm']]);
+  await finishChapter(G, 'liza', [['THE TOWER IS NOT A HOME', 'act'], 'Лиза вышла сама. Принц опоздал, спасать было некого.', ['Не всякая башня, дом. Даже если она очень красивая.', 'sm']]);
 }
 export const rooms: Record<string, RoomDef> = { liz_base: base, liz_top: top, liz_mid: mid, liz_ground: ground };

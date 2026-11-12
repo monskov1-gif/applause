@@ -1,6 +1,6 @@
-// Глава Полины — THE HOUSE THAT LAUGHS. Хоррор/слэшер/комедия.
+// Глава Полины, THE HOUSE THAT LAUGHS. Хоррор/слэшер/комедия.
 // Механики: дождь и свет/тень, звук-подсказка (смех), прятки в шкафу, фото-аномалии (камера), выбор маршрута,
-// кульминация — Варя заперта, игрок управляет Полиной, которая сама находит закономерность в обоях.
+// кульминация, Варя заперта, игрок управляет Полиной, которая сама находит закономерность в обоях.
 import type { RoomDef, Builder } from '../world/room';
 import { canvasTex, ptext } from '../gfx/tex';
 import { P } from '../data/dialogue/polina';
@@ -12,7 +12,7 @@ const DARK = { sat: 0.45, tint: [0.8, 0.88, 1.12], vig: 0.8, bright: 1.0, contra
 const PORTRAITS: { id: string; name: string; year: string; sym: string; anom: string }[] = [
   { id: 'cap', name: 'Капитан с трубкой', year: '1902', sym: '✶', anom: '' },
   { id: 'lady', name: 'Дама с веером', year: '1931', sym: '☾', anom: 'в зеркале за дамой её отражение стоит к зрителю спиной' },
-  { id: 'kids', name: 'Дети на качелях', year: '1897', sym: '♣', anom: 'качели отбрасывают тень, а дети — нет' },
+  { id: 'kids', name: 'Дети на качелях', year: '1897', sym: '♣', anom: 'качели отбрасывают тень, а дети, нет' },
   { id: 'owner', name: 'Хозяин дома', year: '1922', sym: '⚷', anom: 'часы за спиной хозяина показывают тринадцать' },
   { id: 'dog', name: 'Собака у камина', year: '1910', sym: '◉', anom: '' },
 ];
@@ -57,7 +57,7 @@ const porch: RoomDef = {
     R.spawn('start', 0, 5.5, 'b'); R.spawn('back', 0, -2.5);
   },
   async enter(G) {
-    if (!G.f.intro_pol) { G.f.intro_pol = 1; true } if (G.f.intro_pol === 1 && (G.f.intro_pol = 2)) { await G.run(P.arrive); await G.run(P.porchPhoto); G.toast('C — фотоаппарат', '◉'); }
+    if (!G.f.intro_pol) { G.f.intro_pol = 1; true } if (G.f.intro_pol === 1 && (G.f.intro_pol = 2)) { await G.run(P.arrive); await G.run(P.porchPhoto); G.toast('C: фотоаппарат', '◉'); }
   },
   async photo(G, subs) { if (subs.includes('window') && !G.f.pol_win) { G.f.pol_win = 1; await G.run(P.porchPhotoTaken); } },
 };
@@ -75,7 +75,7 @@ function hallBuild(R: Builder, G: any) {
   // подвал
   R.box(4.5, -5.6, 2.2, 0.3, 3.4, { tex: 'metal', tint: '#6a6a7a' }); R.sprite(canvasTex(6, 6, (c) => { c.fillStyle = f.pol_light ? '#40e040' : '#601010'; c.fillRect(0, 0, 6, 6); }, 'boltled' + !!f.pol_light), 5.4, -5.3, { y: 2.2, glow: true });
   R.inter('basement', 4.5, -4.3, { label: f.pol_dark ? 'Засов подвала' : 'Дверь в подвал (замок с дисками)', fn: async (G) => {
-    if (f.pol_dark) { if (!f.pol_light) return G.run(['~: [Полина] Засов электрический. Над ним лампочка — не горит. Нужен ток.', 'varya: (снизу, глухо) Поль? Ты здесь? Я слышу шаги!', 'polina/worried: Это я! Я… сейчас. Мне надо найти, откуда тут берётся свет.']); return polinaFree(G); }
+    if (f.pol_dark) { if (!f.pol_light) return G.run(['~: [Полина] Засов электрический. Над ним лампочка, не горит. Нужен ток.', 'varya: (снизу, глухо) Поль? Ты здесь? Я слышу шаги!', 'polina/worried: Это я! Я… сейчас. Мне надо найти, откуда тут берётся свет.']); return polinaFree(G); }
     if (f.pol_open) return G.goto('pol_basement'); if (!f.pol_book) return G.run(P.basementLocked);
     const found = PORTRAITS.filter((p) => p.anom && f['pol_an_' + p.id]).sort((x, y) => +x.year - +y.year); const r = await lock({ title: 'Замок подвала', hint: `Три диска. Знаки с оборота трёх портретов-«лгунов», по году: от самого старого к самому новому.${found.length ? '<br><i>Блокнот: ' + found.map((p) => p.name + ', ' + p.year + ', знак ' + p.sym).join('; ') + '</i>' : ''}`, symbols: SYMS, len: 3, answer: ANSWER });
     if (!r) return; if (r.join() === ANSWER.join()) { G.sfx('ok'); await G.run(P.lockRight); f.pol_open = 1; await G.goto('pol_basement'); } else { G.sfx('laugh', { n: 7 }); G.shake(0.2); await G.run(P.lockWrong); } } });
@@ -118,7 +118,7 @@ const library: RoomDef = {
   async photo(G, subs) {
     const f = G.f; const anoms = PORTRAITS.filter((p) => p.anom && subs.includes(p.id)); const normals = PORTRAITS.filter((p) => !p.anom && subs.includes(p.id));
     for (const a of anoms) { await G.run([...P.anomalyFound(a.anom), `~: Запомню: «${a.name}», ${a.year} год, на обороте знак ${a.sym}.`]); f['pol_an_' + a.id] = 1; } if (!anoms.length && normals.length) await G.run(P.noAnomaly);
-    if (PORTRAITS.every((p) => !p.anom || f['pol_an_' + p.id]) && !f.pol_photos) { f.pol_photos = 1; G.note('n_pol_photos'); await G.run(['polina: Три лгуна. Капитан и собака честные. Теперь — годы на рамах. От самого давнего.']); }
+    if (PORTRAITS.every((p) => !p.anom || f['pol_an_' + p.id]) && !f.pol_photos) { f.pol_photos = 1; G.note('n_pol_photos'); await G.run(['polina: Три лгуна. Капитан и собака честные. Теперь, годы на рамах. От самого давнего.']); }
   },
 };
 const basement: RoomDef = {
@@ -128,7 +128,7 @@ const basement: RoomDef = {
     R.table(0, -3.6, 3, 1); R.decal(canvasTex(48, 56, (c) => { c.fillStyle = '#86641c'; c.fillRect(0, 0, 48, 56); c.fillStyle = '#9fb4c8'; c.fillRect(4, 4, 40, 48); c.fillStyle = '#fff4c8'; for (let y = 6; y < 52; y += 8) { c.fillRect(1, y, 3, 3); c.fillRect(44, y, 3, 3); } }, 'bmirror'), { x: 0, y: 3, w: 2.6, h: 3 });
     R.light(-1.3, 3, -3.8, 0xffd9a0, 6, 7, { flicker: 0.08 }); R.light(1.3, 3, -3.8, 0xffd9a0, 6, 7, { flicker: 0.08 });
     R.sprite(canvasTex(10, 7, (c) => { c.fillStyle = '#fff8e8'; c.fillRect(0, 0, 10, 7); c.fillStyle = '#e84a6f'; c.fillRect(2, 2, 6, 1); }, 'card'), 0.8, -3.6, { y: 1.15, glow: true });
-    R.look('card', 0.8, -2.6, 'Открытка', ['~: «Варюш, восемнадцать — это не экзамен…» Мамина открытка. Та же, что в моей гримёрке.', '~: Кто-то развесил по чужим историям кусочки меня. Как метки на карте.'], { r: 1.3 });
+    R.look('card', 0.8, -2.6, 'Открытка', ['~: «Варюш, восемнадцать, это не экзамен…» Мамина открытка. Та же, что в моей гримёрке.', '~: Кто-то развесил по чужим историям кусочки меня. Как метки на карте.'], { r: 1.3 });
     R.decal(canvasTex(16, 10, (c) => { c.fillStyle = '#3a3a40'; c.fillRect(0, 0, 16, 10); c.fillStyle = '#111'; for (let i = 0; i < 4; i++) c.fillRect(2, 1 + i * 2.3, 12, 1); }, 'vent'), { x: 5, y: 3.2, w: 1.5, h: 1 });
     R.inter('vent', 5, -4.3, { label: 'Вентиляционная решётка', fn: (G) => G.run(['~: Решётка. Сквозь неё слышен дождь и скрип половиц наверху.']) });
     R.box(-5, 3.2, 1.6, 1, 1, { tex: 'wood' }); R.box(5.2, 3.6, 1.3, 1.3, 1.3, { tex: 'wood' }); R.spawn('start', -4, -3.6);
@@ -137,7 +137,7 @@ const basement: RoomDef = {
     const f = G.f; if (f.pol_trapped) return; f.pol_trapped = 1; const pol = G.actor('polina'); G.unfollow?.(pol);
     await G.run(P.basementDown.slice(0, 3)); G.sfx('door'); G.shake(0.5); G.flash(0.3); await G.run(P.basementDown.slice(3)); G.sfx('laugh', { n: 8, f: 260, vol: 0.4 });
     await G.player.walkTo(5, -3.8, 4); G.player.dir = 'b'; await G.run(P.vent);
-    f.pol_dark = 1; G.setPlayerChar('polina_coat'); G.give('flashlight', true); await G.ui.card([['ПОЛИНА', 'act'], ['Страшно — и всё равно идти.', 'sm']]);
+    f.pol_dark = 1; G.setPlayerChar('polina_coat'); G.give('flashlight', true); await G.ui.card([['ПОЛИНА', 'act'], ['Страшно, и всё равно идти.', 'sm']]);
     await G.goto('pol_hall', 'base', { fade: 'fade' });
   },
 };
@@ -154,11 +154,11 @@ const gallery: RoomDef = {
       R.look('wp' + d.x, d.x + 1.4, -4.2, 'Обои над дверью', d.up ? P.wallpaperUp : P.wallpaperDown, { r: 1.0, y: 4.6 }); }
     for (const [i, x] of [-7, 0, 7].entries()) { R.box(x, -4.6, 1.8, 0.9, 3.2, { tex: 'darkwood', tint: '#5a3a2a' }); R.inter('wd' + i, x, -3.6, { label: 'Шкаф (спрятаться / выйти)', r: 1.3, fn: (G) => hide(G, []) }); }
     for (const x of [-14, 14]) R.sprite('candle', x, -5, { y: 1.6, scale: 1.4 });
-    R.guard('owner', [[-13, 1.6], [13, 1.6]], { speed: 2.1, range: 6.5, half: 0.5, pause: 1.2, onCatch: async (G) => { G.sfx('laugh', { n: 6, f: 300, vol: 0.35 }); G.flash(0.6); G.shake(0.4); await G.run(['*: Белая маска поворачивается к Полине. Смех — её собственный, только медленнее.', '*: Свет фонаря гаснет и загорается. Полина снова у входа в галерею.', 'polina/scared: Хорошо. Ещё раз. Медленнее. Держаться у шкафов.']); G.player.place(-14, 3.5, 'r'); G.room.guards[0].actor.place(13, 1.6); G.camSnap(); } });
+    R.guard('owner', [[-13, 1.6], [13, 1.6]], { speed: 2.1, range: 6.5, half: 0.5, pause: 1.2, onCatch: async (G) => { G.sfx('laugh', { n: 6, f: 300, vol: 0.35 }); G.flash(0.6); G.shake(0.4); await G.run(['*: Белая маска поворачивается к Полине. Смех, её собственный, только медленнее.', '*: Свет фонаря гаснет и загорается. Полина снова у входа в галерею.', 'polina/scared: Хорошо. Ещё раз. Медленнее. Держаться у шкафов.']); G.player.place(-14, 3.5, 'r'); G.room.guards[0].actor.place(13, 1.6); G.camSnap(); } });
     R.door('back', -14, { to: 'pol_hall', spot: 'gal', label: 'В прихожую', z: 5.46, col: '#3a2a1c' }); R.room.inter('back')!.z = 4.2;
     R.spawn('start', -14, 3.8, 'r');
   },
-  async enter(G) { if (!G.f.pol_gal_seen) { G.f.pol_gal_seen = 1; G.sfx('heart'); await G.run(['~: [Полина] Галерея. Четыре двери. Над каждой — свой кусок обоев. И Хозяин, который ходит туда-обратно, как маятник.', 'varya: (далеко, сквозь стены) Поль, ты как?', 'polina/worried: Я… смотрю. Ты же просила, чтобы я смотрела.']); } },
+  async enter(G) { if (!G.f.pol_gal_seen) { G.f.pol_gal_seen = 1; G.sfx('heart'); await G.run(['~: [Полина] Галерея. Четыре двери. Над каждой, свой кусок обоев. И Хозяин, который ходит туда-обратно, как маятник.', 'varya: (далеко, сквозь стены) Поль, ты как?', 'polina/worried: Я… смотрю. Ты же просила, чтобы я смотрела.']); } },
 };
 const kitchen: RoomDef = {
   name: 'Кухня', w: 16, d: 10, music: 'horror', amb: 'rain', step: 'stone', grade: DARK, noMasks: true,
@@ -173,7 +173,7 @@ const kitchen: RoomDef = {
     R.door('back', -5.5, { to: 'pol_gallery', label: 'В галерею', z: 4.96, col: '#3a2a1c', fn: async (G) => G.goto(f.pol_light ? 'pol_hall' : 'pol_gallery', f.pol_light ? 'gal' : 'start') }); R.room.inter('back')!.z = 3.8;
     R.spawn('start', -5.5, 3.6, 'b');
   },
-  async enter(G) { if (!G.f.pol_k_seen) { G.f.pol_k_seen = 1; G.sfx('ok'); await G.run(['~: [Полина] Кухня. Настоящая. Не кирпичная стена. Обои с бутоном вверх — не обманули.', 'polina/laugh: Хи-хи. Варя, я догадалась сама! …Она меня не слышит. Ну и ладно. Я слышу.']); } },
+  async enter(G) { if (!G.f.pol_k_seen) { G.f.pol_k_seen = 1; G.sfx('ok'); await G.run(['~: [Полина] Кухня. Настоящая. Не кирпичная стена. Обои с бутоном вверх, не обманули.', 'polina/laugh: Хи-хи. Варя, я догадалась сама! …Она меня не слышит. Ну и ладно. Я слышу.']); } },
 };
 async function polinaFree(G: any) {
   G.sfx('gear'); await G.wait(0.4); G.setPlayerChar('varya'); G.set('pol_dark', 0);
@@ -181,6 +181,6 @@ async function polinaFree(G: any) {
   const B = new (await import('../world/room')).Builder(G.room, G); const pol = B.actor('polina_coat', -5.5, 3.8, { id: 'polina', dir: 'b' }); G.player.place(-1, -2, 'f'); G.camSnap();
   await pol.walkTo(-2, 0, 3); pol.face(G.player.x, G.player.z); G.player.face(pol.x, pol.z); G.audio.music('school_soft');
   await G.run(P.free); G.sfx('applause', { dur: 4 });
-  await finishChapter(G, 'polina', [['THE HOUSE THAT LAUGHS', 'act'], 'Полина заметила то, чего не заметил никто.', ['Смелость — это идти, когда страшно.', 'sm']]);
+  await finishChapter(G, 'polina', [['THE HOUSE THAT LAUGHS', 'act'], 'Полина заметила то, чего не заметил никто.', ['Смелость, это идти, когда страшно.', 'sm']]);
 }
 export const rooms: Record<string, RoomDef> = { pol_porch: porch, pol_hall: hall, pol_library: library, pol_basement: basement, pol_gallery: gallery, pol_kitchen: kitchen };
