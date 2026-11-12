@@ -56,7 +56,7 @@ class UI {
   say(o: { name: string; color: string; portrait: string; text: string; italic: boolean; pitch: number; seen: boolean }): Promise<void> {
     this.dialogOpen = true; this.dlg.classList.remove('hidden'); this.prompt(null);
     const port = this.dlg.querySelector('.port') as HTMLElement, img = port.querySelector('img')!, nm = this.dlg.querySelector('.name')!, tx = this.dlg.querySelector('.text') as HTMLElement;
-    port.classList.toggle('none', !o.portrait); if (o.portrait) img.src = o.portrait;
+    port.classList.toggle('none', !o.portrait); if (o.portrait) img.src = o.portrait; port.classList.toggle('noir', o.portrait.endsWith('#noir')); port.classList.toggle('art', o.portrait.startsWith('portraits/'));
     nm.innerHTML = o.name ? `<i style="background:${o.color}"></i>${esc(o.name)}` : ''; tx.classList.toggle('it', o.italic);
     this.log.push({ name: o.name, text: o.text, color: o.color }); if (this.log.length > 250) this.log.shift();
     return new Promise((res) => {

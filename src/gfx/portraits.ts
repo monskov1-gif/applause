@@ -5,7 +5,11 @@ import { shade } from './sprites';
 const cache = new Map<string, string>();
 export type Expr = 'neutral' | 'smile' | 'sad' | 'scared' | 'angry' | 'worried' | 'smirk' | 'surprised' | 'laugh' | 'blank';
 
+// Нарисованные портреты (public/portraits): у костюмных вариантов берём портрет основного персонажа.
+const ART = new Set(['varya', 'ruben', 'matvey', 'alla', 'dana', 'vasilisa', 'nina', 'angelina', 'liza', 'erika', 'olya', 'polina', 'anya']);
+const ALIAS: Record<string, string> = { queen: 'alla', girl: 'varya' };
 export function portrait(id: string, expr: Expr = 'neutral'): string {
+  const base = ALIAS[id] || id.split('_')[0]; if (ART.has(base)) return 'portraits/' + base + '.jpg' + (id.endsWith('_noir') ? '#noir' : '');
   const key = id + '|' + expr; const hit = cache.get(key); if (hit) return hit;
   const d: CharDef = CHARS[id]; const W = 200, H = 240;
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const c = cv.getContext('2d')!;
