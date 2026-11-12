@@ -24,6 +24,7 @@ export function door3D(W: number, H: number, col: string, sign?: string, double 
     void hx;
   }
   if (sign) { const cw = Math.max(48, Math.ceil(sign.length * 5.4 + 12)); const t = canvasTex(cw, 14, (c) => { c.fillStyle = '#e8d8b0'; c.fillRect(0, 0, cw, 14); c.strokeStyle = '#86641c'; c.strokeRect(0.5, 0.5, cw - 1, 13); ptext(c, sign, cw / 2, 3, { size: 8, col: '#3a1a14', align: 'center' }); }, 'dsign' + sign); const pw = Math.min(cw * 0.03, W + 1.4); const pl = new THREE.Mesh(new THREE.PlaneGeometry(pw, 0.42), lam({ map: t, emissive: 0x2a2010 })); pl.position.set(0, H + 0.15, 0.3); g.add(pl); }
+  { const gap = new THREE.Mesh(new THREE.BoxGeometry(W - 0.2, 0.04, 0.04), new THREE.MeshBasicMaterial({ color: 0xffc870 })); gap.position.set(0, 0.03, 0.16); g.add(gap); }
   if (glow) { const l = new THREE.PointLight(hexToNum(glow), 3, 4, 1.6); l.position.set(0, H * 0.7, 0.8); g.add(l); }
   return g;
 }
