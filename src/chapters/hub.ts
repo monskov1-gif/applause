@@ -85,11 +85,11 @@ const corridor: RoomDef = {
     R.floor('carpet', { w: 42, d: 2.6, z: -9.6, y: 0.015 }); R.floor('carpet', { w: 4, d: 10, z: -1.5, y: 0.015 }); R.floor('carpet', { w: 42, d: 2.6, z: 7.5, y: 0.015 });
     // массивы стен между галереями (в потолок, прозрачнеют, когда закрывают героиню)
     R.wall(-22, -7.2, -2.8, 3.6, { h: 4.4, tex: 'wallpaper', tint: '#c88870' }); R.wall(2.8, -7.2, 22, 3.6, { h: 4.4, tex: 'wallpaper', tint: '#c88870' });
-    for (const [x0, x1] of [[-22, -2.8], [2.8, 22]]) { const cap = R.box((x0 + x1) / 2, -1.8, x1 - x0, 10.8, 0.06, { tex: 'velvet', tint: '#5a2a24', y: 4.41, solid: false, cast: false }); (cap.material as THREE.MeshLambertMaterial).transparent = true; R.room.occluders.push({ mesh: cap as THREE.Mesh, x0: x0 - 0.4, x1: x1 + 0.4, z: 3.6, h: 4.4 }); }
+    for (const [x0, x1] of [[-22, -2.8], [2.8, 22]]) { const cap = R.box((x0 + x1) / 2, -1.8, x1 - x0, 10.8, 0.06, { tex: 'woodwall', tint: '#8a6248', emissive: 0x3a2618, y: 4.41, solid: false, cast: false }); (cap.material as THREE.MeshLambertMaterial).transparent = true; R.room.occluders.push({ mesh: cap as THREE.Mesh, x0: x0 - 0.4, x1: x1 + 0.4, z: 3.6, h: 4.4 }); }
     R.door('d_props', -12, { z: 3.65, to: 'hub_props', label: 'Реквизиторская', sign: 'РЕКВИЗИТ', col: '#3a2a1c' });
     R.door('d_work', 12, { z: 3.65, to: 'hub_workshop', label: 'Склад декораций и мастерская', sign: 'ЦЕХ', cond: () => G.done('polina'), locked: D.workshopLocked });
-    const plaque = (text: string, x: number, z: number, key: string, y = 3.4) => { const cw = Math.ceil(text.length * 5.4 + 14); return R.decal(canvasTex(cw, 15, (c) => { c.fillStyle = '#2a1408'; c.fillRect(0, 0, cw, 15); c.strokeStyle = '#d4ae48'; c.strokeRect(0.5, 0.5, cw - 1, 14); ptext(c, text, cw / 2, 3, { size: 8, col: '#f0d478', align: 'center' }); }, key), { x, z, y, w: cw * 0.045, h: 0.68, noSlot: true }); };
-    plaque('← ГРИМЁРКИ · КОСТЮМЕРНАЯ →', -5.5, 3.66, 'pl1'); plaque('СЦЕНА → · ← БЕЛЬЭТАЖ', 5.5, 3.66, 'pl2'); plaque('↓ ФОЙЕ · ТРЮМ · СЦЕНА ↓', -0.6, -12.95, 'pl3', 5.3);
+    const plaque = (text: string, x: number, z: number, key: string, y = 3.4) => { const cw = Math.ceil(text.length * 5.4 + 14); return R.decal(canvasTex(cw, 15, (c) => { c.fillStyle = '#2a1408'; c.fillRect(0, 0, cw, 15); c.strokeStyle = '#d4ae48'; c.strokeRect(0.5, 0.5, cw - 1, 14); ptext(c, text, cw / 2, 3, { size: 8, col: '#f0d478', align: 'center' }); }, key), { x, z, y, w: Math.min(cw * 0.03, 4.6), h: 0.6, noSlot: true }); };
+    plaque('← ГРИМЁРКИ · КОСТЮМЕРНАЯ →', -5.1, 3.66, 'pl1'); plaque('СЦЕНА → · ← БЕЛЬЭТАЖ', 5.1, 3.66, 'pl2'); R.poster('ЧАЙКА', 'сезон 1998', { x: -14.6, y: 1.6, w: 1.2, h: 1.7, z: 3.66, motif: 'moon' }); R.poster('СИРАНО', 'бенефис', { x: 14.6, y: 1.6, w: 1.2, h: 1.7, z: 3.66, motif: 'rose', bg: '#e8d0c0' }); plaque('↓ ФОЙЕ · ТРЮМ · СЦЕНА ↓', -0.6, -12.95, 'pl3', 5.3);
     for (const [x, i] of [[-18, 0], [-9.6, 1], [9.6, 2], [18, 3]] as number[][]) { R.box(x, 3.62, 1.25, 0.06, 1.55, { tex: 'gold', y: 1.75, solid: false, cast: false }); R.decal(photoTexV(i), { x, z: 3.66, y: 2.52, w: 1.05, h: 1.3, noSlot: true }); }
     for (const x of [-20, -16, -8, 8, 16, 20]) sconce(R, x, 3.3, 3.66, { light: 4 });
     // северная галерея: двери гримёрок и служебных помещений
@@ -134,7 +134,7 @@ const stage: RoomDef = {
     // кулисы-ноги, колосники с подвешенным задником, портал, рампа
     for (const z of [-21, -16, -11, -6]) for (const sx of [-1, 1]) R.curtain(sx * 14.5, z, 2.6, 10, { solid: false });
     R.box(0, -22.6, 34, 0.3, 9, { tex: 'velvet', solid: false }); for (let i = 0; i < 4; i++) R.box(0, -20 + i * 4, 30, 0.1, 0.1, { tex: 'metal', y: 10.2, solid: false, cast: false });
-    R.box(0, -18.5, 26, 0.12, 3, { color: 0x24305a, emissive: 0x0a1020, y: 7.5, solid: false }); R.box(0, -18.5, 27, 0.16, 0.16, { tex: 'metal', y: 10.5, solid: false, cast: false }); for (const x of [-11, -4, 4, 11]) R.box(x, -18.5, 0.03, 0.03, 0.5, { color: 0x222222, y: 10.5, solid: false, cast: false });
+    R.box(0, -18.5, 27, 0.16, 0.16, { tex: 'metal', y: 10.2, solid: false, cast: false });
     for (const sx of [-1, 1]) { R.curtain(sx * 13.6, -2.6, 2.6, 9.4, { solid: false }); R.box(sx * 13.6, -2.6, 2.8, 0.4, 1.2, { tex: 'velvet', y: 8.2, solid: false, cast: false }); }
     R.box(0, -1.8, 36, 0.8, 2, { tex: 'gold', y: 9.6, solid: false }); for (const sx of [-1, 1]) R.box(sx * 16.5, -1.8, 3, 0.8, 11.6, { tex: 'gold' }); for (let x = -14; x <= 14; x += 2) R.box(x, -1.7, 2, 0.3, 1.4, { tex: 'velvet', y: 8.2, solid: false });
     for (let x = -13; x <= 13; x += 1.3) R.box(x, -1.3, 0.35, 0.22, 0.2, { color: 0xfff0c0, emissive: 0xffc060, y: 0.06, solid: false, cast: false }); for (let x = -12; x <= 12; x += 4) R.light(x, 0.5, -1.4, 0xffc070, 2.5, 6);
@@ -162,7 +162,7 @@ const stage: RoomDef = {
     const kn = n >= 5 ? 5 : n >= 3 ? 3 : n >= 1 ? 1 : 0;
     if (kn && !f['kn' + kn]) { R.sprite(canvasTex(8, 6, (c) => { c.fillStyle = '#f4ecd4'; c.fillRect(0, 0, 8, 6); c.fillStyle = '#3a2a5a'; c.fillRect(1, 1, 5, 1); c.fillRect(1, 3, 4, 1); }, 'knote'), -10.9, -5.2, { y: 1.15, glow: true }); R.inter('knote', -11.3, -4.4, { label: 'Записка от К.', r: 1.3, fn: async (G) => { await G.ui.paper((D as any)['kNote' + kn]); f['kn' + kn] = 1; G.note('knotes'); await G.rebuild(); } }); }
     // зеркало на колёсах
-    const mir = mirror3D(R, 11.6, 2.3, -14, 2.4, 3.6, {}); R.collider(10.2, -14.3, 13.0, -13.7); void mir;
+    const mir = mirror3D(R, 9.6, 2.3, -15.2, 2.4, 3.6, {}); R.collider(8.2, -15.5, 11.0, -14.9); void mir;
     // следы исчезновения (после первой репетиции, пока Полина не вернулась)
     if (f.act1 && !G.done('polina')) {
       const ch = new THREE.Group(); ch.position.set(-2, 0, -9); ch.rotation.set(0, 0.6, Math.PI / 2 - 0.05); const cm = new THREE.MeshLambertMaterial({ map: tex('velvet') }); const s1 = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.12, 0.9), cm); s1.position.y = 0.6; ch.add(s1); const s2 = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1, 0.1), cm); s2.position.set(0, 1.1, -0.45); ch.add(s2); for (const [x, z] of [[-0.4, -0.4], [0.4, -0.4], [-0.4, 0.4], [0.4, 0.4]]) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.6, 0.08), new THREE.MeshLambertMaterial({ map: tex('gold') })); l.position.set(x, 0.3, z); ch.add(l); } ch.position.y = 0.45; R.room.group.add(ch);
@@ -249,7 +249,8 @@ const backstage: RoomDef = {
     R.collider(-6, -6, -2, -1.1); R.collider(-6, 1.1, -2, 6); const mid = R.collider(-6, -1.1, -2, 1.1); mid.on = !f.bridge;
     const shadow = R.decal(canvasTex(64, 34, (c) => { c.fillStyle = 'rgba(4,3,8,0.92)'; c.fillRect(0, 8, 64, 20); for (let i = 0; i < 8; i++) c.fillRect(2 + i * 8, 0, 3, 34); c.fillRect(0, 0, 64, 3); c.fillRect(0, 31, 64, 3); }, 'shadowbridge'), { flat: true, x: -4, z: 0, y: 0.02, w: 4.4, h: 2.3, glow: true }); shadow.visible = !!f.bridge; R.room.named.shadow = shadow; R.room.named.mid = mid;
     for (let x = -20; x <= 20; x += 4.4) R.box(x, -5.6, 0.1, 0.1, 8, { color: 0x6a5a3a, solid: false, cast: false });
-    for (const x of [-21, 8, 16]) R.box(x, 4.2, 1.6, 1.4, 1.4, { tex: 'wood' }); R.box(-21, 4.2, 1.2, 1, 1, { tex: 'wood', y: 1.4, solid: false });
+    for (const x of [-19.4, 8, 16]) R.box(x, 3.8, 1.6, 1.4, 1.4, { tex: 'wood' }); R.box(-19.4, 3.8, 1.2, 1, 1, { tex: 'wood', y: 1.4, solid: false });
+    for (const ex of [-6, -2]) for (let k = 0; k < 12; k++) R.box(ex + (ex < -4 ? 0.12 : -0.12), -5.5 + k + 0.25, 0.22, 0.5, 0.02, { color: k % 2 ? 0x1a1a1a : 0xe8c230, y: 0.01, solid: false, cast: false });
     R.sprite('ladder', 22, -5.3, { scale: 1.3 }); R.sprite('tree', -22, -2, { scale: 0.9 });
     R.light(-14, 5, -2, 0xffc890, 22, 16, { flicker: 0.05 }); R.light(10, 5.5, -2, 0x90a8ff, 16, 22);
     R.door('d_stage', -20, { to: 'hub_stage', spot: 'back', label: 'На сцену', col: '#2a1c14' });
@@ -264,13 +265,13 @@ const backstage: RoomDef = {
     R.look('wallTr', -6.9, -1.6, 'Надпись мелом и следы', D.wallTr, { mask: 'tragedy', photo: 'Следы на тени' });
     R.sprite(canvasTex(12, 5, (c) => { c.fillStyle = '#c9a7ff'; c.fillRect(0, 1, 12, 3); c.fillStyle = '#8f7fc4'; c.fillRect(5, 0, 3, 5); }, 'scarf'), -7.3, 3.4, { mask: 'drama', glow: true, y: 0.1 }); R.look('scarf', -7.3, 3.6, 'Шарф', D.scarfDr, { mask: 'drama', r: 1.3 });
     // головоломка: тень-мост
-    const cutPos = [[-13.5, 3.2], [-8.4, 0]], cp = cutPos[f.cut ? 1 : 0];
+    const cutPos = [[-15, 3.9], [-8.4, 0]], cp = cutPos[f.cut ? 1 : 0];
     const cut = R.sprite('bridgecut', cp[0], cp[1], { scale: 0.75, solid: 1.2 }); R.room.named.cut = cut;
     const cutI = R.inter('cut', cp[0], cp[1] + 0.8, { label: 'Фанерный мостик на колёсах (катить)', cond: () => !f.bridge, fn: async (G) => { if (!f.cut_seen) { f.cut_seen = 1; await G.run(D.cutMove); } f.cut = f.cut ? 0 : 1; G.sfx('gear'); f.spot = 0; await G.rebuild(); } });
-    R.box(-10.6, 0, 0.3, 0.3, 2.2, { tex: 'metal' }); R.sprite('stagelight', -10.6, 0.1, { y: 2.2, scale: 1.3 });
-    const aims = [[-10.6, -5], [-14, -4], [-2, 0]]; const aim = aims[f.spot || 0];
-    R.spot(-10.6, 2.9, 0, aim[0], aim[1], 0xfff0d0, 120, { angle: 0.32, pen: 0.3 });
-    R.inter('spot', -10.6, 1, { label: 'Прожектор (повернуть)', cond: () => !f.bridge, fn: async (G) => { f.spot = ((f.spot || 0) + 1) % 3; G.sfx('spot'); await G.rebuild(); if (f.spot === 0) await G.run(D.spotAim0); else if (f.spot === 1) await G.run(D.bridgeWrong); else if (!f.cut) await G.run(D.bridgeNoCut); else { G.focus(-4, 0, 16); await G.wait(0.8); await G.run(D.bridgeOn); G.unfocus(); await G.rebuild(); } } });
+    R.box(-11.8, 0, 0.16, 0.16, 2.2, { tex: 'metal' }); for (let k = 0; k < 3; k++) { const leg = R.box(-11.8 + Math.cos(k * 2.1) * 0.35, Math.sin(k * 2.1) * 0.35, 0.06, 0.06, 1.0, { tex: 'metal', solid: false }); leg.rotation.set(Math.sin(k * 2.1) * 0.5, 0, -Math.cos(k * 2.1) * 0.5); } R.sprite('stagelight', -11.8, 0.1, { y: 2.2, scale: 1.3 });
+    const aims = [[-11.8, -5], [-14, -4], [-2, 0]]; const aim = aims[f.spot || 0];
+    R.spot(-11.8, 2.9, 0, aim[0], aim[1], 0xfff0d0, 120, { angle: 0.32, pen: 0.3 });
+    R.inter('spot', -11.8, 1, { label: 'Прожектор (повернуть)', cond: () => !f.bridge, fn: async (G) => { f.spot = ((f.spot || 0) + 1) % 3; G.sfx('spot'); await G.rebuild(); if (f.spot === 0) await G.run(D.spotAim0); else if (f.spot === 1) await G.run(D.bridgeWrong); else if (!f.cut) await G.run(D.bridgeNoCut); else { G.focus(-4, 0, 16); await G.wait(0.8); await G.run(D.bridgeOn); G.unfocus(); await G.rebuild(); } } });
     // зеркальная рама под колосниками (после главы Лизы)
     if (G.done('liza')) {
       R.npc('liza_short', -15.5, 2.6, { id: 'liza', talk: (G: any) => G.run(G.state.mask === 'drama' ? D.h_lizaDr : D.h_liza) });
@@ -309,11 +310,11 @@ const workshop: RoomDef = {
     R.inter('maqTr', 0, 1.2, { label: 'Макет: след от клея', mask: 'tragedy', photo: 'Две склеенные фигурки', fn: (G) => G.run(D.maquetteTr) });
     R.look('maqO', 0, 1.2, 'Макет сцены', D.maquette, { mask: 'drama' }); R.look('maqC', 0, 1.2, 'Макет сцены', ['varya=Макет: Меня никто не спрашивал, хочу ли я быть в масштабе один к двадцати. Я хотел быть настоящим залом.'], { mask: 'comedy' });
     for (const [i, col] of [0xa3122a, 0x2f7f82, 0xe8c36a].entries()) R.box(6 + i * 0.7, -4, 0.5, 0.5, 0.6, { color: col }); R.look('paint', 6.7, -3.2, 'Банки с краской', ['~: Красная, бирюзовая, золотая. Красной израсходовано втрое больше.'], { mask: 'none' }); R.look('paintC', 6.7, -3.2, 'Банки (спорят)', D.paintCom, { mask: 'comedy', egg: 'paint' });
-    R.sprite('tree', 2.2, -4.4); R.sprite('pine', 7.6, 1, { emissive: 0x1a2a1a }); R.light(6.2, 3.2, 2.6, 0xffe0b0, 7, 7); R.sprite('ladder', 4, -4.6); R.sprite('wheel', -4, -4.6, { scale: 1.6 }); R.box(-7, 2.5, 2, 1.6, 1.2, { tex: 'wood' });
+    R.sprite('tree', 1.0, -4.4); R.sprite('pine', 7.6, 1, { emissive: 0x1a2a1a }); R.light(6.2, 3.2, 2.6, 0xffe0b0, 7, 7); R.sprite('ladder', 4, -4.6); R.sprite('wheel', -4, -4.6, { scale: 1.6 }); R.box(-7, 2.5, 2, 1.6, 1.2, { tex: 'wood' });
     // верстаки, инструменты, висящие задники, шестерни механики поворотного круга
     R.table(-5.5, 1.8, 3, 1.3, { tex: 'wood' }); for (let i = 0; i < 4; i++) R.sprite(['gear', 'key', 'candle', 'book'][i], -6.6 + i * 0.7, 1.8, { y: 1.15, scale: 1.1 });
     for (const [x, col] of [[-3, '#5a7a4a'], [0, '#4a5a8a'], [3, '#8a5a3a']] as [number, string][]) R.decal(canvasTex(48, 32, (c) => { c.fillStyle = col; c.fillRect(0, 0, 48, 32); c.fillStyle = 'rgba(255,255,255,.15)'; for (let k = 0; k < 6; k++) c.fillRect(k * 8, 18 + (k % 2) * 4, 6, 14); c.fillStyle = '#2a1c14'; c.fillRect(0, 0, 48, 2); }, 'drop' + x), { x, y: 4.8, z: -4.7, w: 3.2, h: 2 });
-    gear(R, 6.4, 3.6, -4.7, 1.2, { speed: 0.2 }); gear(R, 7.6, 2.4, -4.6, 0.7, { teeth: 10, speed: -0.34 });
+    gear(R, 6.4, 2.6, -4.7, 1.2, { speed: 0.2 }); gear(R, 7.6, 1.5, -4.6, 0.7, { teeth: 10, speed: -0.34 });
     R.sprite(PROPTEX.coil(), 2, 3.6, { scale: 1.5 }); R.sprite(PROPTEX.sandbag(), 5, 3.8, { scale: 1.3 }); R.sprite(PROPTEX.sandbag(), 5.5, 4, { scale: 1.2 });
     R.decal(canvasTex(16, 16, (c) => { c.fillStyle = '#e8e0c8'; c.fillRect(0, 0, 16, 16); c.fillStyle = '#111'; c.fillRect(7, 3, 2, 6); c.fillRect(7, 8, 5, 2); c.strokeStyle = '#3a2a14'; c.strokeRect(0.5, 0.5, 15, 15); }, 'clock'), { x: -3.5, y: 4.6, w: 1, h: 1 });
     if (G.done('ruben')) R.npc('ruben', 3.6, 1.6, { talk: (G: any) => G.run(G.state.mask === 'drama' ? D.h_rubenDr : D.h_ruben) });
@@ -332,7 +333,7 @@ const archive: RoomDef = {
     R.box(2.2, 0.75, 0.5, 0.28, 0.24, { color: 0x1f5a34, emissive: 0x0a2a14, y: 1.42, solid: false, cast: false }); R.box(2.2, 0.75, 0.06, 0.06, 0.3, { tex: 'gold', y: 1.12, solid: false }); R.light(2.2, 1.6, 1.0, 0xb8ffb0, 4, 6);
     for (let i = 0; i < 2; i++) { R.box(2.6 + i * 1.25, -4.5, 1.15, 0.9, 1.7, { tex: 'metal', tint: '#8a8a70' }); for (let k = 0; k < 2; k++) { R.box(2.6 + i * 1.25, -4.04, 0.95, 0.04, 0.66, { tex: 'metal', tint: '#a8a890', y: 0.18 + k * 0.78, solid: false, cast: false }); R.box(2.6 + i * 1.25, -4.0, 0.3, 0.05, 0.1, { tex: 'gold', y: 0.62 + k * 0.78, solid: false, cast: false }); } }
     R.sprite('ladder', -8.4, -3.9, { scale: 1.2 });
-    for (let i = 0; i < 9; i++) { const pp = R.box(-6 + i * 1.5 + (i % 2) * 0.4, 2.2 + ((i * 7) % 5) * 0.45, 0.5, 0.65, 0.01, { color: i % 3 ? 0xf0e6d0 : 0xe0d4b8, y: 0.02, solid: false, cast: false }); pp.rotation.y = i * 0.7; }
+    for (let i = 0; i < 9; i++) { const pp = R.box(-6 + i * 1.5 + (i % 2) * 0.4, 2.2 + ((i * 7) % 5) * 0.45, 0.5, 0.65, 0.01, { color: i % 3 ? 0xb8ae9c : 0xa89c88, y: 0.02, solid: false, cast: false }); pp.rotation.y = i * 0.7; }
     for (let i = 0; i < 4; i++) R.box(-8 + i * 0.7, 3.4, 0.6, 0.45, 0.4 - i * 0.05, { tex: 'paper', tint: '#c8b088', y: 0, solid: false }); R.collider(-8.3, 3.15, -5.6, 3.65);
     R.light(7, 4.4, -3.6, 0xffd090, 9, 7);
     corkBoard(R, 3.2, 2.8, 2.8, 2, 4, { wall: 'w', at: -1 });
@@ -358,7 +359,7 @@ const office: RoomDef = {
     desk(R, -1, -1.8, 3.6);
     R.inter('desk', -1, -0.6, { label: 'Стол: черновики', fn: async (G) => { await G.run(D.officeDesk); await G.ui.paper(PAPERS.drafts); if (!f.o_desk) { f.o_desk = 1; await G.run(D.officeAfter); } } });
     armchair(R, -1, -3.4, { col: 0x6a2a3a }); R.look('chair', -2.6, -3.4, 'Кресло с жакетом', D.officeChair, { r: 1.4 });
-    armchair(R, -1.8, 2.6, { col: 0x8a5a3a, ry: Math.PI - 0.3 }); armchair(R, 0.4, 2.6, { col: 0x8a5a3a, ry: Math.PI + 0.3 });
+    armchair(R, -2.6, 2.4, { col: 0x8a5a3a, ry: Math.PI - 0.3 }); armchair(R, 1.2, 2.4, { col: 0x8a5a3a, ry: Math.PI + 0.3 });
     bookshelf(R, -7.6, -5.3, { w: 2.6, h: 4.6 }); bookshelf(R, -4.6, -5.3, { w: 2.6, h: 4.6 }); bookshelf(R, 7.9, -1, { w: 3, h: 4.6, ry: -Math.PI / 2 });
     // доска мыслей: записки, фото и нитки
     corkBoard(R, 0, 3.1, 3.4, 2.4, 7, { wall: 'e', at: 3 }); R.look('thoughts', 7.6, 3, 'Доска с записками', ['~: Доска худрука. Фотографии шестерых, под каждой записка: «дом», «хранилище», «школа», «город», «башня», «агентство».', '~: Красные нитки тянутся от каждой фотографии к одной в центре. Центральная перевёрнута лицом к доске.', '~: Я не переворачиваю. Пока.']);

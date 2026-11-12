@@ -48,7 +48,7 @@ class Game {
   has(item: string) { return this.state.inv.includes(item); }
   give(item: string, quiet = false) { if (this.has(item)) return; this.state.inv.push(item); if (!ITEMS[item]) console.warn('[game] нет описания предмета', item); if (item === 'camera') this.mech('camera'); if (!quiet) { this.sfx('pickup'); ui.showItem(item); } else ui.toast('В инвентаре: ' + (ITEMS[item]?.name || item), '✦'); ui.hud(); }
   /** Открыть гайд механики (один раз) и сообщить, где его перечитать. */
-  mech(id: string) { const m = (this.state.f.mech ||= {}); if (m[id] || !MECH[id]) return; m[id] = 1; if (!this.fast) ui.toast(`Механика: ${MECH[id].title}. Гайд — в журнале (Tab)`, '❖'); }
+  mech(id: string) { const m = (this.state.f.mech ||= {}); if (m[id] || !MECH[id]) return; m[id] = 1; if (!this.fast) ui.toast(`Механика: ${MECH[id].title}. Подробнее в журнале (Tab)`, '❖'); }
   egg(id: string) { const e = (this.state.f.eggs ||= {}); if (e[id] || !EGGS[id]) return; e[id] = 1; this.sfx('note'); ui.toast(`Находка: ${EGGS[id].title} (${Object.keys(e).length}/${Object.keys(EGGS).length})`, '★'); }
   take(item: string) { const i = this.state.inv.indexOf(item); if (i >= 0) this.state.inv.splice(i, 1); }
   note(id: string) { if (this.state.notes.includes(id)) return; if (!NOTES[id]) { console.warn('[game] нет записи блокнота', id); return; } this.state.notes.push(id); this.sfx('pencil'); ui.toast('Блокнот: ' + NOTES[id].title, '✎'); }
@@ -271,7 +271,7 @@ class Game {
       for (const lz of room.lasers) { lz.on = lz.active && ((this.t + lz.phase) % lz.period) < lz.duty * lz.period; lz.mesh.visible = lz.on; if (lz.on && !p.hidden && !(p as any).stealth) { const vx = lz.x1 - lz.x0, vz = lz.z1 - lz.z0, l2 = vx * vx + vz * vz; let u = ((p.x - lz.x0) * vx + (p.z - lz.z0) * vz) / l2; u = clamp(u, 0, 1); if (Math.hypot(p.x - lz.x0 - vx * u, p.z - lz.z0 - vz * u) < 0.4) { this.cut(() => lz.onHit(this)).catch((e) => console.error(e)); break; } } }
     } else { for (const a of room.actors) if (!a.target && a !== p && !this.followers.includes(a)) a.moving = false; }
     for (const fl of room.flick) fl.l.intensity = fl.base * (1 + (Math.sin(this.t * 13 + fl.base) * 0.5 + Math.sin(this.t * 31) * 0.5) * fl.s);
-    for (const oc of room.occluders) { const hide = p.z < oc.z - 0.2 && p.z > oc.z - 12 && p.x > oc.x0 - 0.8 && p.x < oc.x1 + 0.8; const m = oc.mesh.material as THREE.MeshLambertMaterial; const tgt = hide ? 0.18 : 1; m.opacity += (tgt - m.opacity) * Math.min(1, dt * 8); m.depthWrite = m.opacity > 0.9; }
+    for (const oc of room.occluders) { const hide = p.z < oc.z - 0.2 && p.z > oc.z - 12 && p.x > oc.x0 - 0.8 && p.x < oc.x1 + 0.8; const o: any = oc; if (o.by == null) { o.by = oc.mesh.position.y; o.k = 1; } const tgt = hide ? 0.14 : 1; o.k += (tgt - o.k) * Math.min(1, dt * 7); oc.mesh.scale.y = o.k; oc.mesh.position.y = o.by * o.k; const m = oc.mesh.material as THREE.MeshLambertMaterial; m.opacity = 1; m.depthWrite = true; } // стены-«срезы»: опускаются до пояса, когда закрывают героиню
     for (const u of room.updaters) u(dt, this.t);
     if (room.def.update) room.def.update(this, dt, this.t);
     this.questT -= dt; if (this.questT < 0) { this.questT = 0.5; ui.quest(); }

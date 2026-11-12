@@ -179,14 +179,14 @@ export class Builder {
   /** Дверь на задней стене или в произвольном месте. */
   door(id: string, x: number, o: { to?: string; spot?: string; label: string; cond?: () => boolean; locked?: string | any[]; z?: number; col?: string; fn?: (G: any) => any; fade?: string; mask?: string; sign?: string; glow?: string; w?: number; h?: number; wall?: 'w' | 'e' | 's'; double?: boolean }) {
     const W = o.w || 2.2, H = o.h || 3.4; let ix = x, iz: number; let g: THREE.Object3D;
-    if (o.wall === 's') { g = this.southExit(x, o.sign || o.label); iz = this.d / 2 - 0.9; }
+    if (o.wall === 's') { g = this.southExit(x, o.sign || o.label); iz = this.d / 2 - 1.7; }
     else {
       g = door3D(W, H, o.col || '#5a3a22', o.sign, !!o.double || W > 2.6, o.glow);
       if (o.wall === 'w' || o.wall === 'e') { const s = o.wall === 'w' ? -1 : 1; const at = this.wallSlot(o.wall, x, W + 0.8, H / 2, H + 0.6, { fixed: true, obj: g }); g.position.set(s * (this.w / 2), 0, at); g.rotation.y = -s * Math.PI / 2; ix = s * (this.w / 2 - 0.9); iz = at; }
       else { const z = o.z ?? (-this.d / 2); g.position.set(x, 0, z); if (o.z == null) this.wallSlot('n', x, W + 0.8, H / 2, H + 0.6, { fixed: true, obj: g }); iz = z + 0.9; }
       this.room.group.add(g); this.tag(g, { mask: o.mask });
     }
-    this.inter(id, ix, iz, { label: o.label, mask: o.mask, y: o.wall === 's' ? 1.2 : 3.2, fn: async (G) => {
+    this.inter(id, ix, iz, { label: o.label, mask: o.mask, y: o.wall === 's' ? 2.7 : 3.2, fn: async (G) => {
       if (o.cond && !o.cond()) { G.sfx('locked'); if (o.locked) await G.run(typeof o.locked === 'string' ? ['~: ' + o.locked] : o.locked); return; }
       if (o.fn) return o.fn(G); if (o.wall !== 's') { G.sfx('door'); swingDoor(g); } else G.sfx('step'); await G.goto(o.to!, o.spot || 'start', { fade: o.fade });
     } });
@@ -195,7 +195,7 @@ export class Builder {
   /** Выход у открытой (южной) стороны: проём-арка с табличкой и ступенями, видимый камерой. */
   southExit(x: number, label: string) {
     // низкий порог у открытой стороны: ковровая дорожка за край, светящаяся стрелка, латунные столбики и наклонная табличка (ничего не закрывает героиню)
-    const g = new THREE.Group(); const z = this.d / 2 - 0.35; const gold = new THREE.MeshLambertMaterial({ map: tex('gold') });
+    const g = new THREE.Group(); const z = this.d / 2 - 1.2; const gold = new THREE.MeshLambertMaterial({ map: tex('gold') });
     const run = this.texBox(2.2, 0.03, 3.2, { tex: 'carpet' }); run.position.set(x, 0.015, z + 1.2); run.receiveShadow = true; g.add(run);
     for (const sx of [-1, 1]) {
       const p = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.95, 8), gold); p.position.set(x + sx * 1.35, 0.48, z); p.castShadow = true; g.add(p);
