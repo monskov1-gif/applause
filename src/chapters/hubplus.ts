@@ -41,7 +41,7 @@ const mezz: RoomDef = {
   build(R, G) {
     const f = G.f; R.room.group.userData.bg = 0x0a0606; R.floor('carpet', { d: 11, z: -2.5 }); R.walls('wallgreen', { h: 6.5, trim: 'gold' }); base(R, 1.6);
     // проём над фойе: балюстрада и люстра внизу
-    balustrade(R, -19, 3, -4, 3); balustrade(R, 4, 3, 19, 3); const pit = R.box(0, 6, 38, 6, 0.1, { color: 0x140a08, y: -4, solid: false }); R.collider(-19, 3.2, 19, 8);
+    balustrade(R, -19, 3, -4, 3); balustrade(R, 4, 3, 19, 3); const pit = R.box(0, 6, 38, 6, 0.1, { tex: 'checker', y: -4, solid: false }); R.light(0, -1, 6, 0xffd8a0, 10, 10); for (const x of [-12, -6, 6, 12]) R.box(x, 6, 0.8, 0.8, 4, { tex: 'white', tint: '#e8d8c8', y: -4, solid: false }); R.collider(-19, 3.2, 19, 8);
     chandelier(R, -9, -0.6, 6, 1.1, { light: 8 }); chandelier(R, 9, -0.6, 6, 1.1, { light: 8 });
     R.inter('down', 0, 2.2, { label: 'Парадная лестница — вниз, в фойе', fn: (G) => G.goto('hub_foyer', 'stairs', { fade: 'fade' }) }); R.stairs(0, 5.4, 6, 4, { runner: true }).position.y = -1.2;
     // портреты постановок и бюст основателя
@@ -79,10 +79,11 @@ const box: RoomDef = {
   },
 };
 const rehearsal: RoomDef = {
-  name: 'Репетиционный зал', floor: 'Бельэтаж', w: 26, d: 13, music: 'backstage', amb: 'hall', step: 'wood', grade: { tint: [1.0, 0.98, 1.04], vig: 0.45 },
+  name: 'Репетиционный зал', floor: 'Бельэтаж', w: 26, d: 13, music: 'backstage', amb: 'hall', step: 'wood', grade: { tint: [1.06, 0.97, 0.88], vig: 0.5 },
   build(R, G) {
-    R.floor('parquet'); R.walls('mirror', { h: 6, n: true }); R.ambient(0x40404a, 1.7, 0xe8e8ff); R.particles('dust', { count: 120, top: 6 });
-    windowBeam(R, -9, { floorZ: 2 }); windowBeam(R, 9, { floorZ: 2 });
+    R.floor('parquet', { tint: '#a87a4a' }); R.walls('woodwall', { h: 6 }); R.ambient(0x4a3828, 1.6, 0xffd8b0);
+    for (let i = 0; i < 6; i++) R.decal(canvasTex(24, 40, (c) => { c.fillStyle = '#86641c'; c.fillRect(0, 0, 24, 40); c.fillStyle = '#4a3a30'; c.fillRect(1, 1, 22, 38); c.fillStyle = 'rgba(255,220,180,.18)'; c.fillRect(3, 2, 3, 36); c.fillRect(14, 2, 1, 36); }, 'rehmirror'), { x: -10 + i * 4, y: 2.6, w: 3.9, h: 4.2 }); R.particles('dust', { count: 120, top: 6 });
+    R.light(-8, 4, 2, 0xffb070, 12, 14); R.light(8, 4, 2, 0xffb070, 12, 14); R.spot(-6, 7, 6, 0, 0, 0xffc890, 30, { angle: 0.5, cone: 0.04 });
     R.box(0, -6.1, 26, 0.12, 0.12, { tex: 'gold', y: 1.3, solid: false }); for (let x = -12; x <= 12; x += 4) R.box(x, -6.1, 0.1, 0.4, 1.3, { tex: 'metal', solid: false });
     piano(R, 8.6, 2.6, -0.4); R.look('piano', 8, 4.4, 'Рояль', T.piano); R.sprite('bookstand', 6.4, 3.6, { scale: 1.1 });
     for (let i = 0; i < 4; i++) R.sprite('chair', -11.5, 4 - i * 0.12, { y: i * 0.45, scale: 1.1 }); R.sprite(PROPTEX.screen(), -11.4, -2, { scale: 1.6, solid: 1 });
@@ -117,8 +118,9 @@ const trap: RoomDef = {
   name: 'Трюм', floor: 'Под сценой', w: 34, d: 16, music: 'backstage', amb: 'hum', step: 'metal', grade: { tint: [0.9, 0.95, 1.08], vig: 0.6, sat: 0.9 },
   build(R, G) {
     R.room.group.userData.bg = 0x050608; R.floor('metal'); R.walls('brick', { h: 7 }); R.ambient(0x40485a, 2.6, 0xa0b0d0); R.particles('dust', { count: 90, top: 6, color: 0xc8d8ff });
-    gear(R, -6, 3.2, -6.6, 3, { speed: 0.12 }); gear(R, -1.4, 1.6, -6.4, 1.4, { teeth: 10, speed: -0.26 }); gear(R, 6, 0.6, -2, 3.6, { axis: 'y', speed: 0.06, teeth: 24 }); gear(R, 12, 2.4, -6.6, 2, { speed: -0.18 });
-    R.collider(2.2, -5.8, 9.8, 1.8);
+    gear(R, -6, 3.2, -6.6, 3, { speed: 0.12 }); gear(R, -1.4, 1.6, -6.4, 1.4, { teeth: 10, speed: -0.26 }); gear(R, 6, 3.4, -4.4, 3.2, { speed: 0.06, teeth: 24 }); gear(R, 1.6, 1.4, -5.8, 1.2, { teeth: 12, speed: -0.16 }); gear(R, 12, 2.4, -6.6, 2, { speed: -0.18 });
+    R.collider(2.2, -5.8, 9.8, -3.2); R.spot(0, 7, 4, 0, 4, 0xffe8c0, 60, { angle: 0.22, cone: 0.12, pen: 0.2 }); R.box(0, 4, 2.4, 2.4, 0.1, { color: 0xfff0c8, emissive: 0x806030, y: 6.9, solid: false });
+    for (let x = -15; x <= 15; x += 3) R.box(x, -6, 0.3, 4, 0.4, { tex: 'darkwood', y: 6.6, solid: false, cast: false }); for (const x of [-4, 4]) R.box(x, -2, 0.3, 0.3, 7, { tex: 'darkwood', solid: false });
     for (const x of [-12, -9, 14]) { R.box(x, -6.5, 0.3, 0.3, 7, { tex: 'metal' }); R.box(x, -6.5, 0.9, 0.9, 1.2, { tex: 'metal', y: 2 + (x % 3), solid: false }); R.box(x + 0.25, -6.3, 0.03, 0.03, 7, { color: 0xb8a070, solid: false }); }
     for (const [x, z] of [[-14, 4], [-13, 5.4], [15, 4.8]]) R.sprite(PROPTEX.sandbag(), x, z, { scale: 1.4 }); R.sprite(PROPTEX.coil(), -10, 5, { scale: 1.6 });
     for (const x of [-12, 0, 12]) { R.light(x, 3.4, 2, 0xffd890, 12, 12, { flicker: 0.08 }); R.sprite('lamp', x, 2.4, { y: 0.1, scale: 0.8 }); }
