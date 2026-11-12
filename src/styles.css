@@ -33,7 +33,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .logo.small { font-size: clamp(.7rem, 2.2vw, 1.5rem); }
 
 /* ---------- главное меню ---------- */
-.menu-screen { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.2rem; overflow: hidden;
+.menu-screen { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.4rem; overflow: hidden;
   background: radial-gradient(ellipse 60% 55% at 50% 38%, rgba(240,200,120,.2), transparent 70%), radial-gradient(ellipse at 50% 120%, #2a0a10, #070304 70%); }
 .menu-screen::before, .menu-screen::after { content: ''; position: absolute; top: 0; bottom: 0; width: 24%; background: repeating-linear-gradient(90deg, #3a0810 0, #7a1226 2.2vw, #56101c 3.4vw, #2a060c 5vw); box-shadow: 0 0 5vw #000; animation: sway 7s ease-in-out infinite alternate; }
 .menu-screen::before { left: 0; transform-origin: top left; border-right: .3vw solid #1a0408; } .menu-screen::after { right: 0; transform-origin: top right; border-left: .3vw solid #1a0408; animation-delay: -3s; }
@@ -42,9 +42,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .menu-valance::after { content: ''; position: absolute; left: 0; right: 0; bottom: -2.4vh; height: 2.4vh; background: radial-gradient(circle at 1.5vw 0, var(--gold) 1.1vh, transparent 1.2vh) 0 0 / 3vw 100%; }
 .menu-spot { position: absolute; top: -10vh; left: 50%; width: 70vw; height: 120vh; transform: translateX(-50%); background: conic-gradient(from 168deg at 50% 0, transparent, rgba(255,230,170,.13) 6deg, rgba(255,230,170,.13) 18deg, transparent 24deg); animation: spot 9s ease-in-out infinite alternate; pointer-events: none; }
 @keyframes spot { from { transform: translateX(-56%) rotate(-3deg); } to { transform: translateX(-44%) rotate(3deg); } }
-.menu-list { position: relative; z-index: 3; display: flex; flex-direction: column; gap: .5rem; min-width: 16rem; }
-.menu-logo { position: relative; z-index: 3; }
-.menu-foot { position: absolute; bottom: .8rem; left: 0; right: 0; text-align: center; font-size: .78rem; opacity: .55; z-index: 3; }
+.menu-list { position: relative; z-index: 3; display: flex; flex-direction: column; gap: .4rem; margin-bottom: 1.6rem; min-width: 16rem; }
+.menu-logo { position: relative; z-index: 3; margin-top: 12vh; }
+.menu-foot { position: absolute; bottom: .3rem; left: 0; right: 0; text-align: center; font-size: .78rem; opacity: .55; z-index: 3; }
 .btn { background: linear-gradient(#f4e8c8, #dcc898); color: var(--ink); border: 1px solid #6a4a1a; border-bottom-width: 3px; padding: .55rem 1.4rem; font-family: 'Playfair Display', serif; font-size: 1.05rem; letter-spacing: .04em; text-align: center; position: relative; transition: transform .08s, filter .1s; }
 .btn::before { content: '✦'; position: absolute; left: .55rem; color: var(--red); opacity: 0; transition: opacity .1s; }
 .btn:hover, .btn:focus-visible { outline: none; filter: brightness(1.08); transform: translateX(.25rem); } .btn:hover::before, .btn:focus-visible::before { opacity: 1; }
@@ -79,7 +79,7 @@ input[type=range] { width: 11rem; accent-color: var(--red); } select, input[type
 /* ---------- диалог ---------- */
 .dlg { position: absolute; left: 50%; bottom: max(1.2rem, env(safe-area-inset-bottom)); transform: translateX(-50%); width: min(54rem, calc(100% - 1.6rem)); display: grid; grid-template-columns: auto 1fr; align-items: end; z-index: 20; cursor: pointer; }
 .dlg .port { width: 8.2rem; height: 9.8rem; border: 3px solid var(--gold); background: radial-gradient(#5a2030, #1a0a10); margin-right: -.6rem; z-index: 2; box-shadow: 0 .3rem 1rem #000; transform: rotate(-2deg); overflow: hidden; } .dlg .port img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.dlg .port.none { display: none; }
+.dlg .box { grid-column: 2; } .dlg .port.none { visibility: hidden; width: 0; border: 0; margin: 0; }
 .dlg .box { background: var(--paper); color: var(--ink); border: 1px solid #6a4a1a; box-shadow: 0 0 0 .25rem #2a0a10, 0 0 0 .3rem var(--gold), 0 .5rem 2rem #000; padding: 1.25rem 1.4rem 1rem 1.6rem; min-height: 6.4rem; position: relative; font-size: 1.12rem; line-height: 1.5; }
 .dlg .name { position: absolute; top: -1rem; left: 1.2rem; background: var(--red2); color: #fff4e0; font-family: 'Playfair Display', serif; font-weight: 700; padding: .12rem .9rem; border: 1px solid var(--gold); letter-spacing: .04em; font-size: 1rem; } .dlg .name:empty { display: none; }
 .dlg .name i { display: inline-block; width: .55rem; height: .55rem; border-radius: 50%; margin-right: .45rem; vertical-align: .05em; }

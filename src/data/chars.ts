@@ -46,7 +46,7 @@ const C: CharDef[] = [
   { id: 'sofa', name: 'Софа', color: '#ffc0e0', pitch: 540, skin: FAIR, hair: '#a88a5a', style: 'longStyled', eyes: '#5a6a7a', h: 33, build: 'thin', top: '#e8b0c8', bottom: '#f0e8e8', skirt: 'short', acc: ['earrings'], brows: 'arch', lips: '#c84a6a', shadow: '#b86a9a' },
   { id: 'katya', name: 'Катя', color: '#ffb090', pitch: 560, skin: FAIR, hair: '#c8602a', style: 'bobLong', eyes: '#5a7a5a', h: 37, build: 'big', top: '#6a9a7a', bottom: '#4a4a5a', brows: 'soft' },
   // ----- жанровые персонажи -----
-  { id: 'owner', name: 'Хозяин', color: '#b0b0b0', pitch: 150, skin: '#e8e4d8', hair: '#111', style: 'none', eyes: '#111', h: 40, build: 'strong', top: '#3a2a22', bottom: '#1c1614', acc: ['maskface'], brows: 'strict' },
+  { id: 'owner', name: 'Хозяин', color: '#b0b0b0', pitch: 150, skin: '#e8e4d8', hair: '#111', style: 'none', eyes: '#111', h: 40, build: 'strong', top: '#3a2a22', bottom: '#1c1614', acc: ['maskface', 'hat', 'coat'], brows: 'strict' },
   { id: 'nol', name: 'Ноль', color: '#7af0ff', pitch: 560, skin: FAIR, hair: '#40e0d0', style: 'short', eyes: '#222', h: 33, build: 'thin', top: '#22303a', bottom: '#151a22', trim: '#40e0d0', acc: ['visor'], brows: 'soft' },
   { id: 'kasseta', name: 'Кассета', color: '#ff7ad0', pitch: 330, skin: TAN2, hair: '#ff4fa0', style: 'bob', eyes: '#222', h: 36, build: 'mid', top: '#5a2a6a', bottom: '#1a1a22', trim: '#ff4fa0', acc: ['headphones'], brows: 'arch' },
   { id: 'guard', name: 'Охранник', color: '#ff5050', pitch: 140, skin: '#8a94a0', hair: '#444', style: 'none', eyes: '#f33', h: 38, build: 'strong', top: '#39424e', bottom: '#252a33', trim: '#ff3030', acc: ['visor'], brows: 'strict' },

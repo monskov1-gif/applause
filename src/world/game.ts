@@ -88,7 +88,7 @@ class Game {
       if (!room.spawns[spot] && spot !== 'start') console.warn(`[game] в ${id} нет точки появления ${spot}`);
       if (o.load && this.state.room === id && this.state.px != null && !this.hits(this.state.px, this.state.pz!)) this.player.place(this.state.px, this.state.pz!, 'f'); else this.player.place(sp.x, sp.z, sp.dir);
       for (const a of this.followers) a.place(this.player.x + 0.8, this.player.z + 0.3);
-      this.R.scene.add(room.group); this.R.scene.background = new THREE.Color(0x050406);
+      this.R.scene.add(room.group); this.R.scene.background = new THREE.Color(room.group.userData.bg ?? 0x050406); this.R.scene.fog = room.group.userData.fog || null;
       this.gradeBase = def.grade || {}; this.applyMask(true); this.applyGrade(true);
       this.cam.dist = def.camDist || 24; this.camSnap();
       if (def.music !== undefined) audio.music(def.music); audio.ambience(def.amb ?? null);
@@ -196,6 +196,7 @@ class Game {
     if (a === 'act' && this.near) { const it = this.near; this.sfx('click'); this.cut(() => it.fn(this)).catch((e) => console.error('[game] ошибка взаимодействия', it.id, e)); }
     else if (a === 'mask1') this.setMask('comedy'); else if (a === 'mask2') this.setMask('tragedy'); else if (a === 'mask3') this.setMask('drama'); else if (a === 'mask0') { if (this.state.mask) this.setMask(this.state.mask); }
     else if (a === 'camera') this.photoMode(); else if (a === 'notebook') ui.notebook();
+    else if (this.room?.def.onKey) this.room.def.onKey(this, a);
   }
   hits(x: number, z: number, r = 0.38): boolean {
     const room = this.room!; const hw = room.def.w / 2 - r, hd = room.def.d / 2 - r;
