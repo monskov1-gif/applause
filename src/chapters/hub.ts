@@ -5,7 +5,7 @@ import { canvasTex, ptext, tex } from '../gfx/tex';
 import { D, PAPERS } from '../data/dialogue/hub';
 import { pick } from '../ui/minigames';
 import { CHARS } from '../data/chars';
-import { sconce, rug, PROPTEX, seatRows, theatreBox, chandelier, vanity, costumeRack, photoWall, column } from '../world/decor';
+import { sconce, rug, PROPTEX, seatRows, theatreBox, chandelier, vanity, costumeRack, photoWall, column, clutterTex, photoTex as photoTexV } from '../world/decor';
 import { extraRooms } from './hubplus';
 
 const FRIENDS = ['polina', 'ruben', 'matvey', 'erika', 'liza', 'angelina'];
@@ -56,6 +56,14 @@ const dressing: RoomDef = {
     R.look('rack', -7.2, 3.1, 'Вешалка', ['~: Вешалка. Чужая шляпа, чей-то красный шарф и бирюзовый свитер. Мой. Я его сюда не вешала.'], { mask: 'none', r: 1.3 });
     R.look('rackCom', -7.2, 3.1, 'Шляпа (она шевелится)', D.rackCom, { mask: 'comedy', r: 1.3 });
     R.sprite('plant', 7.2, -4.2, { solid: 0.3 }); R.sprite('lamp', -2.6, -4.4); R.light(-2.6, 2.6, -4, 0xffc890, 8, 8);
+    // лампочки вокруг зеркала, бусы, фото за рамой, костюмы на стойке, перья, шляпные коробки, ширма
+    const bulbs = new THREE.InstancedMesh(new THREE.SphereGeometry(0.1, 8, 6), new THREE.MeshLambertMaterial({ color: 0xfff4d8, emissive: 0xffc070 }), 24); const m4 = new THREE.Matrix4(); let bi = 0;
+    for (let i = 0; i < 7; i++) for (const sx of [-1, 1]) { m4.makeTranslation(-0.2 + sx * 1.6, 1.6 + i * 0.55, -4.85); bulbs.setMatrixAt(bi++, m4); } for (let i = 0; i < 9; i++) { m4.makeTranslation(-1.6 + i * 0.35, 5.45, -4.85); bulbs.setMatrixAt(bi++, m4); } bulbs.count = bi; R.room.group.add(bulbs);
+    for (let i = 0; i < 4; i++) R.decal(photoTexV(i), { x: -1.4 + i * 0.75 + (i % 2) * 0.1, y: 4.9 - (i % 2) * 0.3, z: -4.9, w: 0.5, h: 0.62 });
+    for (let i = 0; i < 5; i++) R.sprite(clutterTex(['bottle', 'powder', 'brushes', 'perfume', 'lipstick'][i]), -1.4 + i * 0.6, -4.2 + (i % 2) * 0.25, { y: 1.15, scale: 0.9 });
+    costumeRack(R, 3.6, 4.2, 3.4, 2); R.sprite(PROPTEX.feathers(), 6.6, 4.4, { scale: 1.4 }); R.sprite(PROPTEX.screen(), -7, -1.4, { scale: 1.5 });
+    for (let i = 0; i < 3; i++) R.sprite(PROPTEX.hatbox(), 7 + (i % 2) * 0.15, -2.6, { y: i * 1.05, scale: 1 }); R.sprite(PROPTEX.boa(), 4.1, -4.4, { y: 2.2, scale: 1.1 }); R.sprite(PROPTEX.stool(), -0.2, -2.8, {});
+    photoWall(R, -4.6, 2.6, 6); R.sprite(PROPTEX.trunk(), 1.6, 4.4, { scale: 1.3, solid: 0.8 }); R.light(-0.2, 2, -2.6, 0xffc070, 4, 6);
     R.poster('ЗАВТРА', 'премьера', { x: 2.2, y: 3.6, w: 1.6, h: 2.2 });
     R.inter('journal', 2.2, -4.0, { label: 'Журнал помрежа (сохранить)', y: 1.4, fn: () => G.ui.saveLoad('save') });
     R.sprite('book', 2.2, -4.5, { y: 0.0, scale: 1.4 });
