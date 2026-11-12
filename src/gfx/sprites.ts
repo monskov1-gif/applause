@@ -48,7 +48,7 @@ function drawFrame(c: Ctx, ox: number, oy: number, d: CharDef, frame: string, di
   const hl = longLen[st] || 0, wide = (st === 'glam' || st === 'curls' || st === 'fluffy' || st === 'curlyMid' || st === 'rapunzel') ? 1 : 0;
   // --- волосы сзади (за телом) ---
   if (!side && !back && hl > 8) { V(c, hx - 1 - wide, headY + 2, 10 + wide * 2, Math.min(hl, H - 2), hair); if (st === 'glam' || st === 'rapunzel') { R(c, hx - 2 - wide, headY + 8, 1, hl - 10, hairD); R(c, hx + 9 + wide, headY + 10, 1, hl - 12, hairD); } if (st === 'curls') { for (let k = 0; k < 3; k++) { R(c, hx - 2 - (k % 2), headY + 6 + k * 3, 2, 2, k % 2 ? hairL : hair); R(c, hx + 9 + (k % 2), headY + 6 + k * 3, 2, 2, k % 2 ? hair : hairL); } } }
-  if (side && hl > 8) V(c, hx - 2 - wide, headY + 2, 5 + wide, hl, hair);
+  if (side && hl > 8) { R(c, hx - 2 - wide, headY + 2, 5 + wide, hl, hair); R(c, hx - 2 - wide, headY + 2 + hl - 1, 5 + wide, 1, hairD); }
   if (acc.includes('cape')) { const cw = tw + 4; V(c, cx - cw / 2 + lean, shY + 1, cw, torsoH + legH - 3, shade(d.trim || '#a22', -0.1)); }
   if (acc.includes('wings') && !side) { R(c, cx - tw / 2 - 5, shY, 5, 7, 'rgba(230,220,255,0.85)'); R(c, cx + tw / 2, shY, 5, 7, 'rgba(230,220,255,0.85)'); R(c, cx - tw / 2 - 4, shY + 7, 3, 3, 'rgba(210,200,245,0.8)'); R(c, cx + tw / 2 + 1, shY + 7, 3, 3, 'rgba(210,200,245,0.8)'); }
   // --- ноги ---
@@ -105,7 +105,7 @@ function drawFrame(c: Ctx, ox: number, oy: number, d: CharDef, frame: string, di
   if (st !== 'none') {
     const curly = st === 'curlyMid' || st === 'curlyShort';
     if (back) { R(c, hx + 1, headY - 1, 6, 1, hair); V(c, hx - wide, headY, 8 + wide * 2, Math.max(headH - 2, Math.min(hl, H - 2)), hair); if (hl > 9) R(c, hx + 3, headY + 4, 1, hl - 6, hairD); }
-    else if (side) { R(c, hx + 1, headY - 1, 6, 1, hair); R(c, hx - 1 - wide, headY, 6 + wide, Math.min(Math.max(hl, 4), 8), hair); R(c, hx + 5, headY, 3, d.bangs ? 3 : 2, hair); R(c, hx, headY, 1, 5, hairD); }
+    else if (side) { R(c, hx + 1, headY - 1, 6, 1, hair); R(c, hx - 1 - wide, headY, 6 + wide, Math.min(Math.max(hl, 4), 8), hair); R(c, hx + 5, headY, 3, d.bangs ? 3 : 2, hair); R(c, hx + 1, headY, 3, 1, hairL); }
     else {
       R(c, hx + 1, headY - 1, 6, 1, hair); R(c, hx - wide, headY, 8 + wide * 2, d.bangs ? 4 : 2, hair); R(c, hx + 1, headY, 3, 1, hairL);
       const sl = Math.min(hl, st === 'ponytail' || st === 'twin' || st === 'short' || st === 'bun' ? 4 : hl);

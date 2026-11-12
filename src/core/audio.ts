@@ -36,7 +36,7 @@ class AudioSys {
   timer: any = null;
   amb: { id: string; stop: () => void } | null = null;
   partFilter: ((trackId: string, p: Part) => boolean) | null = null;
-  musicFx: BiquadFilterNode | null = null;
+  musicFx: BiquadFilterNode | null = null; pendingMusic: string | null = null; pendingAmb: string | null = null;
 
   init() {
     if (this.ctx) { if (this.ctx.state === 'suspended') this.ctx.resume(); return; }
@@ -57,6 +57,7 @@ class AudioSys {
     this.rev.connect(this.revG); this.revG.connect(comp);
     this.applyVolumes();
     this.timer = setInterval(() => this.tick(), 40);
+    if (this.pendingMusic) { const m = this.pendingMusic; this.pendingMusic = null; this.music(m); } if (this.pendingAmb) { const a = this.pendingAmb; this.pendingAmb = null; this.ambience(a); }
   }
   applyVolumes() {
     if (!this.ctx) return;
@@ -70,7 +71,7 @@ class AudioSys {
   stepDur(tr: Track) { return 60 / tr.bpm / 4; }
   /** Запускает трек; возвращает аудио-время начала (для синхронизации ритм-сцен). */
   music(id: string | null, opts: { fade?: number; restart?: boolean; delay?: number } = {}): number {
-    if (!this.ctx) return this.now();
+    if (!this.ctx) { this.pendingMusic = id; return this.now(); }
     if (this.cur && this.cur.id === id && !opts.restart) return this.cur.t0;
     const t = this.ctx.currentTime, fade = opts.fade ?? 1.2;
     if (this.cur) { const g = this.cur.gain; g.gain.cancelScheduledValues(t); g.gain.setValueAtTime(g.gain.value, t); g.gain.linearRampToValueAtTime(0, t + fade); setTimeout(() => g.disconnect(), fade * 1000 + 300); this.cur = null; }
@@ -211,7 +212,7 @@ class AudioSys {
   }
   /** Фоновая атмосфера (дождь, зал, толпа, гул). */
   ambience(id: string | null) {
-    if (!this.ctx) return; if (this.amb && this.amb.id === id) return;
+    if (!this.ctx) { this.pendingAmb = id; return; } if (this.amb && this.amb.id === id) return;
     if (this.amb) { this.amb.stop(); this.amb = null; }
     if (!id) return;
     const ctx = this.ctx, g = ctx.createGain(); g.gain.value = 0; g.connect(this.bSfx);

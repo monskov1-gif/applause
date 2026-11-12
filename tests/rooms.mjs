@@ -3,7 +3,7 @@ import { createRequire } from 'module'; const { chromium } = createRequire('/')(
 const BASE = process.argv[2] || 'http://localhost:5173/';
 const b = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] }); const p = await b.newPage({ viewport: { width: 800, height: 450 } });
 const errs = []; p.on('pageerror', (e) => errs.push(e.message));
-await p.goto(BASE + '?debug=1'); await p.waitForSelector('.menu-screen', { timeout: 30000 });
+await p.goto(BASE + '?debug=1'); await p.waitForSelector('#boot.ready', { timeout: 30000 }); await p.mouse.click(5, 5); await p.waitForSelector('.menu-screen', { timeout: 30000 });
 const out = await p.evaluate(async () => {
   const G = window.__G; G.fast = true; document.querySelector('.menu-screen')?.remove();
   const loaders = ['hub', 'pol', 'rub', 'mat', 'eri', 'liz', 'ang', 'fin']; const ids = [];

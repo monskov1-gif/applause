@@ -14,6 +14,7 @@ function schoolFacade(R: Builder, w: number) {
   R.decal(canvasTex(48, 10, (c) => { c.fillStyle = '#2c3550'; c.fillRect(0, 0, 48, 10); ptext(c, 'ШКОЛА № 100', 24, 1, { size: 8, col: '#f0f0f0', align: 'center' }); }, 'schoolsign'), { x: -6, y: 6.1, z: -5.86, w: 4.8, h: 1 });
 }
 const yard: RoomDef = {
+  card: (G) => G.f.intro_mat ? null : [['АКТ II · THE MISSING CAST', 'act'], ['100 STEPS TO THE INEVITABLE', 'big'], ['школьная дорама · по мотивам манги «100 шагов к неизбежному»', 'sm']],
   name: 'Школьный двор', chapter: 'Акт II · Матвей', w: 34, d: 14, music: 'school', amb: null, step: 'stone', grade: fakeGrade(0),
   build(R, G) {
     const f = G.f; R.room.group.userData.bg = 0x9cc2ee; R.floor('grass'); R.floor('schoolfloor', { w: 34, d: 4, z: -3.6, y: 0.01, tex: 'concrete' }); R.floor('concrete', { w: 4, d: 10, x: -6, z: 1, y: 0.012 });
@@ -35,7 +36,7 @@ const yard: RoomDef = {
     R.npc('student2', 0, 4.6, { talk: ['student2: Ты из какого класса? А, неважно. У нас тут вечно какие-то случайные события. Вчера у ворот трижды шёл дождь. Над воротами.'] }); R.actor('student', -16, -2.6, { dir: 'r' });
     R.spawn('start', -10, 4, 'r'); R.spawn('back', -6, -3.6); R.spawn('gate', 13, 1);
   },
-  async enter(G) { if (await chapterIntro(G, 'mat', [['АКТ II · THE MISSING CAST', 'act'], ['100 STEPS TO THE INEVITABLE', 'big'], ['школьная дорама · по мотивам манги «100 шагов к неизбежному»', 'sm']])) await G.run(M.arrive); },
+  async enter(G) { if (!G.f.intro_mat) { G.f.intro_mat = 1; true } if (G.f.intro_mat === 1 && (G.f.intro_mat = 2)) await G.run(M.arrive); },
 };
 async function rainScene(G: any) {
   const f = G.f, mat = G.actor('matvey'), art = G.actor('artemiy'); G.focus(13, 0.5, 18);

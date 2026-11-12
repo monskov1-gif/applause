@@ -100,6 +100,7 @@ class Game {
       if (def.music !== undefined) audio.music(def.music); audio.ambience(def.amb ?? null);
       this.state.room = id; this.state.spot = spot; (this.state.f.visited ||= {})[id] = 1; if (def.chapter) this.state.chapter = def.chapter;
       ui.hud(); if (!o.load && !this.fast) await this.save('auto');
+      const cardLines = def.card?.(this); if (cardLines) { await ui.card(cardLines); }
       if (fade !== 'none') await ui.transition(fade, 'in');
       if (!o.silent && from !== id) ui.place(def.name);
     } finally { this.lock--; }

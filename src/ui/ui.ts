@@ -113,7 +113,7 @@ class UI {
     if (G.fast) return Promise.resolve();
     return new Promise((res) => {
       const c = el('div', 'card', lines.map((l, i) => { const [t, cls] = Array.isArray(l) ? l : [l, '']; return `<p class="${cls}" style="animation-delay:${i * 0.9}s">${t}</p>`; }).join('') + '<div class="more">нажмите, чтобы продолжить</div>', root());
-      const t0 = performance.now(); const fin = () => { if (performance.now() - t0 < 500) return; off(); c.remove(); res(); }; const off = input.onAction((a) => { if (a === 'act' && !this.modal) fin(); }); c.onclick = fin;
+      const t0 = performance.now(); let gone = false; const fin = () => { if (gone || performance.now() - t0 < 900) return; gone = true; off(); c.classList.add('out'); setTimeout(() => { c.remove(); res(); }, 650); }; const off = input.onAction((a) => { if (a === 'act' && !this.modal) fin(); }); c.onclick = fin;
     });
   }
 
@@ -222,7 +222,7 @@ class UI {
         ${sec('ОСОБАЯ БЛАГОДАРНОСТЬ', ['Третьему ряду.<small>Вас видно. Правда.</small>'])}
         <h3>С ДНЁМ РОЖДЕНИЯ, ВАРЯ</h3><p style="margin-top:3rem;opacity:.6">нажмите, чтобы закрыть</p></div>`, root());
       const fin = () => { off(); c.remove(); res(); }; const off = input.onAction((a) => { if (a === 'act' || a === 'pause') fin(); }); const t0 = performance.now(); c.onclick = () => { if (performance.now() - t0 > 600) fin(); };
-      (c.querySelector('.roll') as HTMLElement).addEventListener('animationend', fin); if (G.fast) fin();
+      const roll = c.querySelector('.roll') as HTMLElement; roll.addEventListener('animationend', (e) => { if (e.target === roll) fin(); }); if (G.fast) fin();
     });
   }
   private buildTouch() {

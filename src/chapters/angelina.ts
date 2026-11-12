@@ -14,6 +14,7 @@ const screen = (R: Builder, x: number, y: number, w: number, h: number, txt = 'A
 function glossRoom(R: Builder) { R.room.group.userData.bg = 0x100810; R.floor('gloss'); R.walls('white', { h: 6.5 }); R.ambient(0x8a7a90, 1.7, 0xfff0fa); R.particles('dust', { count: 40, top: 6, color: 0xffc0e0 }); }
 
 const lobby: RoomDef = {
+  card: (G) => G.f.intro_ang ? null : [['АКТ II · THE MISSING CAST', 'act'], ['DEBUT: THE IDOL PROJECT', 'big'], ['глянец · LED · песня, которую написал комитет', 'sm']],
   name: 'Агентство «GLOSS»', chapter: 'Акт II · Ангелина', w: 30, d: 12, music: 'idol_agency', amb: null, step: 'stone', grade: GLOSS,
   build(R, G) {
     const f = G.f; glossRoom(R); for (const x of [-8, 0, 8]) { screen(R, x, 3.6, 4.6, 2.9); R.light(x, 3.6, -3.8, 0xff80c0, 8, 8); }
@@ -29,7 +30,7 @@ const lobby: RoomDef = {
     for (const [to, x, label, sg, cond, lk] of D) R.door(to, x, { label, z: -5.96, col: '#f0e8f0', sign: sg, cond, locked: '~: ' + lk, fn: (G) => G.goto(to, 'start', { fade: 'mirror' }) });
     R.spawn('start', 0, 3.6, 'b'); for (const [to, x] of D) R.spawn(to, x, -4.4);
   },
-  async enter(G, from) { if (await chapterIntro(G, 'ang', [['АКТ II · THE MISSING CAST', 'act'], ['DEBUT: THE IDOL PROJECT', 'big'], ['глянец · LED · песня, которую написал комитет', 'sm']])) await G.run(A.arrive); const sp = G.room.spawns[from]; if (sp) { G.player.place(sp.x, sp.z, 'f'); G.camSnap(); } },
+  async enter(G, from) { if (!G.f.intro_ang) { G.f.intro_ang = 1; true } if (G.f.intro_ang === 1 && (G.f.intro_ang = 2)) await G.run(A.arrive); const sp = G.room.spawns[from]; if (sp) { G.player.place(sp.x, sp.z, 'f'); G.camSnap(); } },
 };
 const practice: RoomDef = {
   name: 'Зал тренировок', w: 22, d: 10, music: 'idol_agency', amb: null, step: 'wood', grade: GLOSS,

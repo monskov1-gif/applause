@@ -15,6 +15,7 @@ function neonBase(R: Builder, floor = 'metal') {
 }
 
 const hideout: RoomDef = {
+  card: (G) => G.f.intro_rub ? null : [['АКТ II · THE MISSING CAST', 'act'], ['THE LAST HEIST', 'big'], ['неон · стекло · металл · план, от которого придётся отступить', 'sm']],
   name: 'Гараж под эстакадой', chapter: 'Акт II · Рубен', w: 22, d: 11, music: 'heist', amb: 'city', step: 'metal', grade: GRADE,
   build(R, G) {
     const f = G.f; neonBase(R, 'concrete');
@@ -38,7 +39,7 @@ const hideout: RoomDef = {
     R.door('lift', -8, { label: 'Лифт в «Фортуну»', col: '#1c2438', sign: '↑ 88', glow: '#40e0d0', cond: () => !!f.rub_plan, locked: D.planNo, fn: async (G) => { G.sfx('engine'); await G.goto('rub_casino', f.rub_route, { fade: 'glitch' }); } });
     R.spawn('start', 4, 3, 'b');
   },
-  async enter(G) { if (await chapterIntro(G, 'rub', [['АКТ II · THE MISSING CAST', 'act'], ['THE LAST HEIST', 'big'], ['неон · стекло · металл · план, от которого придётся отступить', 'sm']])) await G.run(D.arrive); },
+  async enter(G) { if (!G.f.intro_rub) { G.f.intro_rub = 1; true } if (G.f.intro_rub === 1 && (G.f.intro_rub = 2)) await G.run(D.arrive); },
 };
 const casino: RoomDef = {
   name: 'Казино «Фортуна»', w: 40, d: 16, music: 'heist', amb: 'crowd', step: 'carpet', grade: GRADE, camDist: 26,

@@ -15,6 +15,7 @@ function blinds(R: Builder, x: number) { R.decal(canvasTex(24, 32, (c) => { c.fi
 const witness = (R: Builder, ch: string, x: number, z: number, talk: any, flag: string, G: any) => R.npc(ch, x, z, { talk: async (G: any) => { await G.run(talk); G.flag(flag) && G.toast('Показание записано', '✎'); } });
 
 const office: RoomDef = {
+  card: (G) => G.f.intro_eri ? null : [['АКТ II · THE MISSING CAST', 'act'], ['THE CITY NEVER SLEEPS', 'big'], ['нуар · 1940-е · дождь, который всё помнит', 'sm']],
   name: 'Контора «Сыск и Ко»', chapter: 'Акт II · Эрика', w: 16, d: 10, music: 'noir', amb: 'rain', step: 'wood', grade: NOIR,
   build(R, G) {
     const f = G.f; interior(R, 'plaster'); blinds(R, -4); blinds(R, 1.5); R.light(4, 2.6, -2, 0xfff0d0, 10, 8, { flicker: 0.04 });
@@ -34,7 +35,7 @@ const office: RoomDef = {
     R.door('out', 6.2, { label: 'На улицу', z: -4.96, col: '#3a3a3a', sign: 'СЫСК', fn: (G) => G.goto('eri_street', 'office') });
     R.spawn('start', 0, 2.4, 'b');
   },
-  async enter(G) { if (await chapterIntro(G, 'eri', [['АКТ II · THE MISSING CAST', 'act'], ['THE CITY NEVER SLEEPS', 'big'], ['нуар · 1940-е · дождь, который всё помнит', 'sm']])) { G.setPlayerChar('varya_noir'); await G.run(E.arrive); } },
+  async enter(G) { if (!G.f.intro_eri) { G.f.intro_eri = 1; true } if (G.f.intro_eri === 1 && (G.f.intro_eri = 2)) { G.setPlayerChar('varya_noir'); await G.run(E.arrive); } },
 };
 const street: RoomDef = {
   name: 'Улица под дождём', w: 46, d: 12, music: 'noir', amb: 'rain', step: 'stone', grade: NOIR, camDist: 25,

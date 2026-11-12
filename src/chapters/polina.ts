@@ -42,6 +42,7 @@ const mansionFacade = (R: Builder) => {
 };
 
 const porch: RoomDef = {
+  card: (G) => G.f.intro_pol ? null : [['АКТ II · THE MISSING CAST', 'act'], ['THE HOUSE THAT LAUGHS', 'big'], ['хоррор · слэшер · немного комедии', 'sm']],
   name: 'Особняк в лесу', chapter: 'Акт II · Полина', w: 30, d: 14, music: 'horror', amb: 'rain', step: 'grass', grade: GRADE, camDist: 25,
   build(R, G) {
     const f = G.f; R.room.group.userData.bg = 0x0a0e1c; fog(R, 0x0a0e1c, 20, 50);
@@ -56,7 +57,7 @@ const porch: RoomDef = {
     R.spawn('start', 0, 5.5, 'b'); R.spawn('back', 0, -2.5);
   },
   async enter(G) {
-    if (await chapterIntro(G, 'pol', [['АКТ II · THE MISSING CAST', 'act'], ['THE HOUSE THAT LAUGHS', 'big'], ['хоррор · слэшер · немного комедии', 'sm']])) { await G.run(P.arrive); await G.run(P.porchPhoto); G.toast('C — фотоаппарат', '◉'); }
+    if (!G.f.intro_pol) { G.f.intro_pol = 1; true } if (G.f.intro_pol === 1 && (G.f.intro_pol = 2)) { await G.run(P.arrive); await G.run(P.porchPhoto); G.toast('C — фотоаппарат', '◉'); }
   },
   async photo(G, subs) { if (subs.includes('window') && !G.f.pol_win) { G.f.pol_win = 1; await G.run(P.porchPhotoTaken); } },
 };

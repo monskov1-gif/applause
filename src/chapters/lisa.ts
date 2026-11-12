@@ -13,6 +13,7 @@ const ink = (R: Builder, text: string, x: number, y: number, w = 6) => R.decal(c
 const lizaNPC = (R: Builder, G: any, x: number, z: number) => { const a = R.actor('liza_long', x, z, { id: 'liza' }); G.follow(a); return a; };
 
 const base: RoomDef = {
+  card: (G) => G.f.intro_liz ? null : [['АКТ II · THE MISSING CAST', 'act'], ['THE TOWER IS NOT A HOME', 'big'], ['сказка · тушь и акварель · с мотивами «Рапунцель»', 'sm']],
   name: 'Подножие башни', chapter: 'Акт II · Лиза', w: 30, d: 12, music: 'fairy', amb: 'wind', step: 'grass', grade: BOOK,
   build(R, G) {
     const f = G.f; R.room.group.userData.bg = 0xe8dab0; R.floor('grass', { tint: '#9ab060' }); R.floor('dirt', { w: 4, d: 12, x: 4, y: 0.01, tint: '#c8a070' }); R.ambient(0x6a6040, 1.6, 0xfff4d8); R.sun(0xfff0d0, 1.8, -6, 14, 8);
@@ -30,7 +31,7 @@ const base: RoomDef = {
     R.inter('call', 4, -0.6, { label: f.liz_hair ? 'Подняться по косе' : 'Позвать Лизу', fn: async (G) => { if (!f.liz_hair) { await G.run(L.call); f.liz_hair = 1; G.sfx('rope'); await G.rebuild(); return; } await G.run(L.climb); G.sfx('rope'); await G.goto('liz_top', 'start', { fade: 'page' }); } });
     R.spawn('start', -12, 3, 'r'); R.spawn('ground', 4, 1.4);
   },
-  async enter(G) { if (await chapterIntro(G, 'liz', [['АКТ II · THE MISSING CAST', 'act'], ['THE TOWER IS NOT A HOME', 'big'], ['сказка · тушь и акварель · с мотивами «Рапунцель»', 'sm']])) await G.run(L.arrive); },
+  async enter(G) { if (!G.f.intro_liz) { G.f.intro_liz = 1; true } if (G.f.intro_liz === 1 && (G.f.intro_liz = 2)) await G.run(L.arrive); },
 };
 const top: RoomDef = {
   name: 'Покои принцессы', w: 16, d: 10, music: 'fairy', amb: 'wind', step: 'wood', grade: BOOK,

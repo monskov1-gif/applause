@@ -123,9 +123,10 @@ input[type=range] { width: 11rem; accent-color: var(--red); } select, input[type
 .paper.type { font-family: 'Courier New', monospace; font-size: .98rem; background-color: #ece6d8; } .paper.neon { background: #0a1420; color: #7af0ff; font-family: 'Pixelify Sans', monospace; border: 1px solid #40e0d0; box-shadow: 0 0 2rem #40e0d088; } .paper.neon h3 { color: #ff4fa0; }
 .paper.pink { background: #fff0f8; border: .4rem solid #ff9ad8; } .paper.book { background-color: #f0e2b8; font-family: 'Playfair Display', serif; }
 .paper mark { background: none; color: var(--red); font-family: 'Marck Script', cursive; font-size: 1.2em; }
-.card { position: absolute; inset: 0; z-index: 55; background: #050304; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 2rem; cursor: pointer; }
-.card p { font-family: 'Playfair Display', serif; font-size: 1.5rem; margin: .5rem 0; opacity: 0; animation: cardin 1.4s forwards; max-width: 42rem; line-height: 1.45; } .card p.big { font-family: 'Aurelia', 'Playfair Display', serif; font-size: 3.4rem; color: #eadfc8; letter-spacing: .08em; } .card p.sm { font-size: 1.05rem; font-style: italic; opacity: .7; } .card p.act { font-family: 'Playfair Display', serif; font-size: .95rem; letter-spacing: .5em; color: #c8203c; text-transform: uppercase; }
-@keyframes cardin { from { opacity: 0; transform: translateY(.5rem); } to { opacity: 1; transform: none; } } .card .more { position: absolute; bottom: 2rem; opacity: .5; font-size: .85rem; }
+.card { position: absolute; inset: 0; z-index: 65; background: #050304; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 2rem; cursor: pointer; }
+.card { animation: cardbg .6s ease both; } .card.out { animation: cardout .6s ease both; } @keyframes cardbg { from { opacity: 0; } to { opacity: 1; } } @keyframes cardout { from { opacity: 1; } to { opacity: 0; } }
+.card p { font-family: 'Playfair Display', serif; font-size: 1.5rem; margin: .5rem 0; opacity: 0; animation: cardin 1.4s both; max-width: 42rem; line-height: 1.45; } .card p.big { font-family: 'Aurelia', 'Playfair Display', serif; font-size: 3.4rem; color: #eadfc8; letter-spacing: .08em; } .card p.sm { font-size: 1.05rem; font-style: italic; } .card p.act { font-family: 'Playfair Display', serif; font-size: .95rem; letter-spacing: .5em; color: #c8203c; text-transform: uppercase; }
+@keyframes cardin { from { opacity: 0; transform: translateY(.5rem); } to { opacity: var(--o, 1); transform: none; } } .card p.sm { --o: .7; } .card .more { position: absolute; bottom: 2rem; opacity: .5; font-size: .85rem; }
 
 /* ---------- сенсорное управление ---------- */
 .touch { position: absolute; inset: 0; pointer-events: none !important; z-index: 9; } .touch > * { pointer-events: auto; }
@@ -189,3 +190,12 @@ body.contrast .dlg .box, body.contrast .sheet, body.contrast .choice { backgroun
 @media (max-aspect-ratio: 1/1) { .m3d-left { width: 100%; justify-content: flex-start; padding-top: 4vh; background: linear-gradient(rgba(10,4,6,.65), transparent 70%); } .m3d .logo-svg { width: min(92vw, 30rem) !important; } }
 @media (max-height: 520px) { .m3d .logo-svg { width: min(44vw, 58vh) !important; } .m3d .menu-list .btn { padding: .22rem 1.4rem; font-size: .7rem; } .m3d-left { padding: 1vh 2vw; } }
 @media (max-aspect-ratio: 1/1) { .m3d-left { justify-content: space-between; padding: 3vh 4vw 4vh; background: linear-gradient(rgba(10,4,6,.7), transparent 30%, transparent 62%, rgba(10,4,6,.85)); } .m3d .menu-list { background: rgba(10,4,6,.35); } }
+
+#boot.ready { cursor: pointer; } .boot-sub { margin-top: .4rem; font-size: .8rem; opacity: .5; letter-spacing: .2em; }
+.boot-enter { display: inline-block; margin-top: 1.4rem; padding: .6rem 1.6rem; border-top: 1px solid rgba(212,174,72,.5); border-bottom: 1px solid rgba(212,174,72,.5); font-style: normal; font-family: 'Playfair Display', serif; letter-spacing: .3em; text-transform: uppercase; font-size: .85rem; color: #eadfc8; animation: bob 2.4s ease-in-out infinite; }
+
+.paper.sched p { position: relative; padding-right: 9.5rem; }
+.hn { position: absolute; right: -.4rem; top: -.2rem; width: 9rem; color: #2a3a8a; font-size: 1.15rem; line-height: 1.05; transform: rotate(-4deg); }
+.hn.h1 { font-family: 'Caveat', cursive; color: #8e1830; font-size: 1.35rem; } .hn.h2 { font-family: 'Bad Script', cursive; color: #2a3a8a; font-size: 1rem; transform: rotate(3deg); }
+.hn.h3 { font-family: 'Amatic SC', cursive; font-weight: 700; color: #a0307a; font-size: 1.45rem; transform: rotate(-7deg); } .hn.h4 { font-family: 'Neucha', cursive; color: #3a5a3a; font-size: 1.05rem; transform: rotate(2deg); }
+@media (max-width: 640px) { .paper.sched p { padding-right: 0; } .hn { position: static; display: block; width: auto; margin: .1rem 0 .3rem 1rem; } }

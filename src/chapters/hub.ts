@@ -295,7 +295,7 @@ const archive: RoomDef = {
     R.npc('erika', -5.6, 1.4, { talk: (G: any) => G.run(G.state.mask === 'drama' ? D.h_erikaDr : D.h_erika) });
     R.spawn('start', 7, -3.4);
   },
-  async enter(G) { if (!G.f.act3) { G.f.act3 = 1; await G.ui.card([['АКТ III', 'act'], ['THE SCRIPT KNOWS', 'big']]); } },
+  card: (G) => G.f.act3 ? null : (G.f.act3 = 1, [['АКТ III', 'act'], ['THE SCRIPT KNOWS', 'big']]),
 };
 const office: RoomDef = {
   name: 'Кабинет худрука', w: 14, d: 9, music: 'dressing', amb: 'hall', step: 'carpet', grade: { tint: [0.98, 0.94, 1.02], vig: 0.7, sat: 0.85 },

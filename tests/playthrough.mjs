@@ -4,7 +4,7 @@ import { createRequire } from 'module'; const { chromium } = createRequire('/')(
 const BASE = process.argv[2] || 'http://localhost:5173/';
 const b = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] }); const p = await b.newPage({ viewport: { width: 960, height: 540 } });
 const errors = []; p.on('pageerror', (e) => errors.push('pageerror: ' + e.message)); p.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); if (m.type() === 'warning' && /нет |не разобрана|неизвестн/.test(m.text())) errors.push('warn: ' + m.text()); });
-await p.goto(BASE + '?debug=1'); await p.waitForSelector('.menu-screen', { timeout: 30000 });
+await p.goto(BASE + '?debug=1'); await p.waitForSelector('#boot.ready', { timeout: 30000 }); await p.mouse.click(5, 5); await p.waitForSelector('.menu-screen', { timeout: 30000 });
 const log = await p.evaluate(async () => {
   const G = window.__G, out = [];
   const tick = (ms = 120) => new Promise((r) => setTimeout(r, ms));
@@ -56,7 +56,7 @@ const log = await p.evaluate(async () => {
 }).catch((e) => ['ОШИБКА: ' + e.message]);
 console.log(log.join('\n'));
 // сохранение переживает перезагрузку + повреждённый слот не ломает меню
-await p.reload(); await p.waitForSelector('.menu-screen', { timeout: 30000 });
+await p.reload(); await p.waitForSelector('#boot.ready', { timeout: 30000 }); await p.mouse.click(5, 5); await p.waitForSelector('.menu-screen', { timeout: 30000 });
 const reload = await p.evaluate(async () => { const s = window.__S; const r = await s.readSave('slot1'); const db = await new Promise((res) => { const q = indexedDB.open('the-other-me-applause', 1); q.onsuccess = () => res(q.result); }); await new Promise((res) => { const tx = db.transaction('saves', 'readwrite'); tx.objectStore('saves').put('{битые данные', 'slot2'); tx.oncomplete = res; }); const r2 = await s.readSave('slot2'); return { slot1: !!r.state && r.state.f.done_angelina === 1, broken: r2.broken }; }).catch((e) => ({ err: e.message }));
 console.log('после перезагрузки:', JSON.stringify(reload));
 console.log(errors.length ? 'ОШИБКИ КОНСОЛИ:\n' + [...new Set(errors)].slice(0, 30).join('\n') : 'консоль чистая');
