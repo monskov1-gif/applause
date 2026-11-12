@@ -258,18 +258,18 @@ export class DressingRoom {
   update(_dt: number) {
     if (this.disposed) return; const now = performance.now(); const dt = this.lastNow ? Math.min(0.25, (now - this.lastNow) / 1000) : 0.016; this.lastNow = now; this.t += dt; this.st += dt; const st = this.st, kp = this.key;
     switch (this.state) {
-      case 'dark': if (st > 1.4) this.enter('reveal'); break;
-      case 'reveal': { const k = Math.min(1, st / 2.6); (this.R.scene as any).environmentIntensity = 0.12 + 0.3 * ease(k); const w = new THREE.Vector3(); kp.getWorldPosition(w); this.keySpot.position.copy(w).add(new THREE.Vector3(-0.3, 0.6, 0.7)); this.keySpot.target.position.copy(w); this.keySpot.intensity = 6 * ease(k); this.placeKeyCam(0.9 - 0.25 * ease(k)); if (st > 2.8) this.enter('insert'); break; }
+      case 'dark': if (st > 1.0) this.enter('reveal'); break;
+      case 'reveal': { const k = Math.min(1, st / 2.1); (this.R.scene as any).environmentIntensity = 0.12 + 0.3 * ease(k); const w = new THREE.Vector3(); kp.getWorldPosition(w); this.keySpot.position.copy(w).add(new THREE.Vector3(-0.3, 0.6, 0.7)); this.keySpot.target.position.copy(w); this.keySpot.intensity = 6 * ease(k); this.placeKeyCam(0.9 - 0.25 * ease(k)); if (st > 2.2) this.enter('insert'); break; }
       case 'insert': { const k = ease(Math.min(1, st / 1.3)); kp.position.x = 0.13 + 0.32 * (1 - k); this.placeKeyCam(0.62 - 0.06 * k); if (st > 1.3 && !this.turnAsked) { this.turnAsked = true; audio.sfx('keyin'); } if (st > 1.9) this.enter('await'); break; }
-      case 'await': this.onState('await'); if (st > 2.6) this.enter('turn'); break;
+      case 'await': this.onState('await'); if (st > 2.0) this.enter('turn'); break;
       case 'turn': { const T = 2.4; const k = Math.min(1, st / T); const stutter = Math.sin(k * Math.PI * 7) * 0.035 * (1 - k); kp.rotation.x = -(ease(k) + stutter) * Math.PI * 1.5; if (st < 0.05) audio.sfx('scrape', { dur: 2.2 }); if (Math.floor(st * 3) !== Math.floor((st - dt) * 3)) audio.sfx('mechtick'); if (k >= 1) { audio.sfx('clunk'); audio.sfx('hum'); setTimeout(() => audio.sfx('windup'), 250); this.enter('hold'); } break; }
       case 'hold': if (st > 0.9) this.enter('lights'); break;
       case 'lights': {
         const k = Math.min(1, st / 3.4); this.setLights(k < 0.06 ? 1.15 : 0.3 + 0.7 * ease(k)); this.bulbs.forEach((b, i) => { const on = st > 0.15 + i * 0.07; (b.material as Mat).emissiveIntensity = on ? 1.3 : 0; if (on && st - dt <= 0.15 + i * 0.07) audio.sfx('mechtick'); });
         const c = ease(Math.min(1, st / 3.4)); const ctrl = new THREE.Vector3((this.camFrom.x + this.finalCam.x) / 2 + 0.6, Math.max(this.camFrom.y, this.finalCam.y) + 0.6, Math.max(this.camFrom.z, this.finalCam.z) + 1.2); const a1 = new THREE.Vector3().lerpVectors(this.camFrom, ctrl, c), a2 = new THREE.Vector3().lerpVectors(ctrl, this.finalCam, c); this.camPos.lerpVectors(a1, a2, c); this.look.lerpVectors(this.lookFrom, this.finalLook, c); this.keySpot.intensity *= 0.95;
         if (st > 0.6) { this.spinning = true; this.speed = Math.min(1, (st - 0.6) / 2); } if (st > 0.8 && audio.musicId() !== 'musicbox') { audio.music('musicbox', { fade: 2 }); audio.ambience('hall'); }
-        if (st > 3.6) this.enter('logo'); break; }
-      case 'logo': if (st > 1.6) this.enter('menu'); break;
+        if (st > 3.3) this.enter('logo'); break; }
+      case 'logo': if (st > 1.0) this.enter('menu'); break;
       case 'menu': break;
     }
     if (this.state === 'menu' || this.state === 'logo') {
