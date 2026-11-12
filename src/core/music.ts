@@ -142,6 +142,11 @@ export const TRACKS: Record<string, Track> = {
     { inst: 'box', d: 2, seq: 'g5:4 c6:4 e6:4 d6 c6 | d6:6 c6 a5:8 | b5:4 g5:4 d6:4 b5 d6 | c6:12 .:4 | e5:4 g5:4 c6:6 b5 | a5:4 c6:4 f6:8 | e6:4 d6:4 b5:4 g5:4 | c6:12 .:4' },
     { inst: 'drums', seq: 'k...h...r...h.h.', vol: 0.4 },
   ] },
+  musicbox: { bpm: 70, swing: 0.12, vol: 0.9, parts: [
+    { inst: 'box', d: 4, seq: MOTIF + ' | .:12 | e6:4 c6:4 a5:4 | b5:8 g#5:4 | e5:12 | .:24' },
+    { inst: 'box', d: 4, vol: 0.45, seq: 'a3 . e4 | e3 . b3 | a3 . e4 | d3 . a3 | d3 . f3 | c3 . g3 | e3 . g#3 | a3 . c4 | a3 . e4 | a3 . e4 | e3 . b3 | e3 . g#3 | a3 . e4 | a3 . . | .:12' },
+    { inst: 'pad', seq: 'a2+e3:96 .:96', vol: 0.35 },
+  ] },
   morning: { bpm: 60, parts: [
     { inst: 'box', d: 4, seq: MOTIF_MAJ, vol: 0.7 },
     { inst: 'pad', seq: 'a2+e3:48 d3+a3:24 e3+b3:24', vol: 0.7 },

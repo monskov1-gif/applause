@@ -134,7 +134,7 @@ class UI {
       ${row('Меньше вспышек', chk('reduceFlash'), 'приглушает вспышки и глитч-эффекты')}${row('Без тряски камеры', chk('reduceShake'))}${row('Повышенный контраст текста', chk('contrast'))}
       ${row('Облегчённые ритм-сцены', chk('rhythmEasy'), 'широкие окна попадания, меньше нот, нельзя проиграть')}${row('Задержка звука, мс', rng('rhythmOffset', -200, 200, 5) + ' <span data-off></span>', 'для ритм-сцен')}
       ${row('', '<button class="btn small" data-a="calib">Калибровка задержки</button>')}
-      ${row('Сенсорное управление', chk('touch'), 'экспериментально: джойстик и кнопки на экране')}
+      ${row('Сенсорное управление', chk('touch'), 'экспериментально: джойстик и кнопки на экране')}${row('Вступление при каждом запуске', chk('introAlways'), 'иначе — только при первом запуске')}
       <p class="warn">Управление: WASD или стрелки — ходьба, Shift — быстрее, E / Enter / Пробел — действие, 1–3 — маски, Q — снять маску, C — фотоаппарат, Tab — блокнот, H — история, Ctrl — пропуск прочитанного, Esc — пауза.</p></div>
       <div class="foot"><button class="btn small" data-x>Готово</button></div>`);
     (m.querySelector('[data-k=quality]') as HTMLSelectElement).value = s.quality; const offL = m.querySelector('[data-off]')!; offL.textContent = s.rhythmOffset + '';
@@ -173,17 +173,27 @@ class UI {
   }
 
   // ---------- главное меню ----------
+  private introPlayed = false;
   async mainMenu() {
     this.hudShow(false); document.querySelector('.menu-screen')?.remove();
     const autos = await Promise.all(SLOTS.map((s) => readSave(s).catch(() => ({ state: null as GameState | null, broken: true }))));
     let latest: GameState | null = null; for (const a of autos) if (a.state && (!latest || (a.state.savedAt || 0) > (latest.savedAt || 0))) latest = a.state;
-    const scr = el('div', 'menu-screen', `<div class="menu-valance"></div><div class="menu-spot"></div><div class="menu-logo">${LOGO}</div><div class="menu-list"><button class="btn" data-a="cont" ${latest ? '' : 'disabled'}>Продолжить</button><button class="btn" data-a="new">Новая игра</button><button class="btn" data-a="load">Загрузить</button><button class="btn" data-a="set">Настройки</button><button class="btn" data-a="cred">Создатели</button></div><div class="menu-foot">Театр имени М. Ковалевского · сезон восемнадцатый · лучше всего — в наушниках</div>`, root());
-    audio.music('theater');
-    scr.addEventListener('click', async (e) => { audio.init(); audio.music('theater'); const a = (e.target as HTMLElement).dataset?.a; if (!a) return; audio.sfx('click');
-      if (a === 'cont' && latest) { scr.remove(); await G.start(latest); }
-      if (a === 'new') { if (latest && !(await this.confirm('Начать новую игру? Автосохранение будет перезаписано, ручные слоты останутся.', 'Начать'))) return; scr.remove(); await G.start(newState()); }
-      if (a === 'load') this.saveLoad('load'); if (a === 'set') this.settings(); if (a === 'cred') this.credits(false); });
-    (scr.querySelector(latest ? '[data-a=cont]' : '[data-a=new]') as HTMLElement).focus();
+    let seen = false; try { seen = localStorage.getItem('tom-intro-seen') === '1'; } catch (e) { console.warn('[intro] localStorage недоступен', e); }
+    const withIntro = !this.introPlayed && (!seen || settings.introAlways) && !G.fast; this.introPlayed = true;
+    const { DressingRoom } = await import('../menu/dressing');
+    if (G.menuScene) G.menuScene.dispose(); const scene = G.menuScene = new DressingRoom(G.R, withIntro);
+    const scr = el('div', 'menu-screen m3d' + (withIntro ? ' intro' : ' ready'), `<div class="m3d-left"><div class="menu-logo">${LOGO}</div><nav class="menu-list"><button class="btn" data-a="cont" ${latest ? '' : 'disabled'}>Продолжить</button><button class="btn" data-a="new">Новая игра</button><button class="btn" data-a="load">Загрузить</button><button class="btn" data-a="set">Настройки</button><button class="btn" data-a="cred">Создатели</button><button class="btn" data-a="exit">Выход</button></nav></div><div class="m3d-hint">нажмите или кликните, чтобы повернуть ключ</div><div class="m3d-skip">Esc — пропустить вступление</div>`, root());
+    scene.onState = (s: string) => { scr.classList.toggle('await', s === 'await'); if (s === 'logo') scr.classList.add('logo-in'); if (s === 'menu') { scr.classList.remove('intro'); scr.classList.add('ready', 'logo-in'); try { localStorage.setItem('tom-intro-seen', '1'); } catch (e) { console.warn(e); } (scr.querySelector(latest ? '[data-a=cont]' : '[data-a=new]') as HTMLElement)?.focus({ preventScroll: true }); } };
+    scene.build();
+    const introKey = (e: KeyboardEvent | PointerEvent) => { if (scene.state === 'menu' || this.modal) return; audio.init(); const esc = (e as KeyboardEvent).code === 'Escape'; scene.input(esc ? 'skip' : 'act'); if (e.type === 'keydown') e.preventDefault(); };
+    window.addEventListener('keydown', introKey, true); scr.addEventListener('pointerdown', introKey as any);
+    const cleanup = () => { window.removeEventListener('keydown', introKey, true); scr.remove(); };
+    scr.addEventListener('mouseover', (e) => { const b = (e.target as HTMLElement).closest('.btn'); if (b && !(b as HTMLButtonElement).disabled && scene.state === 'menu') audio.sfx('mechtick'); });
+    scr.addEventListener('click', async (e) => { audio.init(); const a = (e.target as HTMLElement).dataset?.a; if (!a || scene.state !== 'menu') return; audio.sfx('click');
+      if (a === 'cont' && latest) { cleanup(); await G.start(latest); }
+      if (a === 'new') { if (latest && !(await this.confirm('Начать новую игру? Автосохранение будет перезаписано, ручные слоты останутся.', 'Начать'))) return; cleanup(); await G.start(newState()); }
+      if (a === 'load') this.saveLoad('load'); if (a === 'set') this.settings(); if (a === 'cred') this.credits(false);
+      if (a === 'exit') { audio.music(null); audio.sfx('curtain'); const c = el('div', 'card', '<p class="act">ЗАНАВЕС</p><p>Спасибо, что заглянули в гримёрку.</p><p class="sm">Закройте вкладку — или нажмите, чтобы вернуться.</p>', root()); c.onclick = () => { c.remove(); audio.music('musicbox'); }; } });
   }
   credits(final: boolean): Promise<void> {
     return new Promise((res) => {

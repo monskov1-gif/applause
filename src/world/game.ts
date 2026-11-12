@@ -29,7 +29,7 @@ class Game {
   cam = { x: 0, z: 0, dist: 24, focus: null as null | { x: number; z: number; dist: number }, shake: 0, roll: 0, pitch: 0.56, yOff: 1.2 };
   near: Inter | null = null; trail: { x: number; z: number }[] = []; followers: Actor[] = []; stepT = 0; busy = false; inPhoto = false; fast = false;
   playerSpeed = 5.6; override: null | ((dt: number) => void) = null; debug = false; gradeBase: Grade = {};
-  audio = audio; ui = ui;
+  audio = audio; ui = ui; menuScene: any = null;
 
   boot(canvas: HTMLCanvasElement) {
     this.R = new Renderer(canvas); this.debug = new URLSearchParams(location.search).has('debug');
@@ -58,6 +58,7 @@ class Game {
 
   // ---------- жизненный цикл ----------
   async start(state: GameState) {
+    if (this.menuScene) { this.menuScene.dispose(); this.menuScene = null; }
     this.state = state; this.running = true; this.lock = 0; this.paused = false; ui.hudShow(true);
     await this.goto(state.room, state.spot, { fade: 'fade', load: true });
   }
@@ -212,7 +213,7 @@ class Game {
   }
   private los(x0: number, z0: number, x1: number, z1: number) { for (let i = 1; i < 8; i++) { const x = x0 + (x1 - x0) * i / 8, z = z0 + (z1 - z0) * i / 8; for (const b of this.room!.boxes) if (b.on && b.x1 - b.x0 > 0.9 && x > b.x0 && x < b.x1 && z > b.z0 && z < b.z1) return false; } return true; }
   private frame(dt: number) {
-    const room = this.room; if (!room || !this.running) { if (this.R && !this.running) { /* меню: сцена не рисуется */ } input.endFrame(); return; }
+    const room = this.room; if (!room || !this.running) { if (this.menuScene && !this.running) { this.menuScene.update(dt); this.R.render(dt); } input.endFrame(); return; }
     if (this.paused) { this.R.render(0); input.endFrame(); return; }
     this.t += dt; this.state.time += dt; const p = this.player;
     if (this.waits.length) { for (const w of this.waits) w.t -= dt; const done = this.waits.filter((w) => w.t <= 0); this.waits = this.waits.filter((w) => w.t > 0); for (const w of done) w.res(); }

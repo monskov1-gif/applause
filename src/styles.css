@@ -171,3 +171,19 @@ body.contrast .dlg .box, body.contrast .sheet, body.contrast .choice { backgroun
 .maskb small { font-size: 0; } .maskb small::first-letter { font-size: .7rem; }
 .maskb::after { content: attr(title); position: absolute; top: 108%; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: .7rem; background: rgba(20,8,10,.85); padding: .1rem .4rem; border: 1px solid var(--gold); opacity: 0; pointer-events: none; transition: opacity .15s; }
 .maskb:hover::after, .maskb.on::after { opacity: 1; }
+/* ---------- 3D-гримёрка: главное меню ---------- */
+.menu-screen.m3d { background: none; justify-content: flex-start; align-items: stretch; }
+.menu-screen.m3d::before, .menu-screen.m3d::after { display: none; }
+.m3d-left { position: absolute; left: 0; top: 0; bottom: 0; width: min(46vw, 40rem); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3vh 2vw; background: radial-gradient(ellipse 80% 70% at 30% 45%, rgba(10,4,6,.55), transparent 75%); }
+.m3d .menu-logo { margin: 0 !important; } .m3d .logo-svg { width: min(44vw, 36rem, 80vh) !important; filter: drop-shadow(0 .4rem 1.4rem rgba(0,0,0,.9)); }
+.m3d .menu-list { margin-top: .4rem; min-width: 14rem; border-top: 1px solid rgba(212,174,72,.4); }
+.m3d .menu-list .btn { font-size: .86rem; padding: .48rem 1.8rem; background: none; }
+.m3d .menu-list .btn:hover, .m3d .menu-list .btn:focus-visible { text-shadow: 0 0 .6rem rgba(255,190,120,.7); background: linear-gradient(90deg, transparent, rgba(142,24,48,.35), transparent); }
+.m3d .menu-logo, .m3d .menu-list { transition: opacity 1.4s ease, transform 1.4s ease; }
+.m3d.intro .menu-logo { opacity: 0; transform: translateY(.6rem); } .m3d.intro .menu-list { opacity: 0; pointer-events: none; }
+.m3d.intro.logo-in .menu-logo { opacity: 1; transform: none; }
+.m3d.ready .menu-list { opacity: 1; transition-delay: .3s; }
+.m3d-hint { position: absolute; bottom: 12vh; left: 50%; transform: translateX(-50%); font-family: 'Playfair Display', serif; font-style: italic; color: rgba(240,212,120,.75); letter-spacing: .12em; opacity: 0; transition: opacity .8s; pointer-events: none; }
+.m3d.await .m3d-hint { opacity: 1; animation: bob 2s infinite; }
+.m3d-skip { position: absolute; right: 1rem; bottom: .8rem; font-size: .72rem; opacity: .45; letter-spacing: .1em; pointer-events: none; } .m3d.ready .m3d-skip { display: none; }
+@media (max-aspect-ratio: 1/1) { .m3d-left { width: 100%; justify-content: flex-start; padding-top: 4vh; background: linear-gradient(rgba(10,4,6,.65), transparent 70%); } .m3d .logo-svg { width: min(92vw, 30rem) !important; } }

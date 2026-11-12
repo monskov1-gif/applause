@@ -192,6 +192,14 @@ class AudioSys {
       case 'candle': nz('bandpass', 900, 0.25, 0.25, t, 1, 300); break;
       case 'firework': nz('bandpass', 600, 0.4, 0.12, t, 2, 3000); nz('lowpass', 2500, 0.8, 0.5, t + 0.45, 0.5, 200); wet(0.6); break;
       case 'engine': tone('sawtooth', 70, 160, 0.9, 0.16); break;
+      case 'mechtick': tone('square', 2600, 1900, 0.018, 0.05); nz('highpass', 5000, 0.02, 0.06); break;
+      case 'keyin': tone('triangle', 1900, 1500, 0.06, 0.16); tone('triangle', 2700, 2500, 0.05, 0.1, t + 0.03); nz('highpass', 4000, 0.04, 0.2, t + 0.02); wet(0.3); break;
+      case 'scrape': { const n = o.dur || 1.6; nz('bandpass', 1400, n, 0.12, t, 6, 700); for (let i = 0; i < 7; i++) tone('square', 900 + Math.random() * 600, 700, 0.03, 0.05, t + i * n / 7 + Math.random() * 0.05); break; }
+      case 'hum': tone('sine', 55, 52, 2.2, 0.22); tone('sine', 110, 108, 2, 0.06); wet(0.4); break;
+      case 'windup': for (let i = 0; i < 14; i++) tone('square', 3000, 2200, 0.015, 0.05 * (1 - i / 16), t + i * 0.07); break;
+      case 'clunk': tone('sine', 120, 45, 0.25, 0.6); nz('lowpass', 900, 0.08, 0.4); wet(0.4); break;
+      case 'lighton': tone('sine', 70, 40, 0.4, 0.5); nz('lowpass', 2400, 0.12, 0.45); nz('highpass', 6000, 0.6, 0.05, t + 0.1); wet(0.5); break;
+      case 'buzz': tone('sawtooth', 100, 100, o.dur || 0.6, 0.025); break;
       default: console.warn('[audio] нет эффекта', name);
     }
   }
