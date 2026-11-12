@@ -197,8 +197,8 @@ export class DressingRoom {
     const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.026, 0.05, 12), gold); neck.position.set(0.3, 0.245, -0.12); this.root.add(neck);
     const tube = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.006, 6, 16, Math.PI), gold); tube.rotation.y = Math.PI; tube.position.set(0.24, 0.27, -0.12); this.root.add(tube);
     const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 10), std({ map: tex('velvet'), color: 0xcc3344 })); bulb.position.set(0.17, 0.25, -0.12); bulb.scale.y = 1.25; this.root.add(bulb);
-    const stand = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.06, 0.32), std({ map: tex('velvet'), color: 0xaa2233 })); stand.position.set(0.26, 0.03, -0.11); this.root.add(stand);
-    const trim = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.012, 0.34), gold); trim.position.set(0.26, 0.062, -0.11); this.root.add(trim);
+    const stand = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.06, 0.32), std({ map: tex('carpet'), color: 0xcc5560, roughness: 0.95 })); stand.position.set(0.26, 0.03, -0.11); this.root.add(stand);
+    for (const [w, d, dx, dz] of [[0.44, 0.012, 0, 0.165], [0.44, 0.012, 0, -0.165], [0.012, 0.34, 0.215, 0], [0.012, 0.34, -0.215, 0]]) { const t = new THREE.Mesh(new THREE.BoxGeometry(w, 0.014, d), gold); t.position.set(0.26 + dx, 0.062, -0.11 + dz); this.root.add(t); }
     const jar = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.085, 0.12, 20), glass); jar.position.set(0.18, 0.06, -0.62); this.root.add(jar);
     const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.095, 0.03, 20), std({ color: 0xcfcfd8, metalness: 0.8, roughness: 0.3 })); lid.position.set(0.18, 0.135, -0.62); this.root.add(lid);
     const knob = new THREE.Mesh(new THREE.SphereGeometry(0.02, 8, 6), std({ color: 0xcfcfd8, metalness: 0.8, roughness: 0.3 })); knob.position.set(0.18, 0.16, -0.62); this.root.add(knob);
