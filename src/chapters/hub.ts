@@ -179,7 +179,7 @@ const backstage: RoomDef = {
   name: 'Карман сцены', w: 46, d: 12, music: 'backstage', amb: 'hall', step: 'wood', grade: { tint: [0.92, 0.96, 1.08], vig: 0.6 },
   build(R, G) {
     const f = G.f;
-    R.floor('stage', { x: -14.5, w: 17 }); R.floor('stage', { x: 10.5, w: 25 }); R.walls('brick', { h: 8 }); R.ambient(0x20222e, 1.0, 0x5a6080); R.particles('dust', { count: 110, top: 7 });
+    R.floor('stage', { x: -14.5, w: 17 }); R.floor('stage', { x: 10.5, w: 25 }); R.walls('brick', { h: 8 }); R.ambient(0x2e3040, 2.2, 0x8a90b0); R.particles('dust', { count: 110, top: 7 });
     const voidP = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 12), new THREE.MeshBasicMaterial({ color: 0x141c30 })); voidP.rotation.x = -Math.PI / 2; voidP.position.set(-4, -3, 0); R.room.group.add(voidP);
     for (const [x, z] of [[-6, 0], [-2, 0]]) R.box(x, z, 0.12, 12, 3, { color: 0x0a0c14, y: -3, solid: false, cast: false });
     R.collider(-6, -6, -2, -1.1); R.collider(-6, 1.1, -2, 6); const mid = R.collider(-6, -1.1, -2, 1.1); mid.on = !f.bridge;
@@ -219,7 +219,8 @@ const backstage: RoomDef = {
       R.door('w_' + d.id, d.x, { label: done ? d.label + ' (история сыграна)' : d.label, col: d.col, sign: d.sign, glow: undefined, fn: async (G) => {
         if (done) return G.run(['~: Эта история сыграна. Дверь тёплая на ощупь и больше не открывается — как книга, которую дочитали.']);
         if (d.id === 'polina') { await G.run(D.polinaDoor); if (!f.go) return; } else { await G.run(['~: ' + d.ask, { c: [['Войти', [{ set: { go: 1 } }]], ['Позже', [{ set: { go: 0 } }]]] }]); if (!f.go) return; }
-        if (G.state.mask) G.setMask(G.state.mask); G.sfx(d.id === 'polina' ? 'thunder' : 'door'); await G.goto(d.to, 'start', { fade: d.fade }); } });
+        if (G.state.mask) G.setMask(G.state.mask); G.sfx(d.id === 'polina' ? 'thunder' : 'door');
+        try { await G.goto(d.to, 'start', { fade: d.fade }); } catch (e) { console.warn('[hub] глава ещё не собрана', d.id, e); await G.run(['~: Ручка поворачивается, но дверь не поддаётся. Изнутри слышно, как кто-то торопливо двигает декорации.', '~: За этой дверью ещё репетируют.']); } } });
       if (d.glow && !done) R.light(d.x, 2.5, -4.6, d.glow, 12, 7, { flicker: 0.1 }); if (d.id === 'polina' && !done) { R.light(d.x, 2.5, -4.6, 0x6080c0, 10, 7, { flicker: 0.3 }); R.decal(canvasTex(32, 16, (c) => { c.fillStyle = 'rgba(120,160,220,0.5)'; c.fillRect(4, 2, 24, 12); c.fillRect(0, 6, 32, 5); }, 'puddle'), { flat: true, x: d.x, z: -4.6, y: 0.03, w: 3, h: 1.5 }); }
       R.spawn('ret_' + d.id, d.x, -3.4);
     }
