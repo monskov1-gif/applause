@@ -62,7 +62,7 @@ export function mirror3D(R: Builder, x: number, y: number, z: number, w: number,
 }
 export function wardrobe(R: Builder, x: number, z: number, o: { w?: number; h?: number; col?: number; ry?: number } = {}) {
   const w = o.w || 1.8, h = o.h || 3.2, d = 0.9; const g = new THREE.Group(); const m = lam({ map: tex('darkwood'), color: o.col ?? 0xc89a70 }); const gold = M.gold();
-  box(g, w, h, d, 0, h / 2, 0, m); box(g, w + 0.2, 0.18, d + 0.15, 0, h + 0.09, 0, m); box(g, w + 0.3, 0.06, d + 0.2, 0, h + 0.2, 0, gold); box(g, w + 0.1, 0.15, d + 0.05, 0, 0.08, 0, m);
+  box(g, w, h, d, 0, h / 2, 0, m); box(g, w + 0.2, 0.18, d + 0.15, 0, h + 0.09, 0, m); box(g, w + 0.3, 0.06, d + 0.2, 0, h + 0.2, 0, lam({ color: 0xb08a3c })); box(g, w + 0.1, 0.15, d + 0.05, 0, 0.08, 0, m);
   for (const sx of [-1, 1]) { box(g, w / 2 - 0.15, h - 0.6, 0.04, sx * w / 4, h / 2, d / 2 + 0.01, lam({ map: tex('darkwood'), color: (o.col ?? 0xc89a70) - 0x101010 })); const k = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 6), gold); k.position.set(sx * 0.12, h / 2, d / 2 + 0.06); g.add(k); }
   g.position.set(x, 0, z); if (o.ry) g.rotation.y = o.ry; R.room.group.add(g); const hw = o.ry ? d / 2 : w / 2, hd = o.ry ? w / 2 : d / 2; R.collider(x - hw, z - hd, x + hw, z + hd); return g;
 }

@@ -50,7 +50,7 @@ const dressing: RoomDef = {
     R.inter('invite', 5.6, 0.2, { label: 'Конверт «Варваре»', fn: async () => { await G.ui.paper(PAPERS.invite); if (!f.read_invite) await G.run(D.inviteAfter); } });
     R.inter('recs', 5.6, 1.4, { label: 'Рекомендательный лист', fn: async () => { await G.ui.paper(PAPERS.recs); if (!f.read_recs) { f.read_recs = 1; await G.run(D.recsAfter); } } });
     // шкаф, на нём камера Василисы
-    wardrobe(R, 4, -4.4, { w: 2, h: 2.6 });
+    wardrobe(R, 4, -4.4, { w: 2, h: 2.6, col: 0xe0b890 }); R.light(4, 2.4, -2.6, 0xffd8a8, 4, 5);
     if (!G.has('camera')) { R.sprite('cam', 4, -4.3, { y: 2.84, name: 'camSpr' }); R.inter('cam', 4, -3.6, { label: 'Фотоаппарат с запиской', fn: async () => { await G.ui.paper(PAPERS.camnote); await G.run(D.camAfter); G.toast('C: достать фотоаппарат, E: снимок', '◉'); G.room.named.camSpr.visible = false; G.room.inter('cam').enabled = false; G.ui.hud(); } }); }
     coatStand(R, -7.2, 2.6, [0x2f2a3a, 0xc41e3a]);
     R.look('rack', -7.2, 3.1, 'Вешалка', ['~: Вешалка. Чужая шляпа и красный лонгслив без плеч. Мой. Матвей подарил на прошлый день рождения, и я в нём сейчас. Тогда чей этот?', '~: Бирка изнутри: «А. Е.». Ладно. Совпадение. Таких лонгсливов много.'], { mask: 'none', r: 1.3 });
@@ -110,7 +110,7 @@ const corridor: RoomDef = {
     R.door('d_foyer', -8, { wall: 's', to: 'hub_foyer', spot: 'service', label: 'В фойе' });
     R.door('d_trap', 12, { wall: 's', to: 'hub_trap', spot: 'stairs', label: 'Вниз, в трюм', cond: () => !!f.act1, locked: ['~: Решётка на лестнице в трюм заперта. Табличка: «Только после первой репетиции».'] });
     for (const x of [-18, -4, 4, 18]) R.light(x, 3.6, 8, n >= 1 ? 0xffc880 : 0xc8b8a0, n >= 1 ? 7 : 4, 9, { flicker: n >= 1 ? 0.03 : 0.12 });
-    R.sprite('chair', -20, 11.6, { solid: 0.4 }); R.sprite('flowerpot', 3.4, 10.4, { scale: 1.4 }); sofa(R, 1.2, -11.5, { w: 2.2, col: 0x8a3a3a }); R.sprite(PROPTEX.stool(), 20.5, 11.4, {}); sofa(R, -14, 11.2, { w: 2.6, col: 0x8a3a3a });
+    R.sprite('chair', -20, 11.6, { solid: 0.4 }); R.sprite('flowerpot', 3.4, 10.4, { scale: 1.4 }); sofa(R, 1.2, -11.5, { w: 2.2, col: 0x8a3a3a }); R.sprite(PROPTEX.stool(), 20.5, 11.4, {}); R.sprite('flowerpot', -3.4, 10.4, { scale: 1.4 }); R.light(0, 3.2, -1.5, 0xffc890, 8, 9); for (const [x0, x1] of [[-22, -2.8], [2.8, 22]]) for (const zz of [-7.2, 3.6]) R.box((x0 + x1) / 2, zz, x1 - x0, 0.12, 0.1, { tex: 'gold', y: 4.42, solid: false, cast: false }); sofa(R, -14, 11.2, { w: 2.6, col: 0x8a3a3a });
     if (G.done('matvey')) { for (let x = -20; x <= 20; x += 2.6) { R.sprite('lantern', x, -12.4, { y: 4.6 + Math.sin(x) * 0.2, glow: true }); R.box(x, -12.4, 0.03, 0.03, 0.27 - Math.sin(x) * 0.2, { color: 0x2a2018, y: 5.45 + Math.sin(x) * 0.2, solid: false, cast: false }); } R.box(0, -12.4, 41, 0.03, 0.03, { color: 0x2a2018, y: 5.7, solid: false, cast: false }); R.npc('matvey', -7, -10.4, { talk: (G: any) => G.run(G.state.mask === 'drama' ? D.h_matveyDr : D.h_matvey) }); }
     R.spawn('start', 0, -10); R.spawn('dressing', -16, -11.4); R.spawn('diva', -9.5, -11.4); R.spawn('costume', -3, -11.4); R.spawn('props', -12, 4.6, 'f'); R.spawn('work', 12, 4.6, 'f'); R.spawn('stage', 20.2, 7.5, 'l'); R.spawn('stair', -20.2, 7.5, 'r'); R.spawn('foyer', -8, 10.6, 'b'); R.spawn('trap', 12, 10.6, 'b');
   },
@@ -145,7 +145,7 @@ const stage: RoomDef = {
     for (const z of [19]) for (const sx of [-1, 1]) { const ex = R.decal(canvasTex(36, 12, (c) => { c.fillStyle = '#0e3a1e'; c.fillRect(0, 0, 36, 12); c.fillStyle = '#7dffb0'; ptext(c, 'ВЫХОД', 18, 2, { size: 8, col: '#b8ffd0', align: 'center' }); }, 'exitG'), { x: sx * 19.9, y: 4.5, z, w: 1.5, h: 0.5, glow: true, noSlot: true }); ex.rotation.y = -sx * Math.PI / 2; R.light(sx * 19, 4.4, z, 0x60ff90, 1.5, 3); }
     R.sprite('lamp', -4.2, -10.2); R.light(-4.2, 2.8, -9.7, 0xffe0a0, 3, 8, { flicker: 0.05 });
     // зрительный зал: 11 рядов, проходы, ложи, люстры
-    seatRows(R, 3.4, 11, { x0: -13.4, x1: 13.4, aisle: 2.4, dz: 1.45 }); for (let z = 3.6; z < 19.5; z += 1.45) for (const sx of [-1, 1]) R.box(sx * 1.05, z, 0.12, 0.12, 0.05, { color: 0xffe0a0, emissive: 0xc08a40, solid: false, cast: false });
+    seatRows(R, 3.4, 11, { x0: -13.4, x1: 13.4, aisle: 2.4, dz: 1.45 }); R.light(0, 7, 12, 0xffd8b0, 16, 18); for (let z = 3.6; z < 19.5; z += 1.45) for (const sx of [-1, 1]) R.box(sx * 1.05, z, 0.12, 0.12, 0.05, { color: 0xffe0a0, emissive: 0xc08a40, solid: false, cast: false });
     for (const z of [4, 9.5, 15]) { theatreBox(R, -18.8, z, 'w', 4); theatreBox(R, 18.8, z, 'e', 4); }
     chandelier(R, -7, 12.5, 9, 1.1, { light: 8 }); chandelier(R, 7, 12.5, 9, 1.1, { light: 8 }); chandelier(R, 0, 13, 17, 1.3, { light: 10 });
     for (const z of [6, 12, 18]) for (const sx of [-1, 1]) R.light(sx * 17, 3, z, 0xffc890, 4, 7);
@@ -251,7 +251,7 @@ const backstage: RoomDef = {
     for (let x = -20; x <= 20; x += 4.4) R.box(x, -5.6, 0.1, 0.1, 8, { color: 0x6a5a3a, solid: false, cast: false });
     for (const x of [-19.4, 8, 16]) R.box(x, 3.8, 1.6, 1.4, 1.4, { tex: 'wood' }); R.box(-19.4, 3.8, 1.2, 1, 1, { tex: 'wood', y: 1.4, solid: false });
     for (const ex of [-6, -2]) for (let k = 0; k < 12; k++) R.box(ex + (ex < -4 ? 0.12 : -0.12), -5.5 + k + 0.25, 0.22, 0.5, 0.02, { color: k % 2 ? 0x1a1a1a : 0xe8c230, y: 0.01, solid: false, cast: false });
-    R.sprite('ladder', 21, -5.3, { scale: 1.3 }); R.sprite('tree', -20.6, -4.6, { scale: 0.9 });
+    R.sprite('ladder', 21, -5.3, { scale: 1.3 }); R.sprite(PROPTEX.coil(), -9.6, -2.4, { scale: 1.4 }); for (const [x, z] of [[-8.6, -2.8], [-8.2, -2.2]]) R.sprite(PROPTEX.sandbag(), x, z, { scale: 1.2 }); R.light(-12.6, 2.2, 5, 0xffd8a0, 5, 6); R.sprite('tree', -20.6, -4.6, { scale: 0.9 });
     R.light(-14, 5, -2, 0xffc890, 22, 16, { flicker: 0.05 }); R.light(10, 5.5, -2, 0x90a8ff, 16, 22);
     R.door('d_stage', -20, { to: 'hub_stage', spot: 'back', label: 'На сцену', col: '#2a1c14' });
     // реквизиторский стол с масками
@@ -310,7 +310,7 @@ const workshop: RoomDef = {
     R.inter('maqTr', 0, 1.2, { label: 'Макет: след от клея', mask: 'tragedy', photo: 'Две склеенные фигурки', fn: (G) => G.run(D.maquetteTr) });
     R.look('maqO', 0, 1.2, 'Макет сцены', D.maquette, { mask: 'drama' }); R.look('maqC', 0, 1.2, 'Макет сцены', ['varya=Макет: Меня никто не спрашивал, хочу ли я быть в масштабе один к двадцати. Я хотел быть настоящим залом.'], { mask: 'comedy' });
     for (const [i, col] of [0xa3122a, 0x2f7f82, 0xe8c36a].entries()) R.box(6 + i * 0.7, -4, 0.5, 0.5, 0.6, { color: col }); R.look('paint', 6.7, -3.2, 'Банки с краской', ['~: Красная, бирюзовая, золотая. Красной израсходовано втрое больше.'], { mask: 'none' }); R.look('paintC', 6.7, -3.2, 'Банки (спорят)', D.paintCom, { mask: 'comedy', egg: 'paint' });
-    R.sprite('tree', 1.0, -4.4); R.box(7, -4.85, 3.2, 0.12, 3.2, { tex: 'wood', tint: '#a08060', y: 0.4, solid: false }); R.sprite('pine', 7.6, 1, { scale: 0.7, emissive: 0x1a2a1a }); R.light(6.2, 3.2, 2.6, 0xffe0b0, 7, 7); R.sprite('ladder', 4, -4.6); R.sprite('wheel', -4, -4.6, { scale: 1.6 }); R.box(-7, 2.5, 2, 1.6, 1.2, { tex: 'wood' });
+    R.sprite('tree', 1.0, -4.4); for (const dx of [-0.7, 0.7]) R.box(4.6 + dx, 3.2, 0.12, 0.7, 0.9, { tex: 'wood', solid: false }); R.box(4.6, 3.2, 1.8, 0.2, 0.12, { tex: 'wood', y: 0.9 }); for (let k = 0; k < 3; k++) R.box(-3.2, 3.6 + k * 0.05, 3.2, 0.3, 0.08, { tex: 'wood', y: k * 0.09, solid: k === 0 }); R.box(7, -4.85, 3.2, 0.12, 3.2, { tex: 'wood', tint: '#a08060', y: 0.4, solid: false }); R.sprite('pine', 7.6, 1, { scale: 0.7, emissive: 0x1a2a1a }); R.light(6.2, 3.2, 2.6, 0xffe0b0, 7, 7); R.sprite('ladder', 4, -4.6); R.sprite('wheel', -4, -4.6, { scale: 1.6 }); R.box(-7, 2.5, 2, 1.6, 1.2, { tex: 'wood' });
     // верстаки, инструменты, висящие задники, шестерни механики поворотного круга
     R.table(-5.5, 1.8, 3, 1.3, { tex: 'wood' }); for (let i = 0; i < 4; i++) R.sprite(['gear', 'key', 'candle', 'book'][i], -6.6 + i * 0.7, 1.8, { y: 1.15, scale: 1.1 });
     for (const [x, col] of [[-3, '#5a7a4a'], [0, '#4a5a8a'], [3, '#8a5a3a']] as [number, string][]) R.decal(canvasTex(48, 32, (c) => { c.fillStyle = col; c.fillRect(0, 0, 48, 32); c.fillStyle = 'rgba(255,255,255,.15)'; for (let k = 0; k < 6; k++) c.fillRect(k * 8, 18 + (k % 2) * 4, 6, 14); c.fillStyle = '#2a1c14'; c.fillRect(0, 0, 48, 2); }, 'drop' + x), { x, y: 4.8, z: -4.7, w: 3.2, h: 2 });
