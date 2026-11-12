@@ -65,7 +65,7 @@ const casino: RoomDef = {
     if (f.rub_route !== 'vent') R.guard('guard', [[14, -5], [14, 6]], { speed: 2 * slow, range: 5, half: 0.4, onCatch: catchFn, id: 'g3', color: 0xff3050, pause: 1.4 });
     if (f.rub_time !== 'show') R.guard('guard', [[-6, -6], [6, -6]], { speed: 2.6 * slow, range: 4.5, half: 0.5, onCatch: catchFn, id: 'g4', color: 0xff3050 });
     else host.hidden = false;
-    R.spawn('start', -18, 6, 'r'); R.spawn('vent', -18, -6.5, 'r'); R.spawn('service', -18, 6.5, 'r'); R.spawn('front', 0, 7, 'b');
+    R.spawn('start', -18, 6, 'r'); R.spawn('vent', -17, -5.6, 'r'); R.spawn('service', -18, 6.5, 'r'); R.spawn('front', 0, 7, 'b');
   },
   async enter(G) { if (!G.f.rub_cas) { G.f.rub_cas = 1; await G.run(D.casinoIn); if (G.f.rub_route === 'front') { await G.run(D.fortuna); G.f.rub_fort = 1; await G.run(D.fortunaAfter); } } },
   onKey(G, a) {

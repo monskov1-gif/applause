@@ -8,11 +8,11 @@ export interface CharDef {
   acc?: string[]; brows?: 'soft' | 'strict' | 'arch'; lips?: string; shadow?: string;
   role?: string; bio?: string;
 }
-const TAN = '#b9794f', TAN2 = '#c08458', FAIR = '#f0cdb0', FAIR2 = '#eac4a4', OLIVE = '#d9a77e';
+const TAN = '#d9a878', TAN2 = '#c08458', FAIR = '#f0cdb0', FAIR2 = '#eac4a4', OLIVE = '#d9a77e';
 const C: CharDef[] = [
-  { id: 'varya', name: 'Варя', color: '#5fd0c8', pitch: 520, skin: TAN, hair: '#5a341f', style: 'bob', eyes: '#5b3a1e', h: 31, build: 'thin', top: '#2f7f82', bottom: '#33293f', trim: '#e8c36a', shoes: '#1c1620', brows: 'soft',
-    role: 'Режиссёрка', bio: 'Завтра ей восемнадцать. Умеет собрать людей вместе — и очень не любит, когда что-то идёт не по плану.' },
-  { id: 'alla', name: 'Алла Ева', color: '#ff5d6c', pitch: 500, skin: TAN, hair: '#2a1512', style: 'glam', eyes: '#5b3a1e', h: 31, build: 'thin', top: '#a3122a', bottom: '#8a0f24', skirt: 'long', trim: '#e8c36a', shoes: '#3a0a12', acc: ['earrings', 'mole'], brows: 'arch', lips: '#b3122e', shadow: '#6b2a55',
+  { id: 'varya', name: 'Варя', color: '#5fd0c8', pitch: 520, skin: TAN, hair: '#5a341f', style: 'bob', eyes: '#5b3a1e', h: 31, build: 'thin', top: '#c41e3a', bottom: '#2a2430', shoes: '#1c1620', brows: 'soft', acc: ['offshoulder'],
+    role: 'Режиссёрка', bio: 'Завтра ей восемнадцать. На ней красный лонгслив без плеч: Матвей подарил на прошлый день рождения. Умеет собрать людей вместе — и очень не любит, когда что-то идёт не по плану.' },
+  { id: 'alla', name: 'Алла Ева', color: '#ff5d6c', pitch: 500, skin: TAN, hair: '#2a1512', style: 'curls', eyes: '#5b3a1e', h: 31, build: 'thin', top: '#a3122a', bottom: '#8a0f24', skirt: 'long', trim: '#e8c36a', shoes: '#3a0a12', acc: ['pearls'], brows: 'arch', lips: '#b3122e', shadow: '#6b2a55',
     role: 'Прима', bio: 'Ведущая актриса театра. Опаздывает, требует лучшую гримёрку и знает о Варе подозрительно много.' },
   { id: 'kukolnik', name: 'Кукольник', color: '#d8b56a', pitch: 180, skin: '#000', hair: '#000', style: 'none', eyes: '#000', h: 38, build: 'mid', top: '#111', bottom: '#111',
     role: 'Художественный руководитель', bio: 'Его никто не видел. Он оставляет письма, пометки на полях и распоряжения — всегда вовремя.' },
@@ -50,7 +50,7 @@ const C: CharDef[] = [
   { id: 'nol', name: 'Ноль', color: '#7af0ff', pitch: 560, skin: FAIR, hair: '#40e0d0', style: 'short', eyes: '#222', h: 33, build: 'thin', top: '#22303a', bottom: '#151a22', trim: '#40e0d0', acc: ['visor'], brows: 'soft' },
   { id: 'kasseta', name: 'Кассета', color: '#ff7ad0', pitch: 330, skin: TAN2, hair: '#ff4fa0', style: 'bob', eyes: '#222', h: 36, build: 'mid', top: '#5a2a6a', bottom: '#1a1a22', trim: '#ff4fa0', acc: ['headphones'], brows: 'arch' },
   { id: 'guard', name: 'Охранник', color: '#ff5050', pitch: 140, skin: '#8a94a0', hair: '#444', style: 'none', eyes: '#f33', h: 38, build: 'strong', top: '#39424e', bottom: '#252a33', trim: '#ff3030', acc: ['visor'], brows: 'strict' },
-  { id: 'teacher', name: 'Руководительница драмкружка', color: '#ff5d6c', pitch: 500, skin: TAN, hair: '#2a1512', style: 'glam', eyes: '#5b3a1e', h: 31, build: 'thin', top: '#44375a', bottom: '#2a2238', skirt: 'long', acc: ['glasses', 'mole'], brows: 'arch', lips: '#b3122e' },
+  { id: 'teacher', name: 'Руководительница драмкружка', color: '#ff5d6c', pitch: 500, skin: TAN, hair: '#2a1512', style: 'curls', eyes: '#5b3a1e', h: 31, build: 'thin', top: '#44375a', bottom: '#2a2238', skirt: 'long', acc: ['glasses'], brows: 'arch', lips: '#b3122e' },
   { id: 'barman', name: 'Сол, бармен', color: '#cccccc', pitch: 200, skin: '#b8b8b8', hair: '#333', style: 'short', eyes: '#222', h: 38, build: 'big', top: '#e8e8e8', bottom: '#222', trim: '#111', brows: 'strict' },
   { id: 'singer', name: 'Мэй, певица', color: '#e8e8e8', pitch: 460, skin: '#d8d8d8', hair: '#1a1a1a', style: 'longStyled', eyes: '#222', h: 36, build: 'thin', top: '#bbbbbb', bottom: '#aaaaaa', skirt: 'long', acc: ['earrings'], brows: 'arch', lips: '#555' },
   { id: 'director', name: 'Грей, режиссёр', color: '#b0b0b0', pitch: 230, skin: '#c8c8c8', hair: '#888', style: 'short', eyes: '#222', h: 37, build: 'thin', top: '#555', bottom: '#333', acc: ['glasses', 'scarf'], brows: 'strict' },
@@ -62,8 +62,8 @@ const C: CharDef[] = [
   { id: 'narrator', name: 'Рассказчик', color: '#e8d8a8', pitch: 190, skin: '#000', hair: '#000', style: 'none', eyes: '#000', h: 30, build: 'mid', top: '#000', bottom: '#000' },
   { id: 'glyants', name: 'Директор Глянц', color: '#ff9ad8', pitch: 210, skin: FAIR, hair: '#e8e8f0', style: 'short', eyes: '#3a3a4a', h: 38, build: 'thin', top: '#f0f0f8', bottom: '#f0f0f8', trim: '#ff4fa0', acc: ['glasses'], brows: 'arch' },
   { id: 'trainer', name: 'Тренер Ми', color: '#a0f0c0', pitch: 520, skin: OLIVE, hair: '#222', style: 'ponytail', eyes: '#222', h: 34, build: 'mid', top: '#30c090', bottom: '#222', brows: 'strict' },
-  { id: 'stylist', name: 'Ассистентка', color: '#ff5d6c', pitch: 500, skin: TAN, hair: '#2a1512', style: 'glam', eyes: '#5b3a1e', h: 31, build: 'thin', top: '#f0f0f8', bottom: '#ff4fa0', skirt: 'short', acc: ['earrings', 'mole', 'visor'], brows: 'arch', lips: '#b3122e' },
-  { id: 'hostess', name: 'Леди Фортуна', color: '#ff5d6c', pitch: 500, skin: TAN, hair: '#2a1512', style: 'glam', eyes: '#5b3a1e', h: 31, build: 'thin', top: '#e8c36a', bottom: '#c9a040', skirt: 'long', acc: ['earrings', 'mole', 'maskhalf'], brows: 'arch', lips: '#b3122e' },
+  { id: 'stylist', name: 'Ассистентка', color: '#ff5d6c', pitch: 500, skin: TAN, hair: '#2a1512', style: 'curls', eyes: '#5b3a1e', h: 31, build: 'thin', top: '#f0f0f8', bottom: '#ff4fa0', skirt: 'short', acc: ['pearls', 'visor'], brows: 'arch', lips: '#b3122e' },
+  { id: 'hostess', name: 'Леди Фортуна', color: '#ff5d6c', pitch: 500, skin: TAN, hair: '#2a1512', style: 'curls', eyes: '#5b3a1e', h: 31, build: 'thin', top: '#e8c36a', bottom: '#c9a040', skirt: 'long', acc: ['pearls', 'maskhalf'], brows: 'arch', lips: '#b3122e' },
   { id: 'student', name: 'Школьник', color: '#cccccc', pitch: 400, skin: FAIR, hair: '#3a2a22', style: 'short', eyes: '#333', h: 34, build: 'mid', top: '#2c3550', bottom: '#2a2a33', trim: '#f0f0f0', brows: 'soft' },
   { id: 'student2', name: 'Школьница', color: '#cccccc', pitch: 560, skin: FAIR, hair: '#5a3a2a', style: 'twin', eyes: '#333', h: 32, build: 'thin', top: '#2c3550', bottom: '#8a2a3a', skirt: 'short', trim: '#f0f0f0', brows: 'soft' },
   { id: 'dancer', name: 'Трейни', color: '#cccccc', pitch: 500, skin: FAIR, hair: '#ffb0d8', style: 'bob', eyes: '#333', h: 33, build: 'thin', top: '#f0f0f8', bottom: '#ff9ad8', skirt: 'short', brows: 'soft' },
@@ -77,14 +77,15 @@ export function variant(base: string, id: string, patch: Partial<CharDef>): Char
   return CHARS[id];
 }
 variant('varya', 'varya_noir', { top: '#6a6a6a', bottom: '#2a2a2a', acc: ['hat'] });
+variant('varya', 'varya_pjm', { top: '#d8c8e8', bottom: '#b8a8d0', acc: [] });
 variant('erika', 'erika_noir', { top: '#9a9a8a', bottom: '#2a2a2a', acc: ['hat', 'coat'] });
 variant('ruben', 'ruben_heist', { top: '#16161c', bottom: '#1c2028', trim: '#40e0d0', acc: ['visor'] });
 variant('matvey', 'matvey_school', { top: '#2c3550', bottom: '#2a2a33', trim: '#f2c230', acc: ['freckles', 'scarf', 'bracelets', 'pins'] });
 variant('angelina', 'angelina_idol', { top: '#f0f0f8', bottom: '#ff9ad8', trim: '#ff4fa0' });
 variant('angelina', 'angelina_own', { top: '#1a1420', bottom: '#7a1f3d', trim: '#e8c36a' });
-variant('alla', 'queen', { name: 'Королева', top: '#8a0f24', bottom: '#6a0a1a', trim: '#e8c36a', acc: ['earrings', 'mole', 'crown', 'cape'] });
-variant('varya', 'girl', { name: 'Молодая Девушка', top: '#f3ead8', bottom: '#e8dcc0', skirt: 'long', trim: '#5fd0c8' });
-variant('varya', 'varya_queen', { name: 'Варя', top: '#8a0f24', bottom: '#6a0a1a', skirt: 'long', trim: '#e8c36a' });
+variant('alla', 'queen', { name: 'Королева', top: '#8a0f24', bottom: '#6a0a1a', trim: '#e8c36a', acc: ['pearls', 'crown', 'cape'] });
+variant('varya', 'girl', { name: 'Молодая Девушка', top: '#f3ead8', bottom: '#e8dcc0', skirt: 'long', trim: '#5fd0c8', acc: [] });
+variant('varya', 'varya_queen', { name: 'Варя', top: '#8a0f24', bottom: '#6a0a1a', skirt: 'long', trim: '#e8c36a', acc: [] });
 variant('liza', 'liza_short', { style: 'bob' });
 variant('polina', 'polina_coat', { top: '#e8c230', bottom: '#3b4a6b' });
-variant('varya', 'varya_pj', { top: '#d8c8e8', bottom: '#b8a8d0' });
+variant('varya', 'varya_pj', { top: '#d8c8e8', bottom: '#b8a8d0', acc: [] });

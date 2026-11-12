@@ -53,7 +53,7 @@ const dressing: RoomDef = {
     if (!G.has('camera')) { R.sprite('cam', 4, -4.3, { y: 2.2, name: 'camSpr' }); R.inter('cam', 4, -3.6, { label: 'Фотоаппарат с запиской', fn: async () => { await G.ui.paper(PAPERS.camnote); await G.run(D.camAfter); G.toast('C — достать фотоаппарат, E — снимок', '◉'); G.room.named.camSpr.visible = false; G.room.inter('cam').enabled = false; G.ui.hud(); } }); }
     // вешалка
     R.sprite(canvasTex(20, 44, (c) => { c.fillStyle = '#2a1c14'; c.fillRect(9, 4, 2, 40); c.fillRect(4, 42, 12, 2); c.fillRect(3, 6, 14, 2); c.fillStyle = '#3a3a40'; c.fillRect(2, 0, 9, 5); c.fillRect(0, 4, 13, 2); c.fillStyle = '#8e1830'; c.fillRect(11, 8, 6, 18); c.fillStyle = '#2f7f82'; c.fillRect(3, 8, 6, 14); }, 'rack'), -7.2, 2.5, { solid: 0.4 });
-    R.look('rack', -7.2, 3.1, 'Вешалка', ['~: Вешалка. Чужая шляпа, чей-то красный шарф и бирюзовый свитер. Мой. Я его сюда не вешала.'], { mask: 'none', r: 1.3 });
+    R.look('rack', -7.2, 3.1, 'Вешалка', ['~: Вешалка. Чужая шляпа и красный лонгслив без плеч. Мой. Матвей подарил на прошлый день рождения, и я в нём сейчас. Тогда чей этот?', '~: Бирка изнутри: «А. Е.». Ладно. Совпадение. Таких лонгсливов много.'], { mask: 'none', r: 1.3 });
     R.look('rackCom', -7.2, 3.1, 'Шляпа (она шевелится)', D.rackCom, { mask: 'comedy', r: 1.3 });
     R.sprite('plant', 7.2, -4.2, { solid: 0.3 }); R.sprite('lamp', -2.6, -4.4); R.light(-2.6, 2.6, -4, 0xffc890, 8, 8);
     // лампочки вокруг зеркала, бусы, фото за рамой, костюмы на стойке, перья, шляпные коробки, ширма
@@ -149,7 +149,7 @@ const stage: RoomDef = {
       if (G.done('angelina')) { R.npc('angelina', 4.5, -4.5, { talk: (G: any) => G.run(G.state.mask === 'drama' ? D.h_angelinaDr : D.h_angelina) }); R.sprite('mic', 5.4, -3.9); }
       if (!f.act4) { R.npc('alla', 8.8, -1.2, { dir: 'r', mask: 'none', talk: (G: any) => G.run((D as any)['alla' + Math.min(5, n)]) }); R.npc('alla', 8.8, -1.2, { id: 'allaDr', dir: 'r', mask: 'drama', talk: D.allaDr }); R.npc('alla', 8.8, -1.2, { id: 'allaX', dir: 'r', mask: 'comedy', talk: ['alla/smirk: Сними это. В Комедии у меня дрожит левая бровь, а я не давала согласия на бровь.'] }); R.npc('alla', 8.8, -1.2, { id: 'allaT', dir: 'r', mask: 'tragedy', talk: ['~: В маске Трагедии её почти не видно. Контур, как у декорации на просвет. И на полу под ней — одна тень. Моя.', { note: 'one_shadow' }] }); }
     }
-    R.spawn('start', -15, -4.5, 'r'); R.spawn('corridor', -15, -4.5, 'r'); R.spawn('back', 12, -7); R.spawn('center', 0, 0); R.spawn('stalls', -4, 8, 'b'); R.spawn('hatch', 5.4, -0.4);
+    R.spawn('start', -15, -4.5, 'r'); R.spawn('corridor', -15, -4.5, 'r'); R.spawn('back', 12, -7); R.spawn('center', 0, 0); R.spawn('stalls', 0, 8.6, 'b'); R.spawn('hatch', 5.4, -0.4);
   },
   async enter(G, from) {
     const f = G.f;

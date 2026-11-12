@@ -44,10 +44,10 @@ function drawFrame(c: Ctx, ox: number, oy: number, d: CharDef, frame: string, di
   const hx = cx - 4 + (side ? 1 : 0) + lean;
   const hair = d.hair, hairD = shade(hair, -0.3), hairL = shade(hair, 0.22);
   const st = d.style;
-  const longLen: Record<string, number> = { long: 16, longStyled: 17, glam: 19, rapunzel: H - 9, bob: 9, bobLong: 11, curlyMid: 10, fluffy: 7, twin: 6, ponytail: 6, short: 4, curlyShort: 5, bun: 5 };
-  const hl = longLen[st] || 0, wide = (st === 'glam' || st === 'fluffy' || st === 'curlyMid' || st === 'rapunzel') ? 1 : 0;
+  const longLen: Record<string, number> = { curls: 15, long: 16, longStyled: 17, glam: 19, rapunzel: H - 9, bob: 9, bobLong: 11, curlyMid: 10, fluffy: 7, twin: 6, ponytail: 6, short: 4, curlyShort: 5, bun: 5 };
+  const hl = longLen[st] || 0, wide = (st === 'glam' || st === 'curls' || st === 'fluffy' || st === 'curlyMid' || st === 'rapunzel') ? 1 : 0;
   // --- волосы сзади (за телом) ---
-  if (!side && !back && hl > 8) { V(c, hx - 1 - wide, headY + 2, 10 + wide * 2, Math.min(hl, H - 2), hair); if (st === 'glam' || st === 'rapunzel') { R(c, hx - 2 - wide, headY + 8, 1, hl - 10, hairD); R(c, hx + 9 + wide, headY + 10, 1, hl - 12, hairD); } }
+  if (!side && !back && hl > 8) { V(c, hx - 1 - wide, headY + 2, 10 + wide * 2, Math.min(hl, H - 2), hair); if (st === 'glam' || st === 'rapunzel') { R(c, hx - 2 - wide, headY + 8, 1, hl - 10, hairD); R(c, hx + 9 + wide, headY + 10, 1, hl - 12, hairD); } if (st === 'curls') { for (let k = 0; k < 3; k++) { R(c, hx - 2 - (k % 2), headY + 6 + k * 3, 2, 2, k % 2 ? hairL : hair); R(c, hx + 9 + (k % 2), headY + 6 + k * 3, 2, 2, k % 2 ? hair : hairL); } } }
   if (side && hl > 8) V(c, hx - 2 - wide, headY + 2, 5 + wide, hl, hair);
   if (acc.includes('cape')) { const cw = tw + 4; V(c, cx - cw / 2 + lean, shY + 1, cw, torsoH + legH - 3, shade(d.trim || '#a22', -0.1)); }
   if (acc.includes('wings') && !side) { R(c, cx - tw / 2 - 5, shY, 5, 7, 'rgba(230,220,255,0.85)'); R(c, cx + tw / 2, shY, 5, 7, 'rgba(230,220,255,0.85)'); R(c, cx - tw / 2 - 4, shY + 7, 3, 3, 'rgba(210,200,245,0.8)'); R(c, cx + tw / 2 + 1, shY + 7, 3, 3, 'rgba(210,200,245,0.8)'); }
@@ -65,13 +65,14 @@ function drawFrame(c: Ctx, ox: number, oy: number, d: CharDef, frame: string, di
   const bw = side ? Math.max(5, tw - 3) : tw, bx = cx - bw / 2 + lean;
   V(c, bx, shY, bw, torsoH + (d.skirt ? 0 : 1), d.top);
   if (acc.includes('coat')) V(c, bx - 1, shY, bw + 2, torsoH + 6, d.top);
+  if (acc.includes('offshoulder') && !back) { R(c, bx, shY, bw, 2, d.skin); R(c, bx, shY + 2, bw, 1, shade(d.top, -0.2)); }
   if (d.trim && !back) { R(c, cx - 1 + lean, shY, side ? 1 : 2, d.skirt ? 2 : 1, d.trim); if (d.build === 'strong') R(c, bx + 1, shY + torsoH - 2, bw - 2, 1, d.trim); }
   if (acc.includes('scarf')) { R(c, bx, shY, bw, 2, d.trim || '#e84a6f'); if (!back) R(c, bx + 1, shY + 2, 2, 4, d.trim || '#e84a6f'); }
   if (acc.includes('pins') && !back && !side) { R(c, bx + bw - 3, shY + 3, 1, 1, '#fff'); R(c, bx + bw - 2, shY + 5, 1, 1, '#4ae0c0'); }
   if (acc.includes('camera') && !back) { R(c, cx - 2 + lean, shY + 4, 4, 3, '#222'); R(c, cx - 1 + lean, shY + 5, 2, 1, '#8ac'); R(c, bx + 1, shY, 1, 4, '#333'); R(c, bx + bw - 2, shY, 1, 4, '#333'); }
   // --- руки ---
   const armL = torsoH - 1, sw = walk === 0 ? 1 : walk === 2 ? -1 : 0;
-  const armCol = (d.build === 'strong' && !acc.includes('visor')) ? d.top : d.top;
+  const armCol = d.top;
   const arm = (x: number, up: string, swing: number) => {
     if (up === 'up') { V(c, x, shY - armL + 3, 2, armL - 1, armCol); R(c, x, shY - armL + 1, 2, 2, d.skin); }
     else if (up === 'side') { R(c, x < cx ? x - 3 : x + 1, shY + 1, 4, 2, armCol); R(c, x < cx ? x - 5 : x + 5, shY + 1, 2, 2, d.skin); }
@@ -120,6 +121,7 @@ function drawFrame(c: Ctx, ox: number, oy: number, d: CharDef, frame: string, di
     if (st === 'longStyled' || st === 'glam') R(c, hx + 2, headY, 1, 2, hairL);
   }
   if (acc.includes('earrings') && !back && !side) { R(c, hx - 1, headY + 6, 1, 2, '#f4d060'); R(c, hx + 8, headY + 6, 1, 2, '#f4d060'); }
+  if (acc.includes('pearls') && !back) { if (!side) { R(c, hx - 1, headY + 6, 1, 1, '#f6f0e8'); R(c, hx + 8, headY + 6, 1, 1, '#f6f0e8'); } R(c, cx - 2 + lean, shY + 1, 4, 1, '#f6f0e8'); }
   if (acc.includes('hat')) { R(c, hx - 2, headY, 12, 1, '#2a2a2e'); V(c, hx, headY - 3, 8, 3, '#3a3a40'); R(c, hx, headY - 1, 8, 1, '#111'); }
   if (acc.includes('crown')) { R(c, hx + 1, headY - 2, 6, 2, '#f4d060'); R(c, hx + 1, headY - 4, 1, 2, '#f4d060'); R(c, hx + 3, headY - 4, 2, 2, '#f4d060'); R(c, hx + 6, headY - 4, 1, 2, '#f4d060'); R(c, hx + 3, headY - 2, 2, 1, '#d02040'); }
   if (acc.includes('headphones')) { R(c, hx, headY - 2, 8, 1, '#222'); R(c, hx - 2, headY + 2, 2, 4, '#222'); R(c, hx + 8, headY + 2, 2, 4, '#222'); }

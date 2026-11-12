@@ -18,8 +18,8 @@ const lobby: RoomDef = {
   build(R, G) {
     const f = G.f; glossRoom(R); for (const x of [-8, 0, 8]) { screen(R, x, 3.6, 4.6, 2.9); R.light(x, 3.6, -3.8, 0xff80c0, 8, 8); }
     R.light(0, 5.5, -1, 0xffffff, 5, 14);
-    R.box(-11, -3.6, 4, 1.2, 1.1, { tex: 'gloss' }); R.decal(canvasTex(32, 10, (c) => { c.fillStyle = '#ff4fa0'; c.fillRect(0, 0, 32, 10); ptext(c, 'GLOSS', 16, 1, { size: 8, col: '#fff', align: 'center' }); }, 'glosslogo'), { x: -11, y: 1.6, z: -2.98, w: 3, h: 0.9, glow: true });
-    R.sprite('plant', 13.6, -4.6, { scale: 1.3, solid: 0.3 }); R.sprite('plant', -14, -4.6, { scale: 1.3, solid: 0.3 });
+    R.box(-9, 1.6, 4, 1.2, 1.1, { tex: 'gloss' }); R.decal(canvasTex(32, 10, (c) => { c.fillStyle = '#ff4fa0'; c.fillRect(0, 0, 32, 10); ptext(c, 'GLOSS', 16, 1, { size: 8, col: '#fff', align: 'center' }); }, 'glosslogo'), { x: -9, y: 0.9, z: 2.22, w: 3, h: 0.7, glow: true });
+    R.sprite('plant', 14.4, -1.5, { scale: 1.3, solid: 0.3 }); R.sprite('plant', -14, -4.6, { scale: 1.3, solid: 0.3 });
     R.inter('concept', -4, -4, { label: 'Концепт дебюта на стене', fn: async (G) => { await G.ui.paper(A.concept); if (!f.ang_concept) { f.ang_concept = 1; await G.run(A.conceptAfter); } } });
     R.decal(canvasTex(20, 28, (c) => { c.fillStyle = '#fff0f8'; c.fillRect(0, 0, 20, 28); c.fillStyle = '#ff9ad8'; c.fillRect(2, 2, 16, 10); ptext(c, 'КОНЦЕПТ', 10, 15, { size: 5, col: '#a03060', align: 'center' }); }, 'cposter'), { x: -4, y: 2.2, w: 1.3, h: 1.8 });
     R.npc('glyants', 4, -1, { talk: ['glyants: Мы не продаём музыку, стажёр. Мы продаём ощущение, что музыка тебя любит. Это разные бизнесы.'] });

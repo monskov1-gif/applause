@@ -108,11 +108,11 @@ const library: RoomDef = {
     for (const x of [-12, 12]) { R.box(x, -2, 1, 4, 4.6, { tex: 'darkwood' }); for (let s = 0; s < 4; s++) R.box(x + (x > 0 ? -0.5 : 0.5), -2, 0.06, 3.6, 0.6, { tex: 'carpet', y: 0.5 + s * 1.05, solid: false }); }
     R.sprite('bookstand', 0, 1.6, { scale: 1.4, solid: 0.4 });
     R.inter('book', 0, 2.4, { label: 'Проклятая книга', fn: async (G) => { await G.run(P.book); await G.ui.paper(P.bookText); if (!f.pol_book) { f.pol_book = 1; await G.run(P.bookAfter); G.room.guards[0].active = true; G.sfx('creak'); await G.run(P.ownerSeen); } } });
-    for (const x of [-9, 9]) { R.box(x, 4.3, 1.8, 1, 3.2, { tex: 'darkwood', tint: '#5a3a2a' }); R.inter('wd' + x, x, 3.3, { label: 'Шкаф (спрятаться / выйти)', r: 1.4, fn: (G) => hide(G) }); }
-    const g = R.guard('owner', [[-10, 1], [10, 1]], { speed: 1.7, range: 5.5, half: 0.45, pause: 1.6, onCatch: async (G) => { G.sfx('laugh', { n: 6, f: 300, vol: 0.35 }); G.flash(0.6); G.shake(0.4); await G.run(P.caught); G.player.place(-8, -4.2, 'f'); G.actor('polina')?.place(-7.2, -3.8); G.room.guards[0].actor.place(10, 1); G.camSnap(); } });
+    for (const x of [-10.6, 9]) { R.box(x, 4.3, 1.8, 1, 3.2, { tex: 'darkwood', tint: '#5a3a2a' }); R.inter('wd' + x, x, 3.3, { label: 'Шкаф (спрятаться / выйти)', r: 1.4, fn: (G) => hide(G) }); }
+    const g = R.guard('owner', [[-10, 1], [10, 1]], { speed: 1.7, range: 5.5, half: 0.45, pause: 1.6, onCatch: async (G) => { G.sfx('laugh', { n: 6, f: 300, vol: 0.35 }); G.flash(0.6); G.shake(0.4); await G.run(P.caught); G.player.place(-7, 3.4, 'b'); G.actor('polina')?.place(-6.4, 3.6); G.room.guards[0].actor.place(10, 1); G.camSnap(); } });
     g.active = !!f.pol_book;
     R.door('back', -8, { to: 'pol_hall', spot: 'lib', label: 'В прихожую', z: 5.96, col: '#3a2a1c' }); R.room.inter('back')!.z = 4.6;
-    const pol = R.actor('polina_coat', -7, 4, { id: 'polina' }); G.follow(pol); R.spawn('start', -8, 4.4, 'b');
+    const pol = R.actor('polina_coat', -6.4, 3.6, { id: 'polina' }); G.follow(pol); R.spawn('start', -7, 3.4, 'b');
   },
   async photo(G, subs) {
     const f = G.f; const anoms = PORTRAITS.filter((p) => p.anom && subs.includes(p.id)); const normals = PORTRAITS.filter((p) => !p.anom && subs.includes(p.id));

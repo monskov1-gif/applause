@@ -195,7 +195,7 @@ const bedroom: RoomDef = {
     R.inter('ticket', 1.2, -2.6, { label: 'Билет на тумбочке', fn: (G) => G.run(F.wake.slice(3, 4)) });
     R.decal(canvasTex(16, 28, (c) => { c.fillStyle = '#86641c'; c.fillRect(0, 0, 16, 28); c.fillStyle = '#c8d8e8'; c.fillRect(2, 2, 12, 24); }, 'bedmirror'), { x: -5.96, wall: 'w', at: 0, y: 2.4, w: 1.4, h: 2.4 });
     R.inter('mirror', -5, 0, { label: 'Зеркало', fn: async (G) => { await G.run(F.wake.slice(4)); G.sfx('note'); await G.wait(1); await G.ui.card([['THE OTHER ME: APPLAUSE, PLEASE!', 'act'], ['Конец.', 'big'], ['Или начало. Тут уж как поставить.', 'sm']]); G.set('game_done', 1); await G.save('auto'); await G.ui.credits(true); G.stopToMenu(); G.ui.mainMenu(); } });
-    R.spawn('start', 2, -1.4, 'f');
+    R.spawn('start', 0, 1, 'f');
   },
   async enter(G) { if (!G.f.wake0) { G.f.wake0 = 1; G.sfx('bell'); await G.run(F.wake.slice(0, 3)); const w = G.f.wish; await G.run([w === 'near' ? '*: Телефон вибрирует. Шесть сообщений подряд: «С днём рождения!» — от Полины, Рубена, Матвея, Эрики, Лизы и Ангелины. Все — в 07:00 ровно.' : w === 'own' ? '*: Телефон вибрирует. Полина: «Записалась на фото!» Рубен: «Подал документы». Лиза: «Я уже в поезде». И ни одного «как ты хочешь, чтобы мы…».' : '*: Телефон молчит. Ещё рано. Это хорошая тишина — как в зале перед первым звонком.']); } },
 };

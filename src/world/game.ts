@@ -92,7 +92,8 @@ class Game {
       const sp = room.spawns[spot] || room.spawns.start || { x: 0, z: 0, dir: 'f' };
       if (!room.spawns[spot] && spot !== 'start') console.warn(`[game] в ${id} нет точки появления ${spot}`);
       if (o.load && this.state.room === id && this.state.px != null && !this.hits(this.state.px, this.state.pz!)) this.player.place(this.state.px, this.state.pz!, 'f'); else this.player.place(sp.x, sp.z, sp.dir);
-      for (const a of this.followers) a.place(this.player.x + 0.8, this.player.z + 0.3);
+      { const fp = this.freeSpot(this.player.x, this.player.z); if (fp.x !== this.player.x || fp.z !== this.player.z) { if (this.debug) console.warn(`[room] ${id}: точка «${spot}» занята, героиня сдвинута`); this.player.place(fp.x, fp.z); } }
+      for (const a of this.followers) { const fp = this.freeSpot(this.player.x + 0.8, this.player.z + 0.3); a.place(fp.x, fp.z); }
       this.R.scene.add(room.group); this.R.scene.background = new THREE.Color(room.group.userData.bg ?? 0x050406); this.R.scene.fog = room.group.userData.fog || null;
       this.gradeBase = def.grade || {}; this.applyMask(true); this.applyGrade(true);
       this.cam.dist = def.camDist || 24; this.camSnap();
@@ -205,6 +206,19 @@ class Game {
     else if (a === 'camera') this.photoMode(); else if (a === 'notebook') ui.notebook();
     else if (this.room?.def.onKey) this.room.def.onKey(this, a);
   }
+  /** Ближайшая свободная точка (спираль), чтобы героиня никогда не появлялась внутри мебели. */
+  freeSpot(x: number, z: number) { if (!this.hits(x, z)) return { x, z }; for (let r = 0.25; r < 8; r += 0.25) for (let a = 0; a < 16; a++) { const nx = x + Math.cos(a / 16 * Math.PI * 2) * r, nz = z + Math.sin(a / 16 * Math.PI * 2) * r; if (!this.hits(nx, nz)) return { x: nx, z: nz }; } return { x, z }; }
+  /** Проверка проходимости: какие точки взаимодействия недостижимы от героини (сетка 0.25). */
+  reachCheck() {
+    const room = this.room!, p = this.player, st = 0.25, w = room.def.w, d = room.def.d, nx = Math.ceil(w / st), nz = Math.ceil(d / st); const seen = new Uint8Array(nx * nz);
+    const idx = (x: number, z: number) => Math.floor((z + d / 2) / st) * nx + Math.floor((x + w / 2) / st); const q: number[][] = [[p.x, p.z]]; const out: string[] = [];
+    if (this.hits(p.x, p.z)) out.push('героиня внутри коллизии');
+    while (q.length) { const [x, z] = q.pop()!; const i = idx(x, z); if (i < 0 || i >= seen.length || seen[i]) continue; seen[i] = 1; for (const [dx, dz] of [[st, 0], [-st, 0], [0, st], [0, -st]]) { const X = x + dx, Z = z + dz; if (!this.hits(X, Z)) q.push([X, Z]); } }
+    const reach = (x: number, z: number, r: number) => { for (let zz = z - r; zz <= z + r; zz += st) for (let xx = x - r; xx <= x + r; xx += st) { if (Math.hypot(xx - x, zz - z) > r - 0.2) continue; const i = idx(xx, zz); if (i >= 0 && i < seen.length && seen[i]) return true; } return false; };
+    for (const it of room.inters) if (!it.mask && !(it.cond && !it.cond()) && !reach(it.x, it.z, it.r)) out.push('недостижимо: ' + it.id + ' (' + it.label + ')');
+    for (const [k, sp] of Object.entries(room.spawns)) if (this.hits(sp.x, sp.z)) out.push('точка появления в коллизии: ' + k);
+    return out;
+  }
   hits(x: number, z: number, r = 0.38): boolean {
     const room = this.room!; const hw = room.def.w / 2 - r, hd = room.def.d / 2 - r;
     if (x < -hw || x > hw || z < -hd || z > hd) return true;
@@ -271,4 +285,5 @@ function dirVec(d: string) { return d === 'l' ? { x: -1, z: 0 } : d === 'r' ? { 
 function hash(s: string) { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
 function mix(a: Grade, b: Grade): Grade { const t = a.tint || [1, 1, 1], u = b.tint || [1, 1, 1]; return { sat: (a.sat ?? 1) * (b.sat ?? 1), tint: [t[0] * u[0], t[1] * u[1], t[2] * u[2]], vig: Math.max(a.vig ?? 0.35, b.vig ?? 0), bright: (a.bright ?? 1) * (b.bright ?? 1), contrast: (a.contrast ?? 1) * (b.contrast ?? 1) }; }
 export const G = new Game();
+(G as any).__rooms = () => ROOMS;
 (window as any).__G = G;
