@@ -153,7 +153,7 @@ const gallery: RoomDef = {
       R.look('wp' + d.x, d.x + 1.4, -4.2, 'Обои над дверью', d.up ? P.wallpaperUp : P.wallpaperDown, { r: 1.0, y: 4.6 }); }
     for (const [i, x] of [-7, 0, 7].entries()) { R.box(x, -4.6, 1.8, 0.9, 3.2, { tex: 'darkwood', tint: '#5a3a2a' }); R.inter('wd' + i, x, -3.6, { label: 'Шкаф (спрятаться / выйти)', r: 1.3, fn: (G) => hide(G, []) }); }
     for (const x of [-14, 14]) R.sprite('candle', x, -5, { y: 1.6, scale: 1.4 });
-    R.guard('owner', [[-13, 1.6], [13, 1.6]], { speed: 2.1, range: 6.5, half: 0.5, pause: 1.2, onCatch: async (G) => { G.sfx('laugh', { n: 6, f: 300, vol: 0.35 }); G.flash(0.6); G.shake(0.4); await G.run(['*: Белая маска поворачивается к Полине. Смех — её собственный, только медленнее.', '*: Свет фонаря гаснет и загорается. Полина снова у входа в галерею.', 'polina/scared: Хи… хи. Хорошо. Ещё раз. Медленнее. Держаться у шкафов.']); G.player.place(-14, 3.5, 'r'); G.room.guards[0].actor.place(13, 1.6); G.camSnap(); } });
+    R.guard('owner', [[-13, 1.6], [13, 1.6]], { speed: 2.1, range: 6.5, half: 0.5, pause: 1.2, onCatch: async (G) => { G.sfx('laugh', { n: 6, f: 300, vol: 0.35 }); G.flash(0.6); G.shake(0.4); await G.run(['*: Белая маска поворачивается к Полине. Смех — её собственный, только медленнее.', '*: Свет фонаря гаснет и загорается. Полина снова у входа в галерею.', 'polina/scared: Хорошо. Ещё раз. Медленнее. Держаться у шкафов.']); G.player.place(-14, 3.5, 'r'); G.room.guards[0].actor.place(13, 1.6); G.camSnap(); } });
     R.door('back', -14, { to: 'pol_hall', spot: 'gal', label: 'В прихожую', z: 5.46, col: '#3a2a1c' }); R.room.inter('back')!.z = 4.2;
     R.spawn('start', -14, 3.8, 'r');
   },
