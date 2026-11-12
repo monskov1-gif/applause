@@ -8,7 +8,7 @@ import { ROLES } from './hub';
 import { CHARS } from '../data/chars';
 
 const FRIENDS = ['polina', 'ruben', 'matvey', 'erika', 'liza', 'angelina'];
-const FCHAR: Record<string, string> = { polina: 'polina_coat', ruben: 'ruben', matvey: 'matvey', erika: 'erika', liza: 'liza', angelina: 'angelina' };
+const FCHAR: Record<string, string> = { polina: 'polina_coat', ruben: 'ruben', matvey: 'matvey', erika: 'erika', liza: 'liza_short', angelina: 'angelina' };
 const FAMILY = ['natasha', 'sasha', 'maxim', 'nastya', 'vasya', 'sofa', 'katya'];
 const TROUPE = ['vasilisa', 'dana', 'nina', 'anya', 'olya'];
 const lyricRun = async (G: any, lines: { t: number; text: string; who?: string }[], total: number) => { let t = 0; for (const l of lines) { await G.wait(l.t - t); t = l.t; G.ui.lyric(l.text, l.who); } await G.wait(Math.max(0, total - t)); G.ui.lyric(null); };
@@ -24,7 +24,7 @@ const diva: RoomDef = {
     for (const dx of [-2, 2]) R.light(1 + dx, 3.4, -3.4, 0xffd9a0, 4, 7, { flicker: 0.1 });
     { const refl = R.actor('varya', 1.2, -4.85, { id: 'refl', dir: 'f' }); refl.alpha = 0.75; refl.y = 1.6; refl.shadow.visible = false; R.onUpdate(() => { const p = G.player; if (!p) return; refl.x = 1 + (p.x - 1) * 0.35; refl.moving = p.moving; refl.dir = p.dir === 'b' ? 'f' : p.dir === 'f' ? 'b' : p.dir; refl.y = 1.6; refl.shadow.visible = false; }); }
     R.sprite('bouquet', -1, -3.8, { y: 1.15, scale: 1.2 }); R.sprite('flowerpot', 6.6, -4.4, { scale: 1.6 });
-    for (let i = 0; i < 5; i++) R.poster(['ЧАЙКА', 'ГАМЛЕТ', 'САД', 'ЛЕДИ', 'КОРОЛЕВА'][i], 'А. ЕВА', { x: -7.97, wall: 'w', at: -3 + i * 1.6, y: 3 + (i % 2) * 0.6, w: 1.2, h: 1.7 });
+    for (let i = 0; i < 5; i++) R.poster(['ЧАЙКА', 'ГАМЛЕТ', 'САД', 'ЛЕДИ', 'КОРОЛЕВА'][i], 'АЛЛА ЕВА', { x: -7.97, wall: 'w', at: -3 + i * 1.6, y: 3 + (i % 2) * 0.6, w: 1.2, h: 1.7 });
     R.actor('alla', 1, -2.8, { id: 'alla', dir: 'b', pose: 'sit' });
     R.spawn('start', -5, 3, 'b');
   },
@@ -51,7 +51,7 @@ const collapse: RoomDef = {
     R.onUpdate((dt, t) => fl.forEach((o, i) => { o.position.y = 2.4 + Math.sin(t * 0.8 + i) * 0.8 + (i % 3); o.rotation.z = Math.sin(t * 0.5 + i) * 0.4; }));
     // A: провал — мост из косы
     R.box(-15, 0, 4, 10, 0.1, { color: 0x05030a, y: -3, solid: false }); for (const x of [-17, -13]) R.box(x, 0, 0.1, 10, 3, { tex: 'black', y: -3, solid: false });
-    const gapC = R.collider(-17, -5, -13, 5); gapC.on = !f.c_gap; if (f.c_gap) R.box(-15, 0, 4.4, 1.2, 0.18, { color: 0xf0d98a, y: 0.02, solid: false });
+    const gapC = R.collider(-17, -5, -13, 5); gapC.on = !f.c_gap; if (f.c_gap) R.box(-15, 0, 4.4, 1.2, 0.18, { color: 0x8c6a45, y: 0.02, solid: false });
     R.trigger(-21, -5, -18, 5, async (G) => { if (f.c_gap) return; await G.run(F.gap); G.sfx('rope'); f.c_gap = 1; await G.rebuild(); }, true);
     // B: стена-декорация (видна без Трагедии)
     R.box(-4, 0, 0.4, 10, 5.6, { tex: 'wallgreen', mask: 'none' }); R.box(-4, 0, 0.1, 10, 5.6, { color: 0x6a8ad0, opacity: 0.25, mask: 'tragedy', solid: false });

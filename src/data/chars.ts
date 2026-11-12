@@ -16,7 +16,7 @@ const C: CharDef[] = [
     role: 'Прима', bio: 'Ведущая актриса театра. Опаздывает, требует лучшую гримёрку и знает о Варе подозрительно много.' },
   { id: 'kukolnik', name: 'Кукольник', color: '#d8b56a', pitch: 180, skin: '#000', hair: '#000', style: 'none', eyes: '#000', h: 38, build: 'mid', top: '#111', bottom: '#111',
     role: 'Художественный руководитель', bio: 'Его никто не видел. Он оставляет письма, пометки на полях и распоряжения — всегда вовремя.' },
-  { id: 'polina', name: 'Полина', color: '#c9a7ff', pitch: 610, skin: FAIR, hair: '#8c6a45', style: 'long', bangs: true, eyes: '#6b7f9a', h: 32, build: 'thin', top: '#8f7fc4', bottom: '#3b4a6b', shoes: '#eeeeee', brows: 'soft',
+  { id: 'polina', name: 'Полина', color: '#c9a7ff', pitch: 610, skin: FAIR, hair: '#f0d98a', style: 'fluffy', eyes: '#3f9b57', h: 32, build: 'thin', top: '#8f7fc4', bottom: '#3b4a6b', shoes: '#eeeeee', brows: 'soft',
     role: 'Подруга', bio: 'Боится почти всего и смеётся, когда страшно. Замечает то, что другие пропускают.' },
   { id: 'ruben', name: 'Рубен', color: '#ffb057', pitch: 240, skin: TAN2, hair: '#1d1512', style: 'curlyMid', eyes: '#3b2416', h: 40, build: 'strong', top: '#26262e', bottom: '#2d3440', trim: '#ff9a3c', shoes: '#111', brows: 'strict',
     role: 'Друг', bio: 'Спокойный и надёжный. Считает, что план нужен, чтобы было от чего отступать.' },
@@ -24,9 +24,9 @@ const C: CharDef[] = [
     role: 'Друг', bio: 'Яркий снаружи, осторожный внутри. Сто раз отрепетирует фразу и так её и не скажет.' },
   { id: 'erika', name: 'Эрика', color: '#9fc3e8', pitch: 430, skin: FAIR, hair: '#6b452a', style: 'ponytail', eyes: '#5b3a1e', h: 34, build: 'mid', top: '#8a7a5c', bottom: '#2b2f3a', shoes: '#22201f', brows: 'soft',
     role: 'Подруга', bio: 'Спокойная. Сначала слушает, потом задаёт один вопрос — обычно самый неудобный.' },
-  { id: 'liza', name: 'Лиза', color: '#ffe27a', pitch: 640, skin: FAIR, hair: '#f0d98a', style: 'fluffy', eyes: '#3f9b57', h: 31, build: 'thin', top: '#7ec4a4', bottom: '#f3ead8', skirt: 'short', shoes: '#8a5a3a', brows: 'soft',
+  { id: 'liza', name: 'Лиза', color: '#ffe27a', pitch: 640, skin: FAIR, hair: '#8c6a45', style: 'long', bangs: true, eyes: '#6b7f9a', h: 31, build: 'thin', top: '#7ec4a4', bottom: '#f3ead8', skirt: 'short', shoes: '#8a5a3a', brows: 'soft',
     role: 'Подруга', bio: 'Лёгкая и упрямая. Если ей сказать «так положено», обязательно спросит — кем.' },
-  { id: 'liza_long', name: 'Лиза', color: '#ffe27a', pitch: 640, skin: FAIR, hair: '#f0d98a', style: 'rapunzel', eyes: '#3f9b57', h: 31, build: 'thin', top: '#c9a0dc', bottom: '#b58ad0', skirt: 'long', shoes: '#8a5a3a', brows: 'soft' },
+  { id: 'liza_long', name: 'Лиза', color: '#ffe27a', pitch: 640, skin: FAIR, hair: '#8c6a45', style: 'rapunzel', bangs: true, eyes: '#6b7f9a', h: 31, build: 'thin', top: '#c9a0dc', bottom: '#b58ad0', skirt: 'long', shoes: '#8a5a3a', brows: 'soft' },
   { id: 'angelina', name: 'Ангелина', color: '#ff7ab8', pitch: 470, skin: OLIVE, hair: '#0f0d12', style: 'longStyled', eyes: '#2a1a14', h: 37, build: 'thin', top: '#16141c', bottom: '#5a1f3d', skirt: 'short', trim: '#d9d9e8', shoes: '#111', acc: ['earrings'], brows: 'arch', lips: '#b0405a',
     role: 'Подруга', bio: 'Точная, собранная, с идеальной укладкой. Поёт так, как считает нужным, — и это не обсуждается.' },
   { id: 'artemiy', name: 'Артемий', color: '#9ab0c8', pitch: 260, skin: FAIR, hair: '#9a7450', style: 'short', eyes: '#2a1a14', h: 39, build: 'mid', top: '#2c3550', bottom: '#2a2a33', trim: '#f0f0f0', shoes: '#111', brows: 'strict',
@@ -85,5 +85,6 @@ variant('angelina', 'angelina_own', { top: '#1a1420', bottom: '#7a1f3d', trim: '
 variant('alla', 'queen', { name: 'Королева', top: '#8a0f24', bottom: '#6a0a1a', trim: '#e8c36a', acc: ['earrings', 'mole', 'crown', 'cape'] });
 variant('varya', 'girl', { name: 'Молодая Девушка', top: '#f3ead8', bottom: '#e8dcc0', skirt: 'long', trim: '#5fd0c8' });
 variant('varya', 'varya_queen', { name: 'Варя', top: '#8a0f24', bottom: '#6a0a1a', skirt: 'long', trim: '#e8c36a' });
+variant('liza', 'liza_short', { style: 'bob' });
 variant('polina', 'polina_coat', { top: '#e8c230', bottom: '#3b4a6b' });
 variant('varya', 'varya_pj', { top: '#d8c8e8', bottom: '#b8a8d0' });

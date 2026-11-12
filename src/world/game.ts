@@ -123,8 +123,9 @@ class Game {
   }
   async choice(opts: (string | { text: string; mask?: boolean })[]): Promise<number> { return ui.choice(opts.map((o) => typeof o === 'string' ? { text: o } : o)); }
   /** Исполняет диалоговые данные (см. src/data/dialogue). */
+  private runDepth = 0;
   async run(nodes: any[]): Promise<void> {
-    this.lock++; audio.duck(true);
+    this.lock++; this.runDepth++; audio.duck(true);
     try {
       for (const n of nodes) {
         if (typeof n === 'string') await this.line(n);
@@ -141,7 +142,7 @@ class Game {
           if (n.shake) this.shake(n.shake); if (n.flash) this.flash();
         }
       }
-    } finally { this.lock--; audio.duck(false); if (this.lock === 0) ui.sayHide(); }
+    } finally { this.lock--; this.runDepth--; if (this.runDepth === 0) { audio.duck(false); ui.sayHide(); } }
   }
   actor(id: string): Actor | undefined { return id === 'player' ? this.player : this.room?.actor(id); }
 

@@ -19,7 +19,7 @@ const base: RoomDef = {
     R.particles('petals', { count: 50, top: 8, color: 0xd8b0d0 });
     R.box(4, -3.6, 5, 4, 14, { tex: 'paperstone' }); R.box(4, -3.6, 6, 5, 1.2, { tex: 'carpet', tint: '#4a6aa0', y: 14 });
     R.decal(canvasTex(16, 20, (c) => { c.fillStyle = '#3a2a14'; c.fillRect(0, 0, 16, 20); c.fillStyle = '#f0d0a0'; c.fillRect(2, 2, 12, 16); c.fillStyle = '#3a2a14'; c.fillRect(7, 2, 2, 16); }, 'twin2'), { x: 4, y: 10, z: -1.55, w: 1.6, h: 2 });
-    if (f.liz_hair) R.box(4.3, -1.4, 0.5, 0.5, 9.4, { color: 0xf0d98a, y: 0, solid: false });
+    if (f.liz_hair) R.box(4.3, -1.4, 0.5, 0.5, 9.4, { color: 0x8c6a45, y: 0, solid: false });
     const hill = (col: string, key: string) => canvasTex(96, 32, (c) => { c.fillStyle = col; c.beginPath(); c.moveTo(0, 32); for (let x = 0; x <= 96; x += 8) c.lineTo(x, 14 + Math.sin(x / 13 + key.length) * 7); c.lineTo(96, 32); c.fill(); c.strokeStyle = '#3a2a14'; c.lineWidth = 1; c.beginPath(); for (let x = 0; x <= 96; x += 8) c.lineTo(x, 14 + Math.sin(x / 13 + key.length) * 7); c.stroke(); for (let i = 0; i < 40; i++) { c.fillStyle = 'rgba(58,42,20,.25)'; c.fillRect((i * 37) % 96, 22 + (i * 7) % 10, 3, 1); } }, 'hill' + key);
     R.sprite(hill('#8aa070', 'a'), -6, -5.8, { scale: 3.4 }); R.sprite(hill('#a8b888', 'bb'), 12, -5.9, { scale: 3 }); R.sprite(hill('#7a9a68', 'ccc'), -16, -5.7, { scale: 2.6 });
     R.decal(canvasTex(40, 30, (c) => { c.fillStyle = '#3a2a14'; c.fillRect(0, 0, 40, 30); c.fillStyle = '#efe0b8'; c.fillRect(2, 2, 36, 26); ptext(c, 'Глава I', 20, 6, { size: 8, col: '#5a0c18', align: 'center', font: '"Marck Script", cursive' }); ptext(c, 'в которой ждут', 20, 17, { size: 6, col: '#3a2a14', align: 'center' }); }, 'chap1'), { x: -10, y: 4.2, z: -5.9, w: 3, h: 2.2 });
@@ -37,7 +37,7 @@ const top: RoomDef = {
   build(R, G) {
     const f = G.f; bookRoom(R); R.light(0, 5, 0, 0xfff0d0, 14, 12); R.light(-5, 3, -3, 0xffe0a0, 6, 8);
     R.decal(canvasTex(16, 22, (c) => { c.fillStyle = '#3a2a14'; c.fillRect(0, 0, 16, 22); c.fillStyle = '#9cc2ee'; c.fillRect(2, 2, 12, 18); c.fillStyle = '#fff'; c.fillRect(4, 4, 4, 3); }, 'lwin'), { x: -4, y: 3.4, w: 2, h: 2.8, glow: true });
-    for (let i = 0; i < 10; i++) R.box(-6 + i * 1.3, 2.6 + (i % 3) * 0.6, 1.2, 0.4, 0.3, { color: 0xf0d98a, solid: false, cast: false });
+    for (let i = 0; i < 10; i++) R.box(-6 + i * 1.3, 2.6 + (i % 3) * 0.6, 1.2, 0.4, 0.3, { color: 0x8c6a45, solid: false, cast: false });
     R.box(4.6, -3, 3, 2, 0.8, { tex: 'velvet', tint: '#b58ad0' }); R.box(4.6, -3.9, 3, 0.3, 2.2, { tex: 'darkwood' });
     R.decal(canvasTex(18, 24, (c) => { c.fillStyle = '#d4ae48'; c.fillRect(0, 0, 18, 24); c.fillStyle = '#c8d8e8'; c.fillRect(2, 2, 14, 20); }, 'lmirror'), { x: 1, y: 2.6, w: 1.4, h: 1.9 });
     R.look('mirror', 1, -4, 'Зеркальце', L.mirror, { mask: 'none' }); R.look('mirrorC', 1, -4, 'Зеркальце', L.mirror, { mask: 'comedy' }); R.look('mirrorT', 1, -4, 'Зеркальце', L.mirror, { mask: 'tragedy' }); R.look('mirrorDr', 1, -4, 'Зеркальце', L.mirrorDr, { mask: 'drama' });
@@ -58,7 +58,7 @@ const mid: RoomDef = {
     // провал
     R.box(-1, 0, 4, 10, 0.1, { color: 0x3a6aa0, emissive: 0x18304a, solid: false, y: -2.2 }); R.light(-1, -1, 0, 0x6aa0e0, 6, 5); for (const x of [-3, 1]) R.box(x, 0, 0.1, 10, 3, { tex: 'stone', y: -3, solid: false, cast: false }); R.collider(-3, -5, 1, -1.1); R.collider(-3, 1.1, 1, 5); const mid = R.collider(-3, -1.1, 1, 1.1); mid.on = !f.liz_bridge;
     R.box(1.4, -4.4, 0.3, 0.3, 0.3, { tex: 'metal', y: 2 }); R.sprite('hook', 1.5, -4.2, { y: 1.6, scale: 1.4 });
-    if (f.liz_bridge) R.box(-1, 0, 4.4, 1.2, 0.18, { color: 0xf0d98a, y: 0.02, solid: false });
+    if (f.liz_bridge) R.box(-1, 0, 4.4, 1.2, 0.18, { color: 0x8c6a45, y: 0.02, solid: false });
     R.inter('gap', -3.8, 0, { label: f.liz_bridge ? 'Мост из косы' : 'Провал', fn: async (G) => { if (f.liz_bridge) return G.run(['liza_long: Не наступай на пробор!']); await G.run(L.gap); await G.run(L.bridge); G.sfx('rope'); f.liz_bridge = 1; await G.rebuild(); } });
     // шестерня и гиря
     if (!G.has('gear') && !f.liz_gear) { R.sprite('gear', -9, -3, { scale: 1.3, name: 'gearSpr' }); R.inter('gear', -9, -2.2, { label: 'Груда шпилек', fn: async (G) => { await G.run(L.gearGot); G.give('gear'); G.room.named.gearSpr.visible = false; } }); }
@@ -81,17 +81,17 @@ const ground: RoomDef = {
     ink(R, 'ВЫХОД ТОЛЬКО ПРИНЦАМ', 0, 5.5, 8);
     R.npc('fairy', 4, -1.4, { talk: async (G: any) => { if (f.liz_cut) return G.run(['fairy/worried: Ох. Ох-ох. Двести страниц ожидания, и ради чего? Ради… ради прекрасной стрижки, вообще-то. Тебе идёт.']); await groundScene(G); } });
     R.sprite('basket', 5, -0.6, { scale: 1.2 });
-    if (f.liz_cut) R.box(-2, -3, 3, 1.4, 0.3, { color: 0xf0d98a, solid: false });
-    const lz = R.actor(f.liz_cut ? 'liza' : 'liza_long', -2, 1, { id: 'liza' }); G.follow(lz); R.spawn('start', -6, 2, 'r');
+    if (f.liz_cut) R.box(-2, -3, 3, 1.4, 0.3, { color: 0x8c6a45, solid: false });
+    const lz = R.actor(f.liz_cut ? 'liza_short' : 'liza_long', -2, 1, { id: 'liza' }); G.follow(lz); R.spawn('start', -6, 2, 'r');
   },
   async enter(G) { if (!G.f.liz_gr) { G.f.liz_gr = 1; await groundScene(G); } },
 };
 async function groundScene(G: any) {
-  if (G.f.liz_cut) return; await G.run(L.ground); await G.run(L.choice); G.sfx('snip'); await G.run(L.cut.slice(0, 1)); G.f.liz_cut = 1; G.actor('liza').setChar('liza'); G.sfx('snip'); await G.run(L.cut.slice(1)); await G.rebuild();
+  if (G.f.liz_cut) return; await G.run(L.ground); await G.run(L.choice); G.sfx('snip'); await G.run(L.cut.slice(0, 1)); G.f.liz_cut = 1; G.actor('liza').setChar('liza_short'); G.sfx('snip'); await G.run(L.cut.slice(1)); await G.rebuild();
 }
 async function outside(G: any) {
   await G.goto('liz_base', 'ground', { fade: 'page' }); const B = new (await import('../world/room')).Builder(G.room, G);
-  const lz = B.actor('liza', 5.4, 1.6, { id: 'liza2' }); lz.face(-10, 2); G.room.actors.find((a: any) => a.id === 'fairy')!.hidden = true;
+  const lz = B.actor('liza_short', 5.4, 1.6, { id: 'liza2' }); lz.face(-10, 2); G.room.actors.find((a: any) => a.id === 'fairy')!.hidden = true;
   const horse = B.sprite('horse', -18, 3, { scale: 1.6 }); const pr = B.actor('prince', -18, 3.2, { id: 'prince' }); pr.y = 0.9; G.focus(-2, 2, 22);
   await G.wait(0.4); G.sfx('engine'); const t0 = performance.now();
   await new Promise<void>((res) => { const tick = () => { const k = Math.min(1, (performance.now() - t0) / 1800); horse.position.x = -18 + k * 16; pr.x = horse.position.x; if (k < 1) requestAnimationFrame(tick); else res(); }; tick(); });

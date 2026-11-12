@@ -76,7 +76,7 @@ const corridor: RoomDef = {
     const f = G.f, n = G.doneCount(); R.floor('carpet'); R.walls('woodwall', { h: 6 }); dustAndBase(R);
     for (let x = -15; x <= 15; x += 7.5) { R.light(x, 4.6, -1.5, n >= 1 ? 0xffc880 : 0xc8b8a0, n >= 1 ? 16 : 9, 11, { flicker: n >= 1 ? 0.03 : 0.12 }); R.sprite(canvasTex(8, 10, (c) => { c.fillStyle = '#86641c'; c.fillRect(3, 0, 2, 4); c.fillStyle = '#fff4c8'; c.fillRect(1, 4, 6, 5); }, 'sconce'), x, -3.3, { y: 3.9, glow: true }); }
     R.door('d_dress', -15, { to: 'hub_dressing', spot: 'door', label: 'Гримёрка режиссёра', sign: 'РЕЖИССЁР' });
-    R.door('d_diva', -9.5, { label: 'Гримёрка примы', sign: 'А. ЕВА', col: '#721022', cond: () => !!f.act4, locked: D.divaDoorLocked, fn: (G) => G.goto('fin_diva', 'start', { fade: 'fade' }) });
+    R.door('d_diva', -9.5, { label: 'Гримёрка примы', sign: 'АЛЛА ЕВА', col: '#721022', cond: () => !!f.act4, locked: D.divaDoorLocked, fn: (G) => G.goto('fin_diva', 'start', { fade: 'fade' }) });
     R.door('d_stage', 0, { to: 'hub_stage', spot: 'corridor', label: 'На сцену', sign: 'СЦЕНА', w: 3.2, h: 4, col: '#5a4029', fade: 'curtain' });
     R.door('d_arch', 6.5, { to: 'hub_archive', label: 'Архив', sign: 'АРХИВ', cond: () => G.has('archive_card'), locked: D.archiveLocked });
     R.door('d_work', 11, { to: 'hub_workshop', label: 'Мастерская', sign: 'ЦЕХ', cond: () => G.done('polina'), locked: D.workshopLocked });
@@ -91,7 +91,7 @@ const corridor: RoomDef = {
     R.decal(canvasTex(56, 40, (c) => { c.fillStyle = '#5a4029'; c.fillRect(0, 0, 56, 40); c.fillStyle = '#8a6a3a'; c.fillRect(2, 2, 52, 36); const cols = ['#f4ecd4', '#e2d5ac', '#fff']; for (let i = 0; i < 7; i++) { c.fillStyle = cols[i % 3]; c.fillRect(4 + (i % 4) * 12, 4 + Math.floor(i / 4) * 16, 10, 13); c.fillStyle = '#a3122a'; c.fillRect(8 + (i % 4) * 12, 4 + Math.floor(i / 4) * 16, 2, 2); } if (G.done('matvey')) { for (let i = 0; i < 24; i++) { c.fillStyle = ['#f2c230', '#e84a6f', '#5fd0c8'][i % 3]; c.fillRect((i * 13) % 54, (i * 7) % 38, 2, 2); } } }, 'board' + G.done('matvey')), { x: -4.8, y: 2.8, w: 3.5, h: 2.5 });
     R.inter('board', -4.8, -2.4, { label: 'Доска объявлений', fn: async () => { await G.ui.paper(PAPERS.board); G.note('troupe'); } });
     R.poster('ВИШНЁВЫЙ САД', 'АЛЛА ЕВА', { x: -12.2, y: 3, w: 1.9, h: 2.7, face: '#b9794f' }); R.look('p1', -12.2, -2.4, 'Афиша', D.posterAlla, { photo: 'Афиша с Аллой Евой' });
-    R.poster('ГАМЛЕТ', 'все роли — А. ЕВА', { x: 3.6, y: 3, w: 1.9, h: 2.7, bg: '#d8c8a0' }); R.look('p2', 3.6, -2.4, 'Афиша', D.posterAlla2);
+    R.poster('ГАМЛЕТ', 'все роли — АЛЛА ЕВА', { x: 3.6, y: 3, w: 1.9, h: 2.7, bg: '#d8c8a0' }); R.look('p2', 3.6, -2.4, 'Афиша', D.posterAlla2);
     R.poster('СНЕЖНАЯ КОРОЛЕВА', 'гастроли', { x: 8.8, y: 3.1, w: 1.7, h: 2.4, bg: '#cfe0f0', fg: '#1a2a5a' }); R.look('p3', 8.8, -2.4, 'Афиша гастролей', ['~: «Снежная королева». Гастрольный состав: Василиса, Дана, Нина, Аня, Оля. На полях приписка Даны: «Вернёмся — и чтоб финал был с блёстками»."'], { r: 1.2 });
     if (G.done('matvey')) { for (let x = -16; x <= 16; x += 2.6) R.sprite('lantern', x, -3.3, { y: 4.6 + Math.sin(x) * 0.2, glow: true }); if (!f.act4 || true) R.npc('matvey', -6.8, -1.6, { talk: (G: any) => G.run(G.state.mask === 'drama' ? D.h_matveyDr : D.h_matvey) }); }
     R.sprite('plant', -17, -2.8, { solid: 0.3 }); R.sprite('chair', 13.2, -2.9, { solid: 0.4 });
@@ -193,7 +193,7 @@ const backstage: RoomDef = {
     // реквизиторский стол с масками
     R.table(-12.5, -4.3, 3, 1.2);
     if (!f.masks) { R.sprite('masks', -12.5, -4.2, { y: 1.15, name: 'masksSpr' }); R.inter('masks', -12.5, -3.2, { label: 'Три маски и записка', fn: async (G) => { await G.run(D.masksGet); await G.ui.paper(PAPERS.masks); await G.run(D.masksAfter); G.room.named.masksSpr.visible = false; G.room.inter('masks').enabled = false; G.ui.hud(); } }); }
-    else R.look('ptable', -12.5, -3.2, 'Реквизиторский стол', ['~: Стол реквизитора. Всё подписано: «кинжал (не настоящий)», «яд (чай)», «корона (не трогать, А. Е.)».'], { quiet: true });
+    else R.look('ptable', -12.5, -3.2, 'Реквизиторский стол', ['~: Стол реквизитора. Всё подписано: «кинжал (не настоящий)», «яд (чай)», «корона (не трогать, Алла Ева)».'], { quiet: true });
     R.sprite('bust', -9.2, -4.8, { scale: 1.5, mask: 'none', solid: 0.5 }); R.sprite('bust', -9.2, -4.8, { scale: 1.5, mask: 'tragedy' }); R.sprite('bust', -9.2, -4.8, { scale: 1.5, mask: 'drama' }); R.sprite('bustfun', -9.2, -4.8, { scale: 1.5, mask: 'comedy' });
     R.look('bust', -9.2, -3.8, 'Бюст основателя', D.bust, { mask: 'none' }); R.look('bustCom', -9.2, -3.8, 'Бюст (он подмигивает)', D.bustCom, { mask: 'comedy' });
     R.decal(canvasTex(72, 20, (c) => { ptext(c, 'Тени здесь держат.', 2, 1, { size: 8, col: '#cfe0ff' }); ptext(c, 'Проверено. — К.', 2, 10, { size: 8, col: '#cfe0ff' }); }, 'chalk'), { x: -7.2, y: 2.6, w: 4.5, h: 1.25, mask: 'tragedy', glow: true });
@@ -210,7 +210,7 @@ const backstage: RoomDef = {
     R.inter('spot', -10.6, 1, { label: 'Прожектор (повернуть)', cond: () => !f.bridge, fn: async (G) => { f.spot = ((f.spot || 0) + 1) % 3; G.sfx('spot'); await G.rebuild(); if (f.spot === 0) await G.run(D.spotAim0); else if (f.spot === 1) await G.run(D.bridgeWrong); else if (!f.cut) await G.run(D.bridgeNoCut); else { G.focus(-4, 0, 16); await G.wait(0.8); await G.run(D.bridgeOn); G.unfocus(); await G.rebuild(); } } });
     // зеркальная рама под колосниками (после главы Лизы)
     if (G.done('liza')) {
-      R.npc('liza', -15.5, 2.6, { talk: (G: any) => G.run(G.state.mask === 'drama' ? D.h_lizaDr : D.h_liza) });
+      R.npc('liza_short', -15.5, 2.6, { id: 'liza', talk: (G: any) => G.run(G.state.mask === 'drama' ? D.h_lizaDr : D.h_liza) });
       if (!f.braid_used) { R.decal(mirrorTex(64, 80, false), { x: -16.5, y: 9.5, w: 4, h: 5 }); R.sprite('hook', -18.2, -5.2, { y: 2, scale: 1.4 }); R.inter('block', -18.2, -4.4, { label: 'Блок и гнилой трос', fn: async (G) => { await G.run(D.frameDown); G.sfx('rope'); G.shake(0.2); await G.rebuild(); } }); }
       else { R.decal(mirrorTex(64, 80, false), { x: -16.5, y: 2.6, w: 4, h: 5 }); R.inter('frame', -16.5, -4.4, { label: 'Репетиционное зеркало', photo: 'Зеркало: одинаковые позы', fn: (G) => G.run(D.frameLook) }); }
     }
@@ -261,7 +261,7 @@ const archive: RoomDef = {
     R.table(0, 1, 4.4, 1.8); R.sprite('lamp', 1.8, 0.7, { y: 1.1, scale: 0.45 }); R.sprite('typewriter', -1.4, 0.9, { y: 1.15 });
     const doc = (id: string, x: number, z: number, label: string, paper: any, after: any[], note: string) => R.inter(id, x, z, { label, fn: async (G) => { await G.ui.paper(paper); if (!f['a_' + id]) { f['a_' + id] = 1; await G.run(after); G.note(note); } } });
     doc('ledger', -0.6, 2.1, 'Протокол собрания труппы', PAPERS.ledger, ['varya/worried: «Не могу голосовать за себя».', '~: Худрук воздержался, потому что голосовали… за него? За неё?', '~: Оля не поняла шутку. Кажется, я тоже не хочу её понимать.'], 'ledger');
-    doc('contract', 1.2, 2.1, 'Ангажемент Аллы Евы', PAPERS.contract, ['~: Две подписи. Размашистая «А. Ева» и скромная «К.».', '~: Чернила одни. Нажим один. Наклон один. Разные только росчерки — как если бы человек расписался дважды, очень стараясь, чтобы было непохоже.'], 'contract');
+    doc('contract', 1.2, 2.1, 'Ангажемент Аллы Евы', PAPERS.contract, ['~: Две подписи. Размашистая «Алла Ева» и скромная «К.».', '~: Чернила одни. Нажим один. Наклон один. Разные только росчерки — как если бы человек расписался дважды, очень стараясь, чтобы было непохоже.'], 'contract');
     doc('program', -7, -3.3, 'Программка', PAPERS.program, ['varya/scared: «На сцене стоит один человек».', '~: Программка завтрашней премьеры. С финалом, который я ещё не поставила.'], 'program');
     doc('seating', -3.4, -3.3, 'Папка «Утренники»', PAPERS.seating, ['varya/sad: «Рот открывать, звук не давать».', '~: Я помню, кто это сказал. Не со зла. Просто чтобы хор звучал ровнее.', '~: Дальше не помню. Как будто кто-то вырезал кусок плёнки.'], 'seating');
     R.decal(photoTex('choir', (c) => { for (let r = 0; r < 3; r++) people(c, ['#fff', '#fff', '#fff', '#fff', r === 2 ? '#2f7f82' : '#fff'], 3 + r * 5); }), { x: 3.4, y: 2.6, w: 1.6, h: 1.25 }); R.look('choir', 3.4, -3.6, 'Школьная фотография', D.archPhoto, { photo: 'Хор: третий ряд' });
