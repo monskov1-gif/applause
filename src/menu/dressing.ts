@@ -187,7 +187,7 @@ export class DressingRoom {
   onMove = (e: PointerEvent) => { this.mouse.x = e.clientX / window.innerWidth - 0.5; this.mouse.y = e.clientY / window.innerHeight - 0.5; };
   onResize = () => { this.adaptFraming(); };
   /** На узких экранах камера отъезжает и смещается, чтобы шкатулка оставалась в кадре под меню. */
-  adaptFraming() { const a = window.innerWidth / window.innerHeight; if (a < 1) { this.finalCam.set(0.8, 1.3, 2.9); this.finalLook.set(0.8, 0.35, -0.3); } else if (a < 1.5) { this.finalCam.set(0.05, 1.0, 2.25); this.finalLook.set(0.6, 0.48, -0.4); } else { this.finalCam.set(-0.25, 0.98, 2.0); this.finalLook.set(0.5, 0.5, -0.45); } }
+  adaptFraming() { const a = window.innerWidth / window.innerHeight; if (a < 1) { this.finalCam.set(0.8, 0.95, 2.7); this.finalLook.set(0.8, 0.5, -0.3); } else if (a < 1.5) { this.finalCam.set(0.05, 1.0, 2.25); this.finalLook.set(0.6, 0.48, -0.4); } else { this.finalCam.set(-0.25, 0.98, 2.0); this.finalLook.set(0.5, 0.5, -0.45); } }
 
   perfume(gold: Mat) {
     const glass = new THREE.MeshStandardMaterial({ color: 0xf4e8f0, roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.55 });

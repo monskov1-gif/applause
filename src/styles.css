@@ -187,3 +187,5 @@ body.contrast .dlg .box, body.contrast .sheet, body.contrast .choice { backgroun
 .m3d.await .m3d-hint { opacity: 1; animation: bob 2s infinite; }
 .m3d-skip { position: absolute; right: 1rem; bottom: .8rem; font-size: .72rem; opacity: .45; letter-spacing: .1em; pointer-events: none; } .m3d.ready .m3d-skip { display: none; }
 @media (max-aspect-ratio: 1/1) { .m3d-left { width: 100%; justify-content: flex-start; padding-top: 4vh; background: linear-gradient(rgba(10,4,6,.65), transparent 70%); } .m3d .logo-svg { width: min(92vw, 30rem) !important; } }
+@media (max-height: 520px) { .m3d .logo-svg { width: min(44vw, 58vh) !important; } .m3d .menu-list .btn { padding: .22rem 1.4rem; font-size: .7rem; } .m3d-left { padding: 1vh 2vw; } }
+@media (max-aspect-ratio: 1/1) { .m3d-left { justify-content: space-between; padding: 3vh 4vw 4vh; background: linear-gradient(rgba(10,4,6,.7), transparent 30%, transparent 62%, rgba(10,4,6,.85)); } .m3d .menu-list { background: rgba(10,4,6,.35); } }

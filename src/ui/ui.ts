@@ -10,6 +10,19 @@ import { G, MASK_NAMES } from '../world/game';
 const root = () => document.getElementById('ui')!;
 export function el(tag: string, cls = '', html = '', parent?: HTMLElement): HTMLElement { const e = document.createElement(tag); if (cls) e.className = cls; if (html) e.innerHTML = html; if (parent) parent.appendChild(e); return e; }
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const MAP: [string, string, number, number, number, number, string][] = [
+  // [id, название, x, y, w, h, этаж]
+  ['hub_mezz', 'Бельэтаж', 30, 20, 240, 40, '2'], ['hub_rehearsal', 'Репетиционный', 30, 70, 70, 40, '2'], ['hub_archive', 'Архив', 105, 70, 55, 40, '2'], ['hub_box', 'Ложа 3', 165, 70, 45, 40, '2'], ['hub_office', 'Кабинет К.', 215, 70, 55, 40, '2'],
+  ['hub_foyer', 'Фойе', 30, 160, 110, 70, '1'], ['hub_stage', 'Сцена и зал', 150, 160, 120, 70, '1'], ['hub_corridor', 'Служебный коридор', 30, 240, 240, 34, '1'], ['hub_dressing', 'Гримёрка режиссёра', 30, 282, 75, 34, '1'], ['hub_costume', 'Костюмерная', 110, 282, 70, 34, '1'], ['hub_workshop', 'Мастерская', 185, 282, 85, 34, '1'], ['hub_backstage', 'Карман сцены', 280, 160, 70, 114, '1'],
+  ['hub_trap', 'Трюм под сценой', 150, 370, 200, 40, '0'],
+];
+function theaterMap(cur: string, visited: Record<string, 1>) {
+  const label = (y: number, t: string) => `<text x="8" y="${y}" font-family="Playfair Display" font-size="10" fill="#8e1830" letter-spacing="2">${t}</text>`;
+  const rooms = MAP.map(([id, n, x, y, w, h]) => { const v = visited[id] || id === cur, here = id === cur; return `<g><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${here ? '#8e1830' : v ? '#efe0b8' : '#d8cba8'}" stroke="#5a4029" stroke-width="${here ? 2 : 1}" ${v ? '' : 'stroke-dasharray="3 2"'}/><text x="${x + w / 2}" y="${y + h / 2 + 3}" text-anchor="middle" font-family="Lora" font-size="8.5" fill="${here ? '#fff4e0' : v ? '#2a1a14' : '#9a8a6a'}">${v ? n : '?'}</text></g>`; }).join('');
+  const links = [[150, 60, 150, 160], [262, 60, 262, 240], [250, 274, 250, 370], [210, 230, 210, 370], [85, 230, 85, 240], [270, 200, 280, 200], [55, 274, 55, 282], [145, 274, 145, 282], [228, 274, 228, 282], [65, 60, 65, 70], [132, 60, 132, 70], [187, 60, 187, 70], [242, 60, 242, 70]].map(([a, b, c, d]) => `<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" stroke="#a3122a" stroke-width="1.5" stroke-dasharray="2 2"/>`).join('');
+  const inPrimary = MAP.some((m) => m[0] === cur);
+  return `<svg viewBox="0 0 360 420" style="width:100%;max-height:62vh;display:block" xmlns="http://www.w3.org/2000/svg">${label(14, 'ЭТАЖ 2 · БЕЛЬЭТАЖ')}${label(150, 'ЭТАЖ 1 · ПАРТЕР')}${label(362, 'ПОД СЦЕНОЙ')}${links}${rooms}</svg><p class="warn">Пунктир — переходы и лестницы. «?» — там вы ещё не были.${inPrimary ? '' : ' Сейчас вы за пределами театра — в чужой пьесе.'}</p>`;
+}
 const fmtTime = (s: number) => `${Math.floor(s / 3600)}:${String(Math.floor(s / 60) % 60).padStart(2, '0')}`;
 import { logoSVG } from './logo';
 export const LOGO = logoSVG('m');
@@ -159,10 +172,11 @@ class UI {
   closeAll() { while (this.modals.length) { const m = this.modals[this.modals.length - 1]; (m as any).onCloseCb = null; this.close(m); } G.paused = false; }
   notebook(tab = 'chars') {
     if (!G.running) return;
-    const m = this.open(`<h2>Блокнот режиссёра <small>В. — «не забыть ничего»</small></h2><div class="tabs">${Object.entries(CATS).map(([k, n]) => `<button class="tab" data-t="${k}">${n}</button>`).join('')}<button class="tab" data-t="photos">Фотоархив</button></div><div class="body" data-b></div><div class="foot"><button class="btn small" data-x>Закрыть</button></div>`);
+    const m = this.open(`<h2>Блокнот режиссёра <small>В. — «не забыть ничего»</small></h2><div class="tabs">${Object.entries(CATS).map(([k, n]) => `<button class="tab" data-t="${k}">${n}</button>`).join('')}<button class="tab" data-t="photos">Фотоархив</button><button class="tab" data-t="map">План театра</button></div><div class="body" data-b></div><div class="foot"><button class="btn small" data-x>Закрыть</button></div>`);
     const body = m.querySelector('[data-b]') as HTMLElement;
     const draw = (t: string) => {
       m.querySelectorAll('.tab').forEach((b) => b.classList.toggle('on', (b as HTMLElement).dataset.t === t));
+      if (t === 'map') { body.innerHTML = theaterMap(G.state.room, G.state.f.visited || {}); return; }
       if (t === 'photos') { body.innerHTML = G.state.photos.length ? `<div class="photos">${G.state.photos.map((p, i) => `<div class="photo" style="--r:${(i * 37 % 7) - 3}deg"><img src="${p.img}" alt=""><span>${esc(p.caption)}</span></div>`).join('')}</div>` : '<p><i>Плёнка пока пуста. Фотоаппарат — клавиша C.</i></p>'; return; }
       let html = '';
       if (t === 'items') html = G.state.inv.map((id) => `<div class="entry noimg"><div><h4>${esc(ITEMS[id]?.name || id)}</h4><p>${esc(ITEMS[id]?.desc || '')}</p></div></div>`).join('');

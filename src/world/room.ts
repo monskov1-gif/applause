@@ -9,7 +9,7 @@ export interface Box { x0: number; z0: number; x1: number; z1: number; on: boole
 export interface Inter { id: string; x: number; z: number; r: number; label: string; fn: (G: any) => any; mask?: string; cond?: () => boolean; marker?: THREE.Object3D; y: number; enabled: boolean; quiet?: boolean; }
 export interface Trigger { x0: number; z0: number; x1: number; z1: number; fn: (G: any) => any; once: boolean; done: boolean; inside: boolean; }
 export interface RoomDef {
-  name: string; chapter?: string; w: number; d: number; music?: string | null; amb?: string | null; grade?: Grade; step?: string;
+  name: string; chapter?: string; floor?: string; w: number; d: number; music?: string | null; amb?: string | null; grade?: Grade; step?: string;
   camDist?: number; camZMax?: number; noMasks?: boolean; noCamera?: boolean; dark?: boolean;
   build: (R: Builder, G: any) => void; enter?: (G: any, from: string) => any; update?: (G: any, dt: number, t: number) => void; onKey?: (G: any, action: string) => any; photo?: (G: any, subjects: string[]) => any;
 }
@@ -71,7 +71,7 @@ export interface Laser { mesh: THREE.Mesh; x0: number; z0: number; x1: number; z
 export class Room {
   group = new THREE.Group(); boxes: Box[] = []; inters: Inter[] = []; triggers: Trigger[] = []; actors: Actor[] = []; spawns: Record<string, { x: number; z: number; dir: string }> = {};
   masked: { obj: THREE.Object3D; mask: string; box?: Box }[] = []; updaters: ((dt: number, t: number) => void)[] = []; photos: { id: string; name: string; x: number; z: number; cond?: () => boolean; mask?: string }[] = [];
-  guards: Guard[] = []; lasers: Laser[] = []; flick: { l: THREE.Light; base: number; s: number }[] = []; named: Record<string, any> = {};
+  guards: Guard[] = []; lasers: Laser[] = []; occluders: { mesh: THREE.Mesh; x0: number; x1: number; z: number; h: number }[] = []; flick: { l: THREE.Light; base: number; s: number }[] = []; named: Record<string, any> = {};
   constructor(public id: string, public def: RoomDef) {}
   actor(id: string) { return this.actors.find((a) => a.id === id); }
   inter(id: string) { return this.inters.find((a) => a.id === id); }
@@ -153,15 +153,31 @@ export class Builder {
     return a;
   }
   /** Дверь на задней стене или в произвольном месте. */
-  door(id: string, x: number, o: { to?: string; spot?: string; label: string; cond?: () => boolean; locked?: string | any[]; z?: number; col?: string; fn?: (G: any) => any; fade?: string; mask?: string; sign?: string; glow?: string; w?: number; h?: number }) {
+  door(id: string, x: number, o: { to?: string; spot?: string; label: string; cond?: () => boolean; locked?: string | any[]; z?: number; col?: string; fn?: (G: any) => any; fade?: string; mask?: string; sign?: string; glow?: string; w?: number; h?: number; wall?: 'w' | 'e' | 's' }) {
     const col = o.col || '#45301f', W = o.w || 2.2, H = o.h || 3.4;
     const t = canvasTex(Math.round(W * PPU), Math.round(H * PPU), (c, w, h) => { c.fillStyle = '#1a120e'; c.fillRect(0, 0, w, h); c.fillStyle = col; c.fillRect(2, 2, w - 4, h - 2); c.fillStyle = 'rgba(0,0,0,0.25)'; c.fillRect(5, 6, w - 10, h * 0.4); c.fillRect(5, h * 0.52, w - 10, h * 0.4); c.fillStyle = 'rgba(255,255,255,0.12)'; c.fillRect(2, 2, 2, h); c.fillStyle = '#d4ae48'; c.fillRect(w - 9, h * 0.5, 3, 3); if (o.sign) { c.fillStyle = '#e2d5ac'; c.fillRect(6, 9, w - 12, 9); ptext(c, o.sign, w / 2, 9, { size: 7, align: 'center', col: '#3a1a14' }); } }, 'door|' + col + W + H + (o.sign || ''));
-    const z = o.z ?? (-this.d / 2 + 0.04); const m = this.decal(t, { x, z, y: H / 2, glow: !!o.glow, color: o.glow, mask: o.mask });
-    this.inter(id, x, z + 0.9, { label: o.label, mask: o.mask, y: 3.2, fn: async (G) => {
+    let ix = x, iz: number, m: THREE.Mesh;
+    if (o.wall === 'w' || o.wall === 'e') { m = this.decal(t, { wall: o.wall, at: x, y: H / 2, glow: !!o.glow, color: o.glow, mask: o.mask }); ix = (o.wall === 'w' ? -1 : 1) * (this.w / 2 - 0.9); iz = x; }
+    else if (o.wall === 's') { m = this.decal(canvasTex(32, 32, (c) => { c.fillStyle = 'rgba(240,212,120,0.85)'; c.beginPath(); c.moveTo(16, 30); c.lineTo(4, 14); c.lineTo(11, 14); c.lineTo(11, 2); c.lineTo(21, 2); c.lineTo(21, 14); c.lineTo(28, 14); c.closePath(); c.fill(); }, 'arrowS'), { flat: true, x, z: this.d / 2 - 0.9, y: 0.03, w: 1.4, h: 1.4, glow: true }); iz = this.d / 2 - 0.9; }
+    else { const z = o.z ?? (-this.d / 2 + 0.04); m = this.decal(t, { x, z, y: H / 2, glow: !!o.glow, color: o.glow, mask: o.mask }); iz = z + 0.9; }
+    this.inter(id, ix, iz, { label: o.label, mask: o.mask, y: 3.2, fn: async (G) => {
       if (o.cond && !o.cond()) { G.sfx('locked'); if (o.locked) await G.run(typeof o.locked === 'string' ? ['~: ' + o.locked] : o.locked); return; }
-      if (o.fn) return o.fn(G); G.sfx('door'); await G.goto(o.to!, o.spot || 'start', { fade: o.fade });
+      if (o.fn) return o.fn(G); G.sfx(o.wall === 's' ? 'step' : 'door'); await G.goto(o.to!, o.spot || 'start', { fade: o.fade });
     } });
     return m;
+  }
+  /** Внутренняя стена: коллизия + становится полупрозрачной, когда заслоняет героиню. */
+  wall(x0: number, z0: number, x1: number, z1: number, o: any = {}) {
+    const w = Math.abs(x1 - x0) || 0.4, d = Math.abs(z1 - z0) || 0.4, h = o.h || 4.2;
+    const m = this.box((x0 + x1) / 2, (z0 + z1) / 2, w, d, h, { tex: o.tex || 'plaster', tint: o.tint, ...o }); const mat = m.material as THREE.MeshLambertMaterial; mat.transparent = true;
+    this.room.occluders.push({ mesh: m, x0: Math.min(x0, x1) - 0.4, x1: Math.max(x0, x1) + 0.4, z: Math.max(z0, z1), h });
+    if (o.trim !== false) { const tr = this.box((x0 + x1) / 2, (z0 + z1) / 2, w + 0.06, d + 0.06, 0.25, { tex: 'darkwood', y: h - 0.25, solid: false, cast: false }); const tm = tr.material as THREE.MeshLambertMaterial; tm.transparent = true; this.room.occluders.push({ mesh: tr, x0: Math.min(x0, x1) - 0.4, x1: Math.max(x0, x1) + 0.4, z: Math.max(z0, z1), h }); }
+    return m;
+  }
+  /** Ступени: визуальная лестница вверх вдоль -Z (без коллизии подъёма — это переход между этажами). */
+  stairs(x: number, z: number, w: number, n = 8, o: any = {}) {
+    const g = new THREE.Group(); for (let i = 0; i < n; i++) { const s = this.texBox(w, 0.28, 0.5, { tex: o.tex || 'stage' }); s.position.set(x, 0.14 + i * 0.28, z - i * 0.5); s.receiveShadow = true; s.castShadow = true; g.add(s); if (o.runner !== false) { const r = this.texBox(w * 0.55, 0.02, 0.52, { tex: 'carpet' }); r.position.set(x, 0.29 + i * 0.28, z - i * 0.5); g.add(r); } }
+    this.room.group.add(g); this.collider(x - w / 2, z - n * 0.5, x + w / 2, z - 0.6); return g;
   }
   spawn(name: string, x: number, z: number, dir = 'f') { this.room.spawns[name] = { x, z, dir }; }
   ambient(color: number, int: number, sky?: number) { const l = sky != null ? new THREE.HemisphereLight(sky, color, int) : new THREE.AmbientLight(color, int); this.room.group.add(l); return l; }
