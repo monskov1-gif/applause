@@ -27,6 +27,9 @@ export function chandelier(R: Builder, x: number, y: number, z: number, s = 1, o
     const dr = new THREE.Mesh(new THREE.OctahedronGeometry(0.07), crystal); dr.scale.y = 1.8; dr.position.set(cx * 0.92, -0.32, cz * 0.92); g.add(dr); }
   for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2 + 0.3; const dr = new THREE.Mesh(new THREE.OctahedronGeometry(0.06), crystal); dr.scale.y = 2; dr.position.set(Math.cos(a) * 0.55, -0.6, Math.sin(a) * 0.55); g.add(dr); }
   const big = new THREE.Mesh(new THREE.OctahedronGeometry(0.16), crystal); big.scale.y = 2; big.position.y = -0.9; g.add(big);
+  const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.62, 0.45, 14, 1, true), gm); bowl.position.y = -0.27; g.add(bowl); const lm = lam({ color: 0xe8dcc0 });
+  for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2; const ln = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.22, 3), lm); ln.position.set(Math.cos(a) * 1.0, -0.12, Math.sin(a) * 1.0); g.add(ln); }
+  const ln2 = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.35, 3), lm); ln2.position.y = -0.65; g.add(ln2);
   R.room.group.add(g); const l = R.light(x, y - 0.4 * s, z, o.color ?? 0xffd8a0, o.light ?? 18, 16 * s, { flicker: 0.03 });
   R.onUpdate((dt, t) => { g.rotation.y = Math.sin(t * 0.3 + x) * 0.05; });
   return { group: g, light: l };

@@ -153,6 +153,9 @@ export class Builder {
     const g = new THREE.PlaneGeometry(w, h); g.translate(0, h / 2, 0); if (!o.glow) litNormals(g);
     const mat = o.glow ? new THREE.MeshBasicMaterial({ map: t, alphaTest: 0.3, side: THREE.DoubleSide, transparent: o.opacity != null, opacity: o.opacity ?? 1 }) : new THREE.MeshLambertMaterial({ map: t, alphaTest: 0.3, side: THREE.DoubleSide, emissive: o.emissive || 0 });
     const m = new THREE.Mesh(g, mat); m.position.set(x, o.y || 0, z); m.castShadow = o.cast !== false && !o.glow; if (o.flipX) m.scale.x = -1; this.room.group.add(m);
+    if (!o.glow && !o.thin && h > 0.8 && !o.mask) { // толщина «картонки»: несколько тёмных слоёв позади, чтобы мебель не читалась плоской
+      const n = Math.min(4, 2 + Math.floor(h / 2)); for (let i = 1; i <= n; i++) { const bm = new THREE.MeshLambertMaterial({ map: t, alphaTest: 0.3, side: THREE.DoubleSide, color: new THREE.Color().setScalar(0.62 - i * 0.07) }); const back = new THREE.Mesh(g, bm); back.position.z = -0.055 * i; back.castShadow = false; m.add(back); }
+    }
     let b: Box | undefined; if (o.solid) { const r = o.solid === true ? Math.min(w, 1.2) / 2 : o.solid; b = this.collider(x - r, z - 0.3, x + r, z + 0.3); (m.userData as any).box = b; }
     this.room.props.push({ x, z, y: o.y || 0, w, kind: typeof kind === 'string' ? kind : 'tex', box: b }); this.tag(m, o, b); return m;
   }
@@ -183,7 +186,7 @@ export class Builder {
       else { const z = o.z ?? (-this.d / 2); g.position.set(x, 0, z); if (o.z == null) this.wallSlot('n', x, W + 0.8, H / 2, H + 0.6, { fixed: true, obj: g }); iz = z + 0.9; }
       this.room.group.add(g); this.tag(g, { mask: o.mask });
     }
-    this.inter(id, ix, iz, { label: o.label, mask: o.mask, y: o.wall === 's' ? 1.6 : 3.2, fn: async (G) => {
+    this.inter(id, ix, iz, { label: o.label, mask: o.mask, y: o.wall === 's' ? 1.2 : 3.2, fn: async (G) => {
       if (o.cond && !o.cond()) { G.sfx('locked'); if (o.locked) await G.run(typeof o.locked === 'string' ? ['~: ' + o.locked] : o.locked); return; }
       if (o.fn) return o.fn(G); if (o.wall !== 's') { G.sfx('door'); swingDoor(g); } else G.sfx('step'); await G.goto(o.to!, o.spot || 'start', { fade: o.fade });
     } });
@@ -191,12 +194,21 @@ export class Builder {
   }
   /** Выход у открытой (южной) стороны: проём-арка с табличкой и ступенями, видимый камерой. */
   southExit(x: number, label: string) {
-    const g = new THREE.Group(); const z = this.d / 2 - 0.25; const wood = new THREE.MeshLambertMaterial({ map: tex('darkwood') }), gold = new THREE.MeshLambertMaterial({ map: tex('gold') });
-    for (const sx of [-1, 1]) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.25, 2.6, 0.25), wood); p.position.set(x + sx * 1.15, 1.3, z); p.castShadow = true; g.add(p); const cap = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.15, 0.4), gold); cap.position.set(x + sx * 1.15, 2.65, z); g.add(cap); }
-    const lint = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.22, 0.3), wood); lint.position.set(x, 2.75, z); g.add(lint);
-    const plate = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 0.42), new THREE.MeshBasicMaterial({ map: canvasTex(88, 16, (c) => { c.fillStyle = '#2a1408'; c.fillRect(0, 0, 88, 16); c.strokeStyle = '#d4ae48'; c.strokeRect(0.5, 0.5, 87, 15); ptext(c, label.length > 22 ? label.slice(0, 21) + '…' : label, 44, 4, { size: 7, col: '#f0d478', align: 'center' }); }, 'sexit' + label) }));
-    plate.position.set(x, 2.75, z + 0.16); g.add(plate);
-    for (let i = 0; i < 3; i++) { const st = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.08, 0.35), wood); st.position.set(x, 0.04 - i * 0.12, z + 0.1 + i * 0.3); g.add(st); }
+    // низкий порог у открытой стороны: ковровая дорожка за край, светящаяся стрелка, латунные столбики и наклонная табличка (ничего не закрывает героиню)
+    const g = new THREE.Group(); const z = this.d / 2 - 0.35; const gold = new THREE.MeshLambertMaterial({ map: tex('gold') });
+    const run = this.texBox(2.2, 0.03, 3.2, { tex: 'carpet' }); run.position.set(x, 0.015, z + 1.2); run.receiveShadow = true; g.add(run);
+    for (const sx of [-1, 1]) {
+      const p = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.95, 8), gold); p.position.set(x + sx * 1.35, 0.48, z); p.castShadow = true; g.add(p);
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.24, 0.06, 12), gold); base.position.set(x + sx * 1.35, 0.03, z); g.add(base);
+      const ball = new THREE.Mesh(new THREE.SphereGeometry(0.1, 10, 8), gold); ball.position.set(x + sx * 1.35, 1.0, z); g.add(ball);
+    }
+    const txt = label.length > 24 ? label.slice(0, 23) + '…' : label; const tw = Math.max(64, Math.min(140, txt.length * 6 + 26));
+    const plate = new THREE.Mesh(new THREE.PlaneGeometry(tw / 40, 0.42), new THREE.MeshBasicMaterial({ map: canvasTex(tw, 17, (c) => { c.fillStyle = '#123a22'; c.fillRect(0, 0, tw, 17); c.strokeStyle = '#d4ae48'; c.strokeRect(0.5, 0.5, tw - 1, 16); c.fillStyle = '#7dffb0'; c.fillRect(4, 7, 7, 3); c.fillRect(6, 5, 2, 7); c.fillRect(5, 6, 4, 5); ptext(c, txt, tw / 2 + 5, 5, { size: 7, col: '#e8fff0', align: 'center' }); }, 'sexit2' + label) }));
+    plate.position.set(x, 0.32, z + 0.25); plate.rotation.x = -1.0; g.add(plate);
+    const stand = new THREE.Mesh(new THREE.BoxGeometry(tw / 40 + 0.1, 0.06, 0.4), gold); stand.position.set(x, 0.1, z + 0.18); g.add(stand);
+    const arrow = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.9), new THREE.MeshBasicMaterial({ map: canvasTex(16, 16, (c) => { c.fillStyle = '#ffe9a8'; for (let i = 0; i < 6; i++) c.fillRect(2 + i, 4 + i, 12 - i * 2, 1); c.fillRect(6, 0, 4, 5); }, 'sarrow'), transparent: true, opacity: 0.85 }));
+    arrow.rotation.x = -Math.PI / 2; arrow.position.set(x, 0.035, z + 1.3); g.add(arrow);
+    const l = new THREE.PointLight(0x9fffc8, 3, 4, 1.6); l.position.set(x, 0.8, z + 0.6); g.add(l);
     this.room.group.add(g); return g;
   }
   /** Внутренняя стена: коллизия + становится полупрозрачной, когда заслоняет героиню. */

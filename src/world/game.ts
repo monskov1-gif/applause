@@ -243,6 +243,7 @@ class Game {
     // управление
     if (this.override) this.override(dt);
     else if (this.lock === 0 && !ui.modal) {
+      if (!p.hidden && this.hits(p.x, p.z)) { const fp = this.freeSpot(p.x, p.z); p.x = fp.x; p.z = fp.z; } // страховка: героиню поставили внутрь мебели в сценке
       const ax = input.axis(); const moving = Math.hypot(ax.x, ax.y) > 0.15;
       if (moving) {
         const sp = this.playerSpeed * (input.isDown('run') ? 1.35 : 1) * dt; const nx = p.x + ax.x * sp, nz = p.z + ax.y * sp;

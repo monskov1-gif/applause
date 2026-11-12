@@ -33,9 +33,9 @@ function finish(cv: HTMLCanvasElement, repeat = true) {
   if (repeat) t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; return t;
 }
 type PatFn = (x: number, y: number, S: number) => number | [number, number[][]];
-const PAT: Record<string, { size: number; ramp: string; fn: PatFn; dither?: number }> = {
-  floor: { size: 64, ramp: 'floor', fn: (x, y, S) => { const row = Math.floor(y / 8), off = (row * 23) % 32, px = (x + off) % 32; if (y % 8 === 0 || px === 0) return 0.05; return 0.35 + fbm(x * 3, y + row * 40, S, row) * 0.55 + hash(Math.floor((x + off) / 32), row) * 0.2; } },
-  parquet: { size: 32, ramp: 'wood', fn: (x, y, S) => { const bx = Math.floor(x / 16), by = Math.floor(y / 16), v = (bx + by) % 2; const u = v ? x % 16 : y % 16, w = v ? y % 4 : x % 4; if (u === 0 || w === 0) return 0.1; return 0.4 + fbm(v ? x : y * 3, v ? y * 3 : x, S, 3) * 0.5 + v * 0.08; } },
+const PAT: Record<string, { size: number; ramp: string; fn: PatFn; dither?: number; u?: number }> = {
+  floor: { u: 0.6, size: 64, ramp: 'floor', fn: (x, y, S) => { const row = Math.floor(y / 8), off = (row * 23) % 32, px = (x + off) % 32; if (y % 8 === 0 || px === 0) return 0.05; return 0.35 + fbm(x * 3, y + row * 40, S, row) * 0.55 + hash(Math.floor((x + off) / 32), row) * 0.2; } },
+  parquet: { u: 0.45, size: 32, ramp: 'wood', fn: (x, y, S) => { const bx = Math.floor(x / 16), by = Math.floor(y / 16), v = (bx + by) % 2; const u = v ? x % 16 : y % 16, w = v ? y % 4 : x % 4; if (u === 0 || w === 0) return 0.1; return 0.4 + fbm(v ? x : y * 3, v ? y * 3 : x, S, 3) * 0.5 + v * 0.08; } },
   wood: { size: 32, ramp: 'wood', fn: (x, y, S) => { const row = Math.floor(y / 8); if (y % 8 === 0) return 0.05; return 0.3 + fbm(x * 2, y + row * 30, S, row + 50) * 0.6; } },
   darkwood: { size: 32, ramp: 'darkwood', fn: (x, y, S) => { const col = Math.floor(x / 8); if (x % 8 === 0) return 0.05; return 0.3 + fbm(x + col * 30, y * 2, S, col + 60) * 0.6; } },
   stage: { size: 64, ramp: 'darkwood', fn: (x, y, S) => { const col = Math.floor(x / 8); if (x % 8 === 0) return 0.05; return 0.3 + fbm(x + col * 30, y * 3, S, col) * 0.6; } },
@@ -47,7 +47,7 @@ const PAT: Record<string, { size: number; ramp: string; fn: PatFn; dither?: numb
   brick: { size: 32, ramp: 'brick', fn: (x, y, S) => { const row = Math.floor(y / 8), px = (x + (row % 2) * 8) % 16; if (y % 8 === 0 || px === 0) return [0.3, RAMPS.stone]; return 0.3 + hash(Math.floor((x + (row % 2) * 8) / 16), row) * 0.45 + fbm(x, y, S, 2) * 0.25; } },
   stone: { size: 32, ramp: 'stone', fn: (x, y, S) => { const row = Math.floor(y / 11), px = (x + (row % 2) * 9) % 18; if (y % 11 === 0 || px === 0) return 0.02; return 0.3 + hash(Math.floor((x + (row % 2) * 9) / 18), row, 4) * 0.4 + fbm(x, y, S, 9) * 0.3; } },
   gold: { size: 16, ramp: 'gold', fn: (x, y) => 0.5 + Math.sin((x + y) / 16 * Math.PI * 2) * 0.35 + hash(x, y) * 0.15 },
-  carpet: { size: 32, ramp: 'carpet', dither: 0.4, fn: (x, y) => { const e = Math.min(x % 32, 31 - (x % 32)); return e < 2 ? [0.7, RAMPS.gold] : 0.4 + hash(x, y) * 0.4; } },
+  carpet: { u: 0.55, size: 32, ramp: 'carpet', dither: 0.35, fn: (x, y) => { const d1 = (x + y) % 16, d2 = (x - y + 64) % 16; if ((d1 === 0 || d2 === 0) && (x % 16 < 8) === (y % 16 < 8)) return [0.45, RAMPS.gold]; if (x % 16 === 8 && y % 16 === 0) return [0.8, RAMPS.gold]; return 0.42 + hash(x, y) * 0.32; } },
   metal: { size: 32, ramp: 'metal', fn: (x, y, S) => { if (x % 32 === 0 || y % 32 === 0) return 0.05; if ((x % 32 === 3 || x % 32 === 28) && (y % 32 === 3 || y % 32 === 28)) return 0.95; return 0.45 + fbm(x * 4, y, S, 11) * 0.35; } },
   black: { size: 16, ramp: 'black', fn: (x, y) => 0.3 + hash(x, y) * 0.5 },
   neon: { size: 32, ramp: 'neon', dither: 0.05, fn: (x, y) => (x % 16 === 0 || y % 16 === 0) ? [0.9, [[30, 220, 230]]] : 0.3 + hash(x, y) * 0.2 },
@@ -59,7 +59,7 @@ const PAT: Record<string, { size: number; ramp: string; fn: PatFn; dither?: numb
   paperstone: { size: 32, ramp: 'paper', fn: (x, y, S) => { const row = Math.floor(y / 11), px = (x + (row % 2) * 9) % 18; if (y % 11 === 0 || px === 0) return [0.4, RAMPS.wood]; return 0.3 + hash(Math.floor((x + (row % 2) * 9) / 18), row, 4) * 0.5; } },
   white: { size: 32, ramp: 'white', fn: (x, y, S) => 0.5 + fbm(x, y, S, 29) * 0.4 },
   gloss: { size: 32, ramp: 'white', dither: 0.1, fn: (x, y) => (x % 32 === 0 || y % 32 === 0) ? 0.1 : 0.75 + ((x + y) % 32 < 4 ? 0.25 : 0) },
-  checker: { size: 32, ramp: 'tileb', dither: 0, fn: (x, y) => ((Math.floor(x / 16) + Math.floor(y / 16)) % 2) ? [0.5, RAMPS.white] : 0.5 },
+  checker: { u: 0.5, size: 32, ramp: 'tileb', dither: 0, fn: (x, y) => ((Math.floor(x / 16) + Math.floor(y / 16)) % 2) ? [0.5, RAMPS.white] : 0.5 },
   concrete: { size: 64, ramp: 'concrete', fn: (x, y, S) => 0.3 + fbm(x, y, S, 31) * 0.6 },
   schoolfloor: { size: 32, ramp: 'schoolfloor', fn: (x, y, S) => (y % 16 === 0 || (x + Math.floor(y / 16) * 16) % 32 === 0) ? 0.1 : 0.45 + fbm(x * 3, y, S, 37) * 0.45 },
   schoolwall: { size: 32, ramp: 'white', dither: 0.15, fn: (x, y) => 0.65 + hash(x, y) * 0.2 },
@@ -82,7 +82,7 @@ export function tex(kind: string, tint?: string): THREE.CanvasTexture {
     if (tn && rp === RAMPS[p.ramp]) { const l = (col[0] * 0.3 + col[1] * 0.6 + col[2] * 0.1) / 160; col = [Math.min(255, tn[0] * l), Math.min(255, tn[1] * l), Math.min(255, tn[2] * l)]; }
     const i = (y * S + x) * 4; img.data[i] = col[0]; img.data[i + 1] = col[1]; img.data[i + 2] = col[2]; img.data[i + 3] = 255;
   }
-  c.putImageData(img, 0, 0); t = finish(cv); (t as any).unit = S / PPU; cache.set(key, t); return t;
+  c.putImageData(img, 0, 0); t = finish(cv); (t as any).unit = S / PPU * (p.u ?? 1); cache.set(key, t); return t;
 }
 export function canvasTex(w: number, h: number, draw: (c: CanvasRenderingContext2D, w: number, h: number) => void, key?: string): THREE.CanvasTexture {
   if (key && cache.has(key)) return cache.get(key)!;

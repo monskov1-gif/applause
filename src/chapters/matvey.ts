@@ -68,7 +68,7 @@ async function noteScene(G: any) {
   const mat = B.actor('matvey_school', 1.8, 0.2, { id: 'matvey' }); const art = B.actor('artemiy', 6, -4, { id: 'artemiy' }); G.player.place(7.6, 3.8, 'l'); G.player.hidden = true; G.focus(3, -1, 16);
   await art.walkTo(3.4, 0.2, 2.5); art.face(mat.x, mat.z); mat.face(art.x, art.z); G.sfx('door'); await G.run(M.s2lock.slice(0, 7));
   const tch = B.actor('teacher', 6, -4, { id: 'teacher' }); G.sfx('door'); await tch.walkTo(4.8, -2, 2.4); tch.face(mat.x, mat.z); await G.run(M.s2lock.slice(7));
-  await tch.walkTo(6, -4.6, 3); tch.hidden = true; await art.walkTo(6, -4.6, 3); art.hidden = true; G.player.hidden = false; G.player.place(4.6, 1.6, 'l'); mat.face(G.player.x, G.player.z);
+  await tch.walkTo(6, -4.6, 3); tch.hidden = true; await art.walkTo(6, -4.6, 3); art.hidden = true; G.player.hidden = false; G.player.place(3.4, 2.3, 'l'); mat.face(G.player.x, G.player.z);
   await G.run(M.s2after); f.mat_s2 = 1; f.mat_fake = 2; G.grade(fakeGrade(2)); G.unfocus();
 }
 const fest: RoomDef = {
@@ -96,17 +96,21 @@ const fest: RoomDef = {
   update(G, dt) { if (G.f.mat_steps && !G.f.mat_steps_done) stepsTick(G, dt); },
 };
 async function checkArch(G: any) { if (G.f.mat_a1 && G.f.mat_a2 && !G.f.mat_both) { G.f.mat_both = 1; await G.run(M.s3both); } }
-const ST = { start: 0, max: 0, n: 0, frozen: 0, mx0: 0 };
+const ST = { start: 0, max: 0, n: 0, frozen: 0, mx0: 0, px: 0, pz: 0, walk: 0, appr: 0, d0: 0 };
 async function climax(G: any) {
   const f = G.f; if (f.mat_steps) return; G.focus(19, 0, 16); await G.run(M.climax); await G.run(M.climaxChoice); G.unfocus();
-  const mat = G.actor('matvey'); mat.pose = null; f.mat_steps = 1; ST.start = G.player.x; ST.max = 0; ST.n = 0; ST.mx0 = mat.x; G.grade({ ...fakeGrade(0), tint: [1.05, 0.98, 1.05], sat: 0.9, vig: 0.5 }); G.audio.music('school_soft');
+  const mat = G.actor('matvey'); mat.pose = null; f.mat_steps = 1; ST.start = G.player.x; ST.max = 0; ST.n = 0; ST.mx0 = mat.x; ST.px = G.player.x; ST.pz = G.player.z; ST.walk = 0; ST.appr = 0; ST.d0 = Math.hypot(G.player.x - mat.x, G.player.z - mat.z); G.grade({ ...fakeGrade(0), tint: [1.05, 0.98, 1.05], sat: 0.9, vig: 0.5 }); G.audio.music('school_soft');
 }
 function stepsTick(G: any, dt: number) {
-  const p = G.player, mat = G.actor('matvey'), art = G.actor('artemiy'); const away = ST.start - p.x;
-  if (away > ST.max) ST.max = away; const n = Math.max(0, Math.min(100, Math.floor(ST.max / 0.38)));
+  // «Сто шагов назад»: считаем любые шаги, которые не приближают Варю к Матвею (по двору можно ходить кругами),
+  // один шаг ≈ 0.16 м, так что места хватает в любой части локации. Шаг навстречу замирает сцену.
+  const p = G.player, mat = G.actor('matvey'), art = G.actor('artemiy');
+  const step = Math.hypot(p.x - ST.px, p.z - ST.pz); const dNow = Math.hypot(p.x - ST.mx0, p.z - (mat?.z ?? p.z)), dPrev = Math.hypot(ST.px - ST.mx0, ST.pz - (mat?.z ?? p.z)); ST.px = p.x; ST.pz = p.z;
+  if (step > 0.0001) { if (dNow < dPrev - step * 0.6) ST.appr += dPrev - dNow; else { ST.walk += step; ST.appr = Math.max(0, ST.appr - step); } }
+  const n = Math.max(0, Math.min(100, Math.floor(ST.walk / 0.16)));
   if (n !== ST.n) { ST.n = n; G.ui.lyric(`${n} / 100`, 'шаги назад'); if (n % 10 === 0 && n) G.sfx('hit', { f: 400 + n * 4 }); }
-  const back = ST.max - away > 1.2; if (back && !ST.frozen) { ST.frozen = 1; G.cut(() => G.run(M.stepsFreeze)); } if (!back) ST.frozen = 0;
-  if (!back) { const tx = ST.mx0 + (art.x - 1.2 - ST.mx0) * (n / 100); if (Math.abs(mat.x - tx) > 0.05) { mat.x += Math.sign(tx - mat.x) * Math.min(Math.abs(tx - mat.x), dt * 2); mat.moving = true; mat.face(art.x, art.z); } else mat.moving = false; }
+  const back = ST.appr > 1.2; if (back && !ST.frozen) { ST.frozen = 1; ST.appr = 0; G.cut(() => G.run(M.stepsFreeze)); } if (!back && ST.appr < 0.3) ST.frozen = 0;
+  if (!back && mat && art) { const tx = ST.mx0 + (art.x - 1.2 - ST.mx0) * (n / 100); if (Math.abs(mat.x - tx) > 0.05) { mat.x += Math.sign(tx - mat.x) * Math.min(Math.abs(tx - mat.x), dt * 2); mat.moving = true; mat.face(art.x, art.z); } else mat.moving = false; }
   if (n >= 100 && !G.f.mat_steps_done) { G.f.mat_steps_done = 1; G.ui.lyric(null); G.cut(() => stepsEnd(G)); }
 }
 async function stepsEnd(G: any) {

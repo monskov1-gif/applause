@@ -32,7 +32,7 @@ export const LOGO = logoSVG('m');
 class UI {
   modal = false; dialogOpen = false; private modals: HTMLElement[] = []; private hudEl!: HTMLElement; private dlg!: HTMLElement; private promptEl!: HTMLElement; private toasts!: HTMLElement; private saveEl!: HTMLElement; private lyricEl!: HTMLElement;
   private vf!: HTMLElement; private touchEl!: HTMLElement; private log: { name: string; text: string; color: string }[] = []; private advance: (() => void) | null = null; private loadingEl!: HTMLElement; private maskRow!: HTMLElement; private hudR!: HTMLElement;
-  auto = false; private placeEl: HTMLElement | null = null; private questEl!: HTMLElement; private lastQuest = '';
+  auto = false; private placeEl: HTMLElement | null = null; private questEl!: HTMLElement; private lastQuest = ''; private qRoom = ''; private qT: any = 0;
 
   init() {
     const r = root();
@@ -45,7 +45,7 @@ class UI {
     input.onAction((a) => { if (this.modal) { if (a === 'pause') this.closeTop(); return; } if (a === 'act' && this.advance) this.advance(); });
     this.hudR.innerHTML = `<button class="hbtn" data-a="cam" title="Фотоаппарат (C)">◉</button><button class="hbtn" data-a="inv" title="Инвентарь (I)">▣<span class="hb-n"></span></button><button class="hbtn" data-a="note" title="Журнал (Tab)">✎</button><button class="hbtn" data-a="pause" title="Пауза (Esc)">❚❚</button>`;
     this.hudR.addEventListener('click', (e) => { const a = (e.target as HTMLElement).closest('[data-a]')?.getAttribute('data-a'); if (a === 'cam') input.fire('camera'); if (a === 'inv') input.fire('inventory'); if (a === 'note') input.fire('notebook'); if (a === 'pause') input.fire('pause'); });
-    this.questEl = el('div', 'questbox', '', this.hudEl); this.questEl.addEventListener('click', () => this.notebook('quests'));
+    this.questEl = el('div', 'questbox', '', this.hudEl); this.questEl.addEventListener('click', () => this.notebook('quests')); this.questEl.addEventListener('mouseenter', () => this.questEl.classList.remove('mini'));
     this.maskRow.addEventListener('click', (e) => { const m = (e.target as HTMLElement).closest('.maskb') as HTMLElement | null; if (m) G.setMask(m.dataset.m!); });
     this.buildTouch(); this.applySettings();
   }
@@ -103,6 +103,7 @@ class UI {
     if (key === this.lastQuest) return; const changedMain = this.lastQuest.split('|')[0] !== o.main; this.lastQuest = key;
     this.questEl.classList.toggle('hidden', !o.main);
     this.questEl.innerHTML = `<small>Задание</small><b>${esc(o.main)}</b>${o.hint ? `<i>${esc(o.hint)}</i>` : ''}${left ? `<em>Здесь ещё можно осмотреть: ${left}</em>` : ''}`;
+    const room0 = room ? room.id : ''; if (changedMain || room0 !== this.qRoom) { this.qRoom = room0; this.questEl.classList.remove('mini'); clearTimeout(this.qT); this.qT = setTimeout(() => this.questEl.classList.add('mini'), 6500); }
     if (changedMain && o.main && !G.fast) { this.questEl.classList.remove('flash'); void this.questEl.offsetWidth; this.questEl.classList.add('flash'); audio.sfx('pencil'); }
   }
   /** Предмет плавно вылетает снизу, фон затемняется и размывается. */

@@ -23,7 +23,7 @@ export function door3D(W: number, H: number, col: string, sign?: string, double 
     const knob = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), gold); knob.position.set(double ? pivX - L * (lw / 2 - 0.15) : pivX + lw / 2 - 0.18, H * 0.48, 0.14); leaf.add(knob);
     void hx;
   }
-  if (sign) { const t = canvasTex(64, 14, (c) => { c.fillStyle = '#e8d8b0'; c.fillRect(0, 0, 64, 14); c.strokeStyle = '#86641c'; c.strokeRect(0.5, 0.5, 63, 13); ptext(c, sign, 32, 3, { size: 8, col: '#3a1a14', align: 'center' }); }, 'dsign' + sign); const pl = new THREE.Mesh(new THREE.PlaneGeometry(Math.min(W, 1.8), 0.4), lam({ map: t })); pl.position.set(0, H + 0.15, 0.28); g.add(pl); }
+  if (sign) { const cw = Math.max(48, Math.ceil(sign.length * 5.4 + 12)); const t = canvasTex(cw, 14, (c) => { c.fillStyle = '#e8d8b0'; c.fillRect(0, 0, cw, 14); c.strokeStyle = '#86641c'; c.strokeRect(0.5, 0.5, cw - 1, 13); ptext(c, sign, cw / 2, 3, { size: 8, col: '#3a1a14', align: 'center' }); }, 'dsign' + sign); const pw = Math.min(cw * 0.03, W + 1.4); const pl = new THREE.Mesh(new THREE.PlaneGeometry(pw, 0.42), lam({ map: t, emissive: 0x2a2010 })); pl.position.set(0, H + 0.15, 0.3); g.add(pl); }
   if (glow) { const l = new THREE.PointLight(hexToNum(glow), 3, 4, 1.6); l.position.set(0, H * 0.7, 0.8); g.add(l); }
   return g;
 }
@@ -53,7 +53,7 @@ export function window3D(R: Builder, x: number, o: { wall?: 'n' | 'w' | 'e'; y?:
 /** Зеркало в золочёной раме, с объёмом и бликами. */
 export function mirror3D(R: Builder, x: number, y: number, z: number, w: number, h: number, o: { bulbs?: boolean; ry?: number } = {}) {
   const g = new THREE.Group(); const gold = M.gold();
-  const glass = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ map: canvasTex(24, 32, (c) => { const gr = c.createLinearGradient(0, 0, 24, 32); gr.addColorStop(0, '#6a5a50'); gr.addColorStop(0.5, '#2e2622'); gr.addColorStop(1, '#4a3c34'); c.fillStyle = gr; c.fillRect(0, 0, 24, 32); c.fillStyle = 'rgba(255,240,220,.22)'; c.fillRect(3, 1, 2, 30); c.fillRect(7, 1, 1, 30); }, 'mirglass'), metalness: 0.6, roughness: 0.2 }));
+  const glass = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ map: canvasTex(24, 32, (c) => { const gr = c.createLinearGradient(0, 0, 24, 32); gr.addColorStop(0, '#a89a90'); gr.addColorStop(0.5, '#5e524c'); gr.addColorStop(1, '#847468'); c.fillStyle = gr; c.fillRect(0, 0, 24, 32); c.fillStyle = 'rgba(255,240,220,.22)'; c.fillRect(3, 1, 2, 30); c.fillRect(7, 1, 1, 30); }, 'mirglass2'), metalness: 0.3, roughness: 0.25, emissive: 0x58504a, emissiveIntensity: 0.55 })); (glass.material as any).emissiveMap = (glass.material as any).map;
   glass.position.z = 0.03; g.add(glass);
   for (const [bw, bh, bx, by] of [[w + 0.3, 0.16, 0, h / 2 + 0.08], [w + 0.3, 0.16, 0, -h / 2 - 0.08], [0.16, h, -w / 2 - 0.08, 0], [0.16, h, w / 2 + 0.08, 0]]) box(g, bw, bh, 0.14, bx, by, 0.05, gold);
   const crest = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.05, 6, 12, Math.PI), gold); crest.position.set(0, h / 2 + 0.16, 0.06); g.add(crest);
@@ -125,6 +125,12 @@ export function barCounter(R: Builder, x: number, z: number, w = 7) {
   const n = Math.floor((w - 0.8) / 0.22) * 3; const bot = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.06, 0.07, 0.42, 6), lam({ color: 0xffffff, transparent: true, opacity: 0.9 }), n); const m4 = new THREE.Matrix4(), col = new THREE.Color(); const cs = [0x2a6a3a, 0x8a2a2a, 0xd8c890, 0x3a3a6a, 0xb07a2a, 0xe8e0d0];
   for (let i = 0; i < n; i++) { const row = i % 3, k = Math.floor(i / 3); m4.makeTranslation(-w / 2 + 0.5 + k * 0.22, 1.85 + row * 0.7, -0.9); bot.setMatrixAt(i, m4); bot.setColorAt(i, col.setHex(cs[(i * 7) % cs.length])); } g.add(bot);
   const mir = new THREE.Mesh(new THREE.PlaneGeometry(w - 0.8, 2.2), new THREE.MeshStandardMaterial({ color: 0x3a2a24, metalness: 0.8, roughness: 0.2 })); mir.position.set(0, 2.5, -1.12); g.add(mir);
+  // на стойке: самовар, кассовый аппарат, витрины-колпаки с пирожными, ряд бокалов
+  const glassM = lam({ color: 0xe8f4ff, transparent: true, opacity: 0.45 }); const T = 1.3, FZ = 1.15;
+  const sam = new THREE.Group(); sam.position.set(-w / 2 + 0.8, T, FZ); const sb = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.28, 0.55, 12), gold); sb.position.y = 0.42; sam.add(sb); const sf = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.18, 0.15, 10), gold); sf.position.y = 0.08; sam.add(sf); const st = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), gold); st.position.y = 0.78; sam.add(st); box(sam, 0.18, 0.04, 0.04, 0.3, 0.3, 0, gold); g.add(sam);
+  const till = new THREE.Group(); till.position.set(w / 2 - 0.9, T, FZ); box(till, 0.6, 0.3, 0.45, 0, 0.15, 0, lam({ color: 0x5a4a3a })); box(till, 0.5, 0.22, 0.06, 0, 0.42, -0.12, gold); box(till, 0.4, 0.06, 0.3, 0, 0.32, 0.05, lam({ color: 0xd8d0c0 })); g.add(till);
+  for (const cx of [-w / 4, w / 4 - 0.4]) { const pl = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.04, 14), lam({ color: 0xf4f0e8 })); pl.position.set(cx, T + 0.02, FZ); g.add(pl); for (let k = 0; k < 3; k++) { const ck = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.09, 0.12, 8), lam({ color: [0xd86a8a, 0x8a5a3a, 0xf0e0a0][k] })); ck.position.set(cx - 0.14 + k * 0.14, T + 0.1, FZ + (k % 2) * 0.08); g.add(ck); } const dome = new THREE.Mesh(new THREE.SphereGeometry(0.34, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), glassM); dome.position.set(cx, T + 0.04, FZ); g.add(dome); }
+  for (let k = 0; k < 8; k++) { const gl = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.02, 0.22, 8), glassM); gl.position.set(-0.9 + k * 0.24, T + 0.11, FZ - 0.25); g.add(gl); }
   g.position.set(x, 0, z); R.room.group.add(g); R.collider(x - w / 2, z + 0.6, x + w / 2, z + 1.6); R.collider(x - w / 2, z - 1.2, x + w / 2, z - 0.6); return g;
 }
 export function cafeTable(R: Builder, x: number, z: number) {
@@ -132,6 +138,10 @@ export function cafeTable(R: Builder, x: number, z: number) {
   const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1, 8), gold); leg.position.y = 0.5; g.add(leg); const ft = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.35, 0.05, 12), gold); ft.position.y = 0.03; g.add(ft);
   const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.05, 0.1, 8), lam({ color: 0xf4f0e8 })); cup.position.set(0.15, 1.08, 0.1); g.add(cup); const gl = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.02, 0.2, 8), lam({ color: 0xe8f0f8, transparent: true, opacity: 0.6 })); gl.position.set(-0.2, 1.13, -0.05); g.add(gl);
   for (const a of [0, Math.PI]) { const ch = new THREE.Group(); ch.position.set(Math.cos(a) * 0.85, 0, Math.sin(a) * 0.85); ch.rotation.y = -a + Math.PI / 2; box(ch, 0.5, 0.06, 0.5, 0, 0.6, 0, M.velvet()); box(ch, 0.5, 0.6, 0.05, 0, 0.9, -0.24, gold); for (const sx of [-1, 1]) for (const sz of [-1, 1]) box(ch, 0.04, 0.6, 0.04, sx * 0.22, 0.3, sz * 0.22, gold); g.add(ch); }
+  const sd = Math.abs(Math.round(x * 3 + z * 7)) % 3; // разные столики: цветы, меню, свеча
+  if (sd === 0) { const v = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 0.22, 8), lam({ color: 0xc8e0f0, transparent: true, opacity: 0.7 })); v.position.set(0, 1.14, -0.1); g.add(v); for (let k = 0; k < 3; k++) { const fl = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 5), lam({ color: [0xc41e3a, 0xf0e0f0, 0xe8a0b8][k] })); fl.position.set(-0.05 + k * 0.05, 1.3 + (k % 2) * 0.05, -0.1); g.add(fl); } }
+  else if (sd === 1) { const mn = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.28, 0.03), lam({ color: 0x8e1830 })); mn.position.set(0, 1.17, -0.15); mn.rotation.x = -0.25; g.add(mn); }
+  else { const cd = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.18, 6), lam({ color: 0xf4ecd8, emissive: 0x403020 })); cd.position.set(0, 1.12, -0.1); g.add(cd); const fl = new THREE.Mesh(new THREE.SphereGeometry(0.035, 6, 4), new THREE.MeshBasicMaterial({ color: 0xffd080 })); fl.position.set(0, 1.24, -0.1); g.add(fl); }
   g.position.set(x, 0, z); R.room.group.add(g); R.collider(x - 1.1, z - 0.6, x + 1.1, z + 0.6); return g;
 }
 /** Мраморная статуя на постаменте (силуэт из примитивов). */
