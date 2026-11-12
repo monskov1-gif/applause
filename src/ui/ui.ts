@@ -117,13 +117,25 @@ class UI {
     const close = () => { m.classList.add('out'); setTimeout(() => m.remove(), 450); }; setTimeout(close, 2400); m.onclick = close;
   }
   prompt(label: string | null, x = 0, y = 0) { if (!label) { this.promptEl.classList.add('hidden'); return; } this.promptEl.classList.remove('hidden'); if (this.promptEl.dataset.l !== label) { this.promptEl.dataset.l = label; this.promptEl.innerHTML = `<kbd>E</kbd>${esc(label)}`; } this.promptEl.style.left = Math.min(86, Math.max(14, x * 100)) + '%'; this.promptEl.style.top = Math.max(8, y * 100) + '%'; }
-  toast(text: string, icon = '✦') { if (G.fast) return; const t = el('div', 'toast', `<b>${icon}</b>${esc(text)}`, this.toasts); setTimeout(() => t.remove(), 4100); }
+  private toastAt = 0;
+  toast(text: string, icon = '✦') { if (G.fast) return; const now = performance.now(); const at = Math.max(now, this.toastAt); this.toastAt = at + 1400; setTimeout(() => { const t = el('div', 'toast', `<b>${icon}</b>${esc(text)}`, this.toasts); setTimeout(() => t.remove(), 4100); }, at - now); }
   place(name: string) { if (this.placeEl) this.placeEl.remove(); if (G.fast) return; const p = this.placeEl = el('div', 'place', `<b>${esc(name)}</b><i></i>`, root()); setTimeout(() => p.remove(), 3700); }
   saved(slot: string) { this.saveEl.textContent = slot === 'auto' ? '✎ автосохранение' : '✎ сохранено'; this.saveEl.classList.add('on'); setTimeout(() => this.saveEl.classList.remove('on'), 1600); }
   loading(on: boolean) { this.loadingEl.classList.toggle('on', on); }
   lyric(text: string | null, who = '') { if (!text) { this.lyricEl.classList.add('hidden'); return; } this.lyricEl.classList.remove('hidden'); this.lyricEl.innerHTML = (who ? `<small>${esc(who)}</small>` : '') + esc(text).replace(/\n/g, '<br>'); }
   viewfinder(on: boolean) { this.vf.classList.toggle('hidden', !on); }
+  private lbEl: HTMLElement | null = null; private lbOn = false;
+  /** Кинематографические полосы во время катсцен. */
+  letterbox(on: boolean) { if (on === this.lbOn) return; this.lbOn = on; if (!this.lbEl) this.lbEl = el('div', 'letterbox', '<i></i><i></i>', root()); this.lbEl.classList.toggle('on', on); }
+  /** Занавес из лент: полотна собираются складками к центру и расходятся, подхватываясь к краям. */
+  private curtainEl() { const N = 14; const half = (side: string) => `<div class="cur-half ${side}">${Array.from({ length: N }, (_, i) => `<b style="--i:${i};--n:${N}"></b>`).join('')}</div>`; return el('div', 'trans curtain2', `${half('l')}${half('r')}<div class="cur-val"></div>`, root()); }
   async transition(kind: string, phase: 'out' | 'in') {
+    if (kind === 'curtain') {
+      let t = root().querySelector('.trans') as HTMLElement | null;
+      if (phase === 'out') { if (t) t.remove(); t = this.curtainEl(); void t.offsetWidth; t.classList.add('on'); audio.sfx('curtain'); await new Promise((r) => setTimeout(r, 1100)); }
+      else if (t) { t.classList.remove('on'); t.classList.add('open'); const tt = t; setTimeout(() => tt.remove(), 1500); await new Promise((r) => setTimeout(r, 500)); }
+      return;
+    }
     let t = root().querySelector('.trans') as HTMLElement | null;
     if (phase === 'out') { if (t) t.remove(); t = el('div', 'trans ' + kind, '', root()); void t.offsetWidth; t.classList.add('on'); if (kind === 'curtain') audio.sfx('curtain'); if (kind === 'glitch') audio.sfx('glitch'); if (kind === 'mirror' || kind === 'page') audio.sfx('whoosh'); await new Promise((r) => setTimeout(r, kind === 'curtain' ? 760 : 520)); }
     else if (t) { t.classList.remove('on'); const tt = t; setTimeout(() => tt.remove(), 800); await new Promise((r) => setTimeout(r, 350)); }

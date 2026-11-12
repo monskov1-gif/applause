@@ -73,7 +73,7 @@ export interface Laser { mesh: THREE.Mesh; x0: number; z0: number; x1: number; z
 export class Room {
   group = new THREE.Group(); boxes: Box[] = []; inters: Inter[] = []; triggers: Trigger[] = []; actors: Actor[] = []; spawns: Record<string, { x: number; z: number; dir: string }> = {};
   masked: { obj: THREE.Object3D; mask: string; box?: Box }[] = []; updaters: ((dt: number, t: number) => void)[] = []; photos: { id: string; name: string; x: number; z: number; cond?: () => boolean; mask?: string }[] = [];
-  guards: Guard[] = []; lasers: Laser[] = []; occluders: { mesh: THREE.Mesh; x0: number; x1: number; z: number; h: number }[] = []; flick: { l: THREE.Light; base: number; s: number }[] = []; named: Record<string, any> = {};
+  guards: Guard[] = []; lasers: Laser[] = []; occluders: { mesh: THREE.Mesh; x0: number; x1: number; z: number; h: number }[] = []; props: { x: number; z: number; y: number; w: number; kind: string; box?: Box }[] = []; flick: { l: THREE.Light; base: number; s: number }[] = []; named: Record<string, any> = {};
   constructor(public id: string, public def: RoomDef) {}
   actor(id: string) { return this.actors.find((a) => a.id === id); }
   inter(id: string) { return this.inters.find((a) => a.id === id); }
@@ -154,7 +154,7 @@ export class Builder {
     const mat = o.glow ? new THREE.MeshBasicMaterial({ map: t, alphaTest: 0.3, side: THREE.DoubleSide, transparent: o.opacity != null, opacity: o.opacity ?? 1 }) : new THREE.MeshLambertMaterial({ map: t, alphaTest: 0.3, side: THREE.DoubleSide, emissive: o.emissive || 0 });
     const m = new THREE.Mesh(g, mat); m.position.set(x, o.y || 0, z); m.castShadow = o.cast !== false && !o.glow; if (o.flipX) m.scale.x = -1; this.room.group.add(m);
     let b: Box | undefined; if (o.solid) { const r = o.solid === true ? Math.min(w, 1.2) / 2 : o.solid; b = this.collider(x - r, z - 0.3, x + r, z + 0.3); (m.userData as any).box = b; }
-    this.tag(m, o, b); return m;
+    this.room.props.push({ x, z, y: o.y || 0, w, kind: typeof kind === 'string' ? kind : 'tex', box: b }); this.tag(m, o, b); return m;
   }
   actor(charId: string, x: number, z: number, o: any = {}) {
     const a = new Actor(charId, o.id || charId); a.place(x, z, o.dir || 'f'); if (o.pose) a.pose = o.pose; a.mask = o.mask; if (o.hidden) a.hidden = true;

@@ -15,11 +15,12 @@ const log = await p.evaluate(async () => {
   const photo = async (subs) => { await G.room.def.photo(G, subs); };
   document.querySelector('.menu-screen')?.remove(); G.fast = true;
   G.autoChoice = (opts) => 0;
-  await G.start({ v: 3, room: 'hub_dressing', spot: 'start', chapter: 'test', f: {}, inv: [], notes: [], photos: [], seen: {}, mask: null, time: 0 });
+  await G.start({ v: 3, room: 'hub_sydney', spot: 'start', chapter: 'test', f: {}, inv: [], notes: [], photos: [], seen: {}, mask: null, time: 0 });
+  await act('phone'); await act('sleep'); expect(room() === 'hub_dressing' && G.f.woke, 'проснулась в гримёрке');
   // ---- Акт I ----
   await act('invite'); await act('recs'); await act('cam'); expect(G.has('camera'), 'камера'); await act('door'); expect(room() === 'hub_corridor', 'коридор');
   await act('d_stage'); expect(G.f.met_cast, 'знакомство с труппой'); await act('script'); expect(G.f.act1, 'акт I'); await act('d_back'); expect(room() === 'hub_backstage', 'закулисье');
-  await act('masks'); expect(G.f.masks, 'маски'); await act('cut'); await act('spot'); await act('spot'); expect(G.f.bridge, 'тень-мост'); out.push('Акт I ✓');
+  await act('masks'); expect(G.f.masks, 'маски'); await act('cut'); await act('spot'); await act('spot'); expect(G.f.bridge, 'тень-мост'); out.push('Акт I ✓'); out.push('находок: ' + Object.keys(G.f.eggs || {}).length);
   // ---- Полина ----
   await act('w_polina'); expect(room() === 'pol_porch', 'особняк'); await act('pot1'); await act('front'); await act('lib'); await act('book');
   await photo(['lady', 'kids', 'owner', 'cap']); expect(G.f.pol_photos, 'три аномалии'); await act('back'); await act('basement'); expect(G.f.pol_dark, 'Полина одна');
@@ -52,6 +53,7 @@ const log = await p.evaluate(async () => {
   await act('cB'); expect(room() === 'fin_backstage', 'кулисы'); await act('go'); expect(G.f.show_done && room() === 'fin_party', 'мюзикл'); await act('cake'); await photo(['group']); await act('end'); expect(room() === 'fin_bedroom', 'спальня');
   await act('mirror'); expect(G.f.game_done, 'конец игры'); out.push('Финал и эпилог ✓');
   out.push('записей в блокноте: ' + G.state.notes.length + ', предметов: ' + G.state.inv.length + ', фото: ' + G.state.photos.length);
+  out.push('находки: ' + Object.keys(G.f.eggs || {}).join(','));
   return out;
 }).catch((e) => ['ОШИБКА: ' + e.message]);
 console.log(log.join('\n'));

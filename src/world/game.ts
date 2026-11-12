@@ -223,6 +223,9 @@ class Game {
     const reach = (x: number, z: number, r: number) => { for (let zz = z - r; zz <= z + r; zz += st) for (let xx = x - r; xx <= x + r; xx += st) { if (Math.hypot(xx - x, zz - z) > r - 0.2) continue; const i = idx(xx, zz); if (i >= 0 && i < seen.length && seen[i]) return true; } return false; };
     for (const it of room.inters) if (!it.mask && !(it.cond && !it.cond()) && !reach(it.x, it.z, it.r)) out.push('недостижимо: ' + it.id + ' (' + it.label + ')');
     for (const [k, sp] of Object.entries(room.spawns)) if (this.hits(sp.x, sp.z)) out.push('точка появления в коллизии: ' + k);
+    const W2 = w / 2, D2 = d / 2;
+    for (const pr of room.props) { if (pr.x < -W2 - 0.2 || pr.x > W2 + 0.2 || pr.z < -D2 - 0.2 || pr.z > D2 + 0.6) out.push(`предмет за пределами комнаты: ${pr.kind} (${pr.x.toFixed(1)}, ${pr.z.toFixed(1)})`); if (pr.y < 0.3 && !pr.box && !room.props.some((q) => q.box && Math.abs(q.x - pr.x) < 0.05 && Math.abs(q.z - pr.z) < 0.05)) for (const b of room.boxes) if (b.on && b.x1 - b.x0 > 0.5 && b.z1 - b.z0 > 0.5 && pr.x > b.x0 + 0.15 && pr.x < b.x1 - 0.15 && pr.z > b.z0 + 0.15 && pr.z < b.z1 - 0.15) { out.push(`предмет внутри мебели/стены: ${pr.kind} (${pr.x.toFixed(1)}, ${pr.z.toFixed(1)})`); break; } }
+    for (const it of room.inters) for (const a of room.actors) if (a.id !== 'player' && !a.hidden && it.id !== a.id && Math.hypot(a.x - it.x, a.z - it.z) < 0.5 && !(it.label || '').includes(a.def?.name || '@@')) out.push(`персонаж стоит на точке взаимодействия: ${a.id} на ${it.id}`);
     return out;
   }
   hits(x: number, z: number, r = 0.38): boolean {
@@ -283,6 +286,7 @@ class Game {
     this.R.cam.position.set(c.x + sx, c.yOff + Math.sin(c.pitch) * c.dist * aspectFix + sy, c.z + Math.cos(c.pitch) * c.dist * aspectFix);
     this.R.cam.up.set(Math.sin(c.roll), Math.cos(c.roll), 0); this.R.cam.lookAt(c.x + sx, c.yOff, c.z);
     this.R.render(dt);
+    ui.letterbox(!!this.cam.focus && this.lock > 0);
     if (best) { const v = new THREE.Vector3(best.x, best.y + 0.9, best.z).project(this.R.cam); ui.prompt(best.label, (v.x + 1) / 2, (1 - v.y) / 2); } else ui.prompt(null);
     input.endFrame();
   }

@@ -223,3 +223,17 @@ body.contrast .dlg .box, body.contrast .sheet, body.contrast .choice { backgroun
 .reveal-card img { width: 6rem; height: 6rem; image-rendering: pixelated; display: block; margin: 0 auto .5rem; } .reveal-card img.ph { width: 100%; height: auto; border: .4rem solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.4); }
 .reveal-card b { display: block; font-family: 'Playfair Display', serif; font-size: 1.15rem; color: var(--red2); } .reveal-card span { display: block; font-size: .9rem; margin-top: .3rem; } .reveal-card .cap { font-family: 'Caveat', cursive; font-size: 1.3rem; } .reveal-card small { display: block; margin-top: .5rem; opacity: .55; font-size: .72rem; letter-spacing: .1em; }
 .prompt { max-width: 80vw; } 
+
+/* ---------- кинематограф ---------- */
+.letterbox { position: absolute; inset: 0; pointer-events: none !important; z-index: 8; } .letterbox i { position: absolute; left: 0; right: 0; height: 0; background: #000; transition: height .6s cubic-bezier(.3,0,.2,1); } .letterbox i:first-child { top: 0; } .letterbox i:last-child { bottom: 0; } .letterbox.on i { height: 8vh; }
+/* ---------- занавес из лент ---------- */
+.trans.curtain2 { overflow: hidden; }
+.cur-half { position: absolute; top: 0; bottom: 0; width: 50.5%; display: flex; } .cur-half.l { left: 0; } .cur-half.r { right: 0; flex-direction: row-reverse; }
+.cur-half b { flex: 1; height: 100%; background: linear-gradient(90deg, #2a040a 0%, #6a0e1e 18%, #a8182e 42%, #c8283e 52%, #8e1426 70%, #3a060e 100%); box-shadow: inset 0 -6vh 6vh rgba(0,0,0,.45); transform-origin: top center; transition: transform 1s cubic-bezier(.55,0,.25,1), opacity .4s; transition-delay: calc((var(--n) - var(--i)) * 28ms); }
+.cur-half.l b { transform: translateX(calc(-100% * (var(--n) - var(--i)) * 1.08)) scaleX(.6); } .cur-half.r b { transform: translateX(calc(100% * (var(--n) - var(--i)) * 1.08)) scaleX(.6); }
+.trans.curtain2.on .cur-half b { transform: none; transition-delay: calc(var(--i) * 26ms); }
+.trans.curtain2.open .cur-half.l b { transform: translateX(calc(-100% * var(--i) * .9)) skewX(calc(var(--i) * -1.2deg)) scaleX(.5); transition-delay: calc(var(--i) * 22ms); }
+.trans.curtain2.open .cur-half.r b { transform: translateX(calc(100% * var(--i) * .9)) skewX(calc(var(--i) * 1.2deg)) scaleX(.5); transition-delay: calc(var(--i) * 22ms); }
+.cur-val { position: absolute; top: 0; left: 0; right: 0; height: 12vh; background: repeating-radial-gradient(ellipse at 50% -40%, #8e1830 0 3vh, #5a0c18 3vh 5vh); border-bottom: .5vh solid #d4ae48; box-shadow: 0 1vh 2vh rgba(0,0,0,.6); transform: translateY(-100%); transition: transform .7s ease; }
+.cur-val::after { content: ''; position: absolute; left: 0; right: 0; bottom: -2.2vh; height: 2.2vh; background: radial-gradient(circle at 2.5vw 0, #d4ae48 .9vh, transparent 1vh) 0 0 / 5vw 100%; }
+.trans.curtain2.on .cur-val, .trans.curtain2.open .cur-val { transform: none; }

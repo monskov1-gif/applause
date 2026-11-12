@@ -13,10 +13,12 @@ const out = await p.evaluate(async () => {
   for (const id of Object.keys(ROOMS)) for (const [sn, fl] of Object.entries(states)) {
     G.running = true; G.state = { v: 3, room: id, spot: 'start', chapter: '', f: { ...fl, foyer0: 1, mezz0: 1, reh0: 1, cost0: 1, trap0: 1, intro_pol: 1, intro_rub: 1, intro_mat: 1, intro_eri: 1, intro_liz: 1, intro_ang: 1, diva_done: 1, show_done: 1, party0: 1, wake0: 1, c_in: 1, pre_show: 1 }, inv: ['camera', 'marionette', 'archive_card', 'braid'], notes: [], photos: [], seen: {}, mask: null, time: 0 };
     const def = ROOMS[id]; const enter = def.enter; def.enter = undefined;
-    try { await G.goto(id, 'start', { fade: 'none', silent: true }); for (const sp of Object.keys(G.room.spawns)) { const s = G.room.spawns[sp]; G.player.place(s.x, s.z); const fp = G.freeSpot(s.x, s.z); G.player.place(fp.x, fp.z); const pr = G.reachCheck(); for (const m of pr) res.push(`${id} [${sn}] от «${sp}»: ${m}`); } }
+    try { await G.goto(id, 'start', { fade: 'none', silent: true }); G.__eggsSeen = G.__eggsSeen || new Set(); for (const it of G.room.inters) if (it.egg) G.__eggsSeen.add(it.egg); for (const sp of Object.keys(G.room.spawns)) { const s = G.room.spawns[sp]; G.player.place(s.x, s.z); const fp = G.freeSpot(s.x, s.z); G.player.place(fp.x, fp.z); const pr = G.reachCheck(); for (const m of pr) res.push(`${id} [${sn}] от «${sp}»: ${m}`); } }
     catch (e) { res.push(`${id} [${sn}]: ОШИБКА ${e.message}`); } finally { def.enter = enter; }
   }
+  const eggs = new Set(); for (const id of Object.keys(ROOMS)) { /* собрано ниже */ }
+  res.push('__EGGS__' + JSON.stringify([...G.__eggsSeen || []]));
   return [...new Set(res)];
 });
-console.log(out.length ? out.join('\n') : 'все комнаты проходимы'); if (errs.length) console.log('ошибки:', errs.slice(0, 5).join('\n'));
+const eg = out.find((x) => x.startsWith('__EGGS__')); const rest = out.filter((x) => !x.startsWith('__EGGS__')); console.log(rest.length ? rest.join('\n') : 'все комнаты проходимы'); console.log('находки, размещённые в комнатах:', eg?.slice(8)); if (errs.length) console.log('ошибки:', errs.slice(0, 5).join('\n'));
 await b.close();

@@ -11,19 +11,20 @@ import { settings } from '../core/state';
 export interface Grade { sat?: number; tint?: number[]; vig?: number; glitch?: number; bright?: number; contrast?: number; wave?: number; bloom?: number; }
 const DEF: Required<Grade> = { sat: 1, tint: [1, 1, 1], vig: 0.35, glitch: 0, bright: 1, contrast: 1, wave: 0, bloom: 0.45 };
 const GradeShader = {
-  uniforms: { tDiffuse: { value: null }, uSat: { value: 1 }, uTint: { value: new THREE.Vector3(1, 1, 1) }, uVig: { value: 0.35 }, uGlitch: { value: 0 }, uBright: { value: 1 }, uContrast: { value: 1 }, uWave: { value: 0 }, uTime: { value: 0 }, uFlash: { value: 0 }, uDither: { value: 1 } },
+  uniforms: { tDiffuse: { value: null }, uSat: { value: 1 }, uTint: { value: new THREE.Vector3(1, 1, 1) }, uVig: { value: 0.35 }, uGlitch: { value: 0 }, uBright: { value: 1 }, uContrast: { value: 1 }, uWave: { value: 0 }, uTime: { value: 0 }, uFlash: { value: 0 }, uDither: { value: 1 }, uCA: { value: 0.0018 }, uGrain: { value: 0.035 } },
   vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
-  fragmentShader: `uniform sampler2D tDiffuse; uniform float uSat,uVig,uGlitch,uBright,uContrast,uWave,uTime,uFlash,uDither; uniform vec3 uTint; varying vec2 vUv;
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float uSat,uVig,uGlitch,uBright,uContrast,uWave,uTime,uFlash,uDither,uCA,uGrain; uniform vec3 uTint; varying vec2 vUv;
     float h(vec2 p){ return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453); }
     void main(){ vec2 uv=vUv;
       if(uWave>0.0){ uv.x+=sin(uv.y*18.0+uTime*2.2)*0.006*uWave; uv.y+=sin(uv.x*14.0+uTime*1.7)*0.005*uWave; }
       float sh=0.0;
       if(uGlitch>0.0){ float band=floor(uv.y*24.0); float n=h(vec2(band,floor(uTime*9.0))); if(n>1.0-uGlitch*0.35){ uv.x+=(h(vec2(band,uTime))-0.5)*0.12*uGlitch; } sh=0.004*uGlitch; }
-      vec3 c=texture2D(tDiffuse,uv).rgb;
+      vec2 dc=uv-0.5; float ca=uCA*dot(dc,dc)*4.0; vec3 c=vec3(texture2D(tDiffuse,uv+dc*ca).r, texture2D(tDiffuse,uv).g, texture2D(tDiffuse,uv-dc*ca).b);
       if(sh>0.0){ c.r=texture2D(tDiffuse,uv+vec2(sh,0.0)).r; c.b=texture2D(tDiffuse,uv-vec2(sh,0.0)).b; }
       float l=dot(c,vec3(0.3,0.59,0.11)); c=mix(vec3(l),c,uSat); c*=uTint*uBright; c=(c-0.5)*uContrast+0.5;
       float d=distance(vUv,vec2(0.5)); c*=1.0-uVig*smoothstep(0.35,0.85,d);
-      c+=vec3(uFlash);
+      float lum=dot(c,vec3(0.3,0.59,0.11)); c=mix(c*vec3(0.94,0.98,1.06), c*vec3(1.06,1.0,0.92), smoothstep(0.15,0.75,lum));
+      c+=(h(gl_FragCoord.xy+floor(uTime*24.0))-0.5)*uGrain; c+=vec3(uFlash);
       vec2 fp=floor(mod(gl_FragCoord.xy,4.0)); float b=mod(fp.x*8.0+fp.y*2.0+mod(fp.y,2.0)*4.0,16.0)/16.0;
       c=floor(c*40.0+b*uDither)/40.0; gl_FragColor=vec4(c,1.0); }`,
 };

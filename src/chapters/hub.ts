@@ -85,6 +85,7 @@ const corridor: RoomDef = {
     R.floor('carpet', { w: 42, d: 2.6, z: -9.6, y: 0.015 }); R.floor('carpet', { w: 4, d: 10, z: -1.5, y: 0.015 }); R.floor('carpet', { w: 42, d: 2.6, z: 7.5, y: 0.015 });
     // массивы стен между галереями (в потолок, прозрачнеют, когда закрывают героиню)
     R.wall(-22, -7.2, -2.8, 3.6, { h: 6, tex: 'wallpaper', tint: '#c88870' }); R.wall(2.8, -7.2, 22, 3.6, { h: 6, tex: 'wallpaper', tint: '#c88870' });
+    for (const [x0, x1] of [[-22, -2.8], [2.8, 22]]) { const cap = R.box((x0 + x1) / 2, -1.8, x1 - x0, 10.8, 0.06, { tex: 'parquet', y: 6.01, solid: false, cast: false }); (cap.material as THREE.MeshLambertMaterial).transparent = true; R.room.occluders.push({ mesh: cap as THREE.Mesh, x0: x0 - 0.4, x1: x1 + 0.4, z: 3.6, h: 6 }); }
     R.door('d_props', -12, { z: 3.65, to: 'hub_props', label: 'Реквизиторская', sign: 'РЕКВИЗИТ', col: '#3a2a1c' });
     R.door('d_work', 12, { z: 3.65, to: 'hub_workshop', label: 'Склад декораций и мастерская', sign: 'ЦЕХ', cond: () => G.done('polina'), locked: D.workshopLocked });
     const plaque = (text: string, x: number, z: number, key: string) => R.decal(canvasTex(80, 14, (c) => { c.fillStyle = '#2a1408'; c.fillRect(0, 0, 80, 14); c.strokeStyle = '#d4ae48'; c.strokeRect(0.5, 0.5, 79, 13); ptext(c, text, 40, 3, { size: 8, col: '#f0d478', align: 'center' }); }, key), { x, z, y: 3.4, w: 3.6, h: 0.63, noSlot: true });
@@ -347,7 +348,7 @@ const office: RoomDef = {
     armchair(R, -1.8, 2.6, { col: 0x8a5a3a, ry: Math.PI - 0.3 }); armchair(R, 0.4, 2.6, { col: 0x8a5a3a, ry: Math.PI + 0.3 });
     bookshelf(R, -7.6, -5.3, { w: 2.6, h: 4.6 }); bookshelf(R, -4.6, -5.3, { w: 2.6, h: 4.6 }); bookshelf(R, 7.9, -1, { w: 3, h: 4.6, ry: -Math.PI / 2 });
     // доска мыслей: записки, фото и нитки
-    corkBoard(R, 4.4, 3.1, 3.6, 2.6, 7); R.look('thoughts', 4.4, -4.6, 'Доска с записками', ['~: Доска худрука. Фотографии шестерых, под каждой записка: «дом», «хранилище», «школа», «город», «башня», «агентство».', '~: Красные нитки тянутся от каждой фотографии к одной в центре. Центральная перевёрнута лицом к доске.', '~: Я не переворачиваю. Пока.']);
+    corkBoard(R, 0, 3.1, 3.4, 2.4, 7, { wall: 'e', at: 3 }); R.look('thoughts', 7.6, 3, 'Доска с записками', ['~: Доска худрука. Фотографии шестерых, под каждой записка: «дом», «хранилище», «школа», «город», «башня», «агентство».', '~: Красные нитки тянутся от каждой фотографии к одной в центре. Центральная перевёрнута лицом к доске.', '~: Я не переворачиваю. Пока.']);
     // камин с часами
     const fp = new THREE.Group(); const marble = new THREE.MeshLambertMaterial({ map: tex('white'), color: 0xd8ccc0 }); const add = (w: number, h: number, d: number, x: number, y: number, z: number, m: THREE.Material) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); b.position.set(x, y, z); fp.add(b); };
     add(2.8, 0.3, 0.8, 0, 2, 0, marble); add(0.4, 2, 0.6, -1.2, 1, 0, marble); add(0.4, 2, 0.6, 1.2, 1, 0, marble); add(2, 1.4, 0.3, 0, 0.7, -0.2, new THREE.MeshBasicMaterial({ color: 0x1a0a06 }));
@@ -355,13 +356,13 @@ const office: RoomDef = {
     fp.position.set(-8.6, 0, 2); fp.rotation.y = Math.PI / 2; R.room.group.add(fp); R.collider(-9, 0.6, -8, 3.4); R.light(-7.8, 1, 2, 0xff9a40, 8, 7, { flicker: 0.3 });
     R.sprite('candle', -8.5, 1.3, { y: 2.15 }); R.sprite('candle', -8.5, 2.7, { y: 2.15 });
     // кукольный театр
-    R.box(5.4, 4.4, 2.6, 0.8, 1.2, { tex: 'darkwood' }); for (let i = 0; i < 6; i++) R.sprite('marionette', 4.4 + i * 0.42, 4.6, { y: 1.2, scale: 0.55 }); for (let i = 0; i < 6; i++) R.box(4.4 + i * 0.42, 4.6, 0.02, 0.02, 3.2, { color: 0xdddddd, y: 2.1, solid: false, cast: false });
-    R.look('puppets', 5.4, 3.4, 'Кукольный театр', D.officePuppets, { photo: 'Шесть марионеток на одной ваге' });
+    R.box(5.4, -5.3, 2.6, 0.8, 1.2, { tex: 'darkwood' }); for (let i = 0; i < 6; i++) R.sprite('marionette', 4.4 + i * 0.42, -5.1, { y: 1.2, scale: 0.55 }); for (let i = 0; i < 6; i++) R.box(4.4 + i * 0.42, -5.1, 0.02, 0.02, 3.2, { color: 0xdddddd, y: 2.1, solid: false, cast: false });
+    R.look('puppets', 5.4, -4.3, 'Кукольный театр', D.officePuppets, { photo: 'Шесть марионеток на одной ваге' });
     // зеркало под тканью
     mirror3D(R, 1.8, 2.8, -5.85, 2.2, 3.4, {});
     if (!f.know_k) R.box(1.8, -5.6, 2.6, 0.12, 3.8, { tex: 'velvet', tint: '#6a6a8a', y: 0.9, solid: false, name: 'cloth' });
     R.inter('omirror', 1.8, -4.6, { label: f.know_k ? 'Зеркало' : 'Зеркало под тканью', fn: async (G) => { if (f.know_k) return G.run(['~: Я. В жакете худрука. Он мне идёт. Это-то и пугает.']); await G.run(D.officeMirror); G.room.named.cloth.visible = false; G.sfx('curtain'); await G.ui.paper(D.kNoteMirror); await G.run(D.officeMirrorAfter); } });
-    window3D(R, 5, { wall: 'n', y: 3.4, w: 1.6, h: 2.4 }); sconce(R, -2.6, 3.6, -5.96, {}); R.sprite('plant', 7.6, 4.6, { solid: 0.3 });
+    window3D(R, 5, { wall: 'n', y: 3.4, w: 1.6, h: 2.4 }); sconce(R, -2.6, 3.6, -5.96, {}); R.sprite('plant', 7.8, -5.2, { solid: 0.3 });
     R.door('door', 4, { wall: 's', to: 'hub_mezz', spot: 'office', label: 'На бельэтаж' }); R.spawn('start', 4, 4.4, 'b');
   },
 };
