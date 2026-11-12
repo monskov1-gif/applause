@@ -11,7 +11,7 @@ async function boot() {
   const bootEl = document.getElementById('boot')!, st = document.getElementById('boot-s')!;
   try {
     // шрифты нужны до генерации пиксельных текстур с текстом
-    await Promise.all(['8px "Pixelify Sans"', '16px Lora', '16px "Playfair Display"', '16px "Marck Script"', '16px Zaslia', '16px Aurelia', '16px Cintarini', '16px Bastliga', '16px Highcrest', '16px Lombardina'].map((f) => document.fonts.load(f, 'AБя').catch((e) => console.warn('[fonts]', f, e))));
+    await Promise.all(['8px "Pixelify Sans"', '16px Lora', '16px "Playfair Display"', '16px "Marck Script"', '16px Aurelia', '16px Cintarini', '16px Highcrest', '16px Lombardina'].map((f) => document.fonts.load(f, 'AБя').catch((e) => console.warn('[fonts]', f, e))));
     ui.init(); G.boot(document.getElementById('game') as HTMLCanvasElement);
     const unlock = () => { audio.init(); }; window.addEventListener('pointerdown', unlock); window.addEventListener('keydown', unlock);
     await ui.mainMenu(); bootEl.style.opacity = '0'; setTimeout(() => bootEl.remove(), 700);

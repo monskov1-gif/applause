@@ -11,7 +11,8 @@ const root = () => document.getElementById('ui')!;
 export function el(tag: string, cls = '', html = '', parent?: HTMLElement): HTMLElement { const e = document.createElement(tag); if (cls) e.className = cls; if (html) e.innerHTML = html; if (parent) parent.appendChild(e); return e; }
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
 const fmtTime = (s: number) => `${Math.floor(s / 3600)}:${String(Math.floor(s / 60) % 60).padStart(2, '0')}`;
-export const LOGO = `<h1 class="logo" aria-label="THE OTHER ME: APPLAUSE, PLEASE!"><span class="row r1"><span class="l-the">THE</span><span class="l-other">Other</span><span class="l-me">ME<span class="l-colon">:</span></span></span><span class="row r2"><span class="l-app"><b>A</b>PPLAUSE<span class="l-comma">,</span></span></span><span class="row r3"><span class="l-please">Please</span><span class="l-bang">!</span></span></h1>`;
+import { logoSVG } from './logo';
+export const LOGO = logoSVG('m');
 
 class UI {
   modal = false; dialogOpen = false; private modals: HTMLElement[] = []; private hudEl!: HTMLElement; private dlg!: HTMLElement; private promptEl!: HTMLElement; private toasts!: HTMLElement; private saveEl!: HTMLElement; private lyricEl!: HTMLElement;
@@ -187,13 +188,13 @@ class UI {
   credits(final: boolean): Promise<void> {
     return new Promise((res) => {
       const sec = (h: string, ps: string[]) => `<h3>${h}</h3>${ps.map((p) => `<p>${p}</p>`).join('')}`;
-      const c = el('div', 'credits', `<div class="roll" style="--dur:${final ? 70 : 55}s"><div style="display:inline-block">${LOGO}</div>
+      const c = el('div', 'credits', `<div class="roll" style="--dur:${final ? 70 : 55}s"><div class="cred-logo">${logoSVG('c')}</div>
         ${sec('В РОЛЯХ', ['Варя<small>режиссёрка, Молодая Девушка, Королева — и всё это одновременно</small>', 'Полина · Рубен · Матвей · Эрика · Лиза · Ангелина<small>в ролях самих себя, наконец-то по собственному выбору</small>', 'Артемий<small>школьный кот одобряет</small>'])}
         ${sec('ТРУППА ТЕАТРА', ['Василиса · Дана · Нина · Аня · Оля<small>второй состав, гастроли «Снежной королевы»; рекомендательные письма — их рук дело</small>'])}
         ${sec('В ЗРИТЕЛЬНОМ ЗАЛЕ', ['Мама Наташа и Саша', 'Папа Максим и Настя', 'Вася', 'Софа · Катя'])}
         ${sec('ХУДОЖЕСТВЕННЫЙ РУКОВОДИТЕЛЬ', ['Кукольник<small>просил не указывать. Указан.</small>'])}
         ${sec('МУЗЫКА, ДЕКОРАЦИИ, СВЕТ', ['Вся музыка, спрайты, портреты и текстуры созданы процедурно специально для этой игры', 'Three.js · TypeScript · Vite'])}
-        ${sec('ШРИФТЫ ЛОГОТИПА', ['Aurelia Diamond · Bastliga One · Cintarini · Highcrest · Lombardina Initial One · Zaslia<small>лицензии «для личного некоммерческого использования»; игра — подарок, не продукт</small>', 'Lora · Playfair Display · Marck Script · Pixelify Sans<small>SIL Open Font License</small>'])}
+        ${sec('ШРИФТЫ ЛОГОТИПА', ['Aurelia Diamond · Cintarini · Highcrest · Lombardina Initial One<small>лицензии «для личного некоммерческого использования»; игра — подарок, не продукт</small>', 'Lora · Playfair Display · Marck Script · Pixelify Sans<small>SIL Open Font License</small>'])}
         ${sec('ОСОБАЯ БЛАГОДАРНОСТЬ', ['Третьему ряду.<small>Вас видно. Правда.</small>'])}
         <h3>С ДНЁМ РОЖДЕНИЯ, ВАРЯ</h3><p style="margin-top:3rem;opacity:.6">нажмите, чтобы закрыть</p></div>`, root());
       const fin = () => { off(); c.remove(); res(); }; const off = input.onAction((a) => { if (a === 'act' || a === 'pause') fin(); }); const t0 = performance.now(); c.onclick = () => { if (performance.now() - t0 > 600) fin(); };
