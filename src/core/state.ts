@@ -115,3 +115,6 @@ export function exportSave(s: GameState): string { return JSON.stringify(s); }
 export function importSave(text: string): GameState | null {
   try { return migrate(JSON.parse(text)); } catch (e) { console.warn('[save] импорт: файл не является сохранением', e); return null; }
 }
+
+// для автотестов (tests/playthrough.mjs)
+if (typeof window !== 'undefined') (window as any).__S = { readSave, writeSave, migrate };

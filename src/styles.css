@@ -167,3 +167,7 @@ body.contrast .dlg .box, body.contrast .sheet, body.contrast .choice { backgroun
 .menu-list .btn:disabled { color: rgba(234,223,200,.5); }
 .menu-screen .logo-svg { width: min(96vw, 68rem, 104vh); }
 .menu-logo { margin-top: 6vh !important; margin-bottom: -3vh !important; }
+
+.maskb small { font-size: 0; } .maskb small::first-letter { font-size: .7rem; }
+.maskb::after { content: attr(title); position: absolute; top: 108%; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: .7rem; background: rgba(20,8,10,.85); padding: .1rem .4rem; border: 1px solid var(--gold); opacity: 0; pointer-events: none; transition: opacity .15s; }
+.maskb:hover::after, .maskb.on::after { opacity: 1; }

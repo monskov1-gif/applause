@@ -52,7 +52,9 @@ class Game {
   doneCount() { return ['polina', 'ruben', 'matvey', 'erika', 'liza', 'angelina'].filter((c) => this.done(c)).length; }
   sfx(n: string, o?: any) { audio.sfx(n, o); }
   toast(t: string, icon?: string) { ui.toast(t, icon); }
-  wait(s: number) { return sleep(this.fast ? 0 : s * 1000); }
+  waits: { t: number; res: () => void }[] = [];
+  /** Пауза сцены по игровому времени: стоит, пока игра на паузе. */
+  wait(s: number): Promise<void> { if (this.fast) return Promise.resolve(); return new Promise((res) => this.waits.push({ t: s, res })); }
 
   // ---------- жизненный цикл ----------
   async start(state: GameState) {
@@ -64,7 +66,7 @@ class Game {
     if (!this.running) return; const s = this.state; if (this.player) { s.px = this.player.x; s.pz = this.player.z; }
     try { await writeSave(slot, s); ui.saved(slot); } catch (e) { console.error('[save] не удалось сохранить', e); ui.toast('Не удалось сохранить игру: хранилище браузера недоступно', '⚠'); }
   }
-  private clearRoom() { if (this.room) { this.R.scene.remove(this.room.group); this.room.dispose(); this.room = null; } this.followers = []; this.trail = []; this.near = null; this.override = null; ui.prompt(null); }
+  private clearRoom() { for (const w of this.waits) w.res(); this.waits = []; if (this.room) { this.R.scene.remove(this.room.group); this.room.dispose(); this.room = null; } this.followers = []; this.trail = []; this.near = null; this.override = null; ui.prompt(null); }
   async loadRoom(id: string): Promise<RoomDef> {
     if (ROOMS[id]) return ROOMS[id];
     const pre = id.split('_')[0], ld = LOADERS[pre]; if (!ld) throw new Error('Неизвестная локация: ' + id);
@@ -186,13 +188,13 @@ class Game {
   photographed(subject: string) { return this.state.photos.some((p) => p.subjects.includes(subject)); }
   key(actions: string[]): Promise<string> { return new Promise((res) => { const off = input.onAction((a) => { if (actions.includes(a)) { off(); setTimeout(() => res(a), 0); } }); }); }
   follow(a: Actor) { this.followers.push(a); }
-  unfollow(a: Actor) { this.followers = this.followers.filter((f) => f !== a); a.moving = false; }
+  unfollow(a?: Actor) { if (!a) return; this.followers = this.followers.filter((f) => f !== a); a.moving = false; }
   setPlayerChar(id: string) { this.state.f.playerChar = id; this.player.setChar(id); }
 
   // ---------- кадр ----------
   private onAction(a: string) {
     if (!this.running || ui.modal || this.paused) return;
-    if (a === 'pause' && !this.inPhoto) { if (this.lock === 0 || ui.dialogOpen) ui.pause(); return; }
+    if (a === 'pause' && !this.inPhoto) { ui.pause(); return; }
     if (a === 'history') { ui.history(); return; }
     if (this.lock > 0) return;
     if (a === 'act' && this.near) { const it = this.near; this.sfx('click'); this.cut(() => it.fn(this)).catch((e) => console.error('[game] ошибка взаимодействия', it.id, e)); }
@@ -211,6 +213,7 @@ class Game {
     const room = this.room; if (!room || !this.running) { if (this.R && !this.running) { /* меню: сцена не рисуется */ } input.endFrame(); return; }
     if (this.paused) { this.R.render(0); input.endFrame(); return; }
     this.t += dt; this.state.time += dt; const p = this.player;
+    if (this.waits.length) { for (const w of this.waits) w.t -= dt; const done = this.waits.filter((w) => w.t <= 0); this.waits = this.waits.filter((w) => w.t > 0); for (const w of done) w.res(); }
     // управление
     if (this.override) this.override(dt);
     else if (this.lock === 0 && !ui.modal) {

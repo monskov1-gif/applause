@@ -90,15 +90,17 @@ export function rhythm(o: { track: string; part: number; loops?: number; title: 
 }
 const DIR_SYM: Record<string, string> = { up: '↑', down: '↓', left: '←', right: '→' };
 /** «Смотри и повтори»: зеркальная хореография, танцевальные связки. */
-export function sequence(o: { title: string; sub?: string; rounds: string[][]; onShow?: (dir: string, i: number) => void; onInput?: (dir: string, ok: boolean) => void; bpm?: number }): Promise<boolean> {
+const MIR: Record<string, string> = { left: 'right', right: 'left', up: 'up', down: 'down' };
+export function sequence(o: { title: string; sub?: string; rounds: string[][]; mirror?: boolean[]; roundSub?: string[]; onShow?: (dir: string, i: number) => void; onInput?: (dir: string, ok: boolean) => void; bpm?: number }): Promise<boolean> {
   if (G.fast) return Promise.resolve(true);
   return new Promise((res) => {
     const m = el('div', 'mg clear', `<div class="paper" style="transform:none;text-align:center;width:min(30rem,100%);margin-top:auto;margin-bottom:2rem"><h3>${o.title}</h3><div data-st style="min-height:1.6rem;font-style:italic">${o.sub || ''}</div><div data-seq style="font-size:2.6rem;letter-spacing:.5rem;min-height:3.6rem;font-family:'Playfair Display',serif"></div><div style="opacity:.6;font-size:.85rem">стрелки или WASD</div><div class="opts" style="justify-content:center;margin-top:.5rem">${['left', 'down', 'up', 'right'].map((d) => `<button class="opt" data-d="${d}" style="font-size:1.4rem;width:3rem;text-align:center">${DIR_SYM[d]}</button>`).join('')}</div></div>`, document.getElementById('ui')!);
     const st = m.querySelector('[data-st]')!, sq = m.querySelector('[data-seq]')!; let round = 0, pos = 0, listening = false; const beat = 60 / (o.bpm || 100) * 1000;
-    const show = async () => { listening = false; st.textContent = round === 0 ? 'Смотри…' : 'Ещё раз. Смотри…'; sq.textContent = ''; const seq = o.rounds[round]; await new Promise((r) => setTimeout(r, 500));
+    const want = () => o.mirror?.[round] ? o.rounds[round].map((d) => MIR[d]) : o.rounds[round];
+    const show = async () => { listening = false; st.textContent = o.roundSub?.[round] || (round === 0 ? 'Смотри…' : 'Ещё раз. Смотри…'); sq.textContent = ''; const seq = o.rounds[round]; await new Promise((r) => setTimeout(r, 500));
       for (let i = 0; i < seq.length; i++) { sq.innerHTML = seq.slice(0, i + 1).map((d, j) => `<span style="color:${j === i ? '#8e1830' : '#b89858'}">${DIR_SYM[d]}</span>`).join(''); audio.sfx('hit', { f: { up: 880, down: 523, left: 660, right: 784 }[seq[i]] }); o.onShow?.(seq[i], i); await new Promise((r) => setTimeout(r, beat)); }
-      sq.textContent = '· '.repeat(seq.length); st.textContent = 'Теперь ты.'; pos = 0; listening = true; };
-    const inp = (d: string) => { if (!listening || ui.modal) return; const seq = o.rounds[round];
+      sq.textContent = '· '.repeat(seq.length); st.textContent = o.mirror?.[round] ? 'Теперь ты — зеркально.' : 'Теперь ты.'; pos = 0; listening = true; };
+    const inp = (d: string) => { if (!listening || ui.modal) return; const seq = want();
       if (seq[pos] === d) { pos++; audio.sfx('hit', { f: { up: 880, down: 523, left: 660, right: 784 }[d] }); o.onInput?.(d, true); sq.innerHTML = seq.map((x, j) => j < pos ? `<span style="color:#2f7f82">${DIR_SYM[x]}</span>` : '·').join(' ');
         if (pos >= seq.length) { listening = false; round++; if (round >= o.rounds.length) { st.textContent = 'Идеально.'; setTimeout(() => { off(); m.remove(); res(true); }, 700); } else setTimeout(show, 800); } }
       else { audio.sfx('error'); o.onInput?.(d, false); listening = false; st.textContent = 'Не в зеркало. Сначала.'; setTimeout(show, 900); } };
