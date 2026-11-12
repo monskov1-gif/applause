@@ -162,3 +162,8 @@ body.contrast .dlg .box, body.contrast .sheet, body.contrast .choice { backgroun
 .menu-foot { bottom: .5rem !important; }
 .menu-screen .logo-svg { width: min(94vw, 60rem, 86vh); }
 @media (max-height: 820px) { .menu-foot { display: none; } }
+
+.maskb { width: 3.3rem; height: 3.5rem; } .maskb small { font-size: .62rem; opacity: .85; letter-spacing: .02em; }
+.menu-list .btn:disabled { color: rgba(234,223,200,.5); }
+.menu-screen .logo-svg { width: min(96vw, 68rem, 104vh); }
+.menu-logo { margin-top: 6vh !important; margin-bottom: -3vh !important; }

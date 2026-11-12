@@ -10,7 +10,7 @@ export interface Inter { id: string; x: number; z: number; r: number; label: str
 export interface Trigger { x0: number; z0: number; x1: number; z1: number; fn: (G: any) => any; once: boolean; done: boolean; inside: boolean; }
 export interface RoomDef {
   name: string; chapter?: string; w: number; d: number; music?: string | null; amb?: string | null; grade?: Grade; step?: string;
-  camDist?: number; noMasks?: boolean; noCamera?: boolean; dark?: boolean;
+  camDist?: number; camZMax?: number; noMasks?: boolean; noCamera?: boolean; dark?: boolean;
   build: (R: Builder, G: any) => void; enter?: (G: any, from: string) => any; update?: (G: any, dt: number, t: number) => void; onKey?: (G: any, action: string) => any; photo?: (G: any, subjects: string[]) => any;
 }
 const sheetTex = new Map<string, THREE.CanvasTexture>();
@@ -194,9 +194,9 @@ export class Builder {
   }
   /** Страж с конусом зрения, ходит по маршруту. */
   guard(charId: string, path: number[][], o: { speed?: number; range?: number; half?: number; onCatch: (G: any) => any; id?: string; pause?: number; color?: number }) {
-    const a = this.actor(charId, path[0][0], path[0][1], { id: o.id }); const range = o.range || 5, half = o.half || 0.5;
+    const a = this.actor(charId, path[0][0], path[0][1], { id: o.id }); (a.mesh.material as THREE.MeshLambertMaterial).emissive.set(0x3a3438); const eye = new THREE.PointLight(o.color || 0xff4040, 3, 3, 1.5); eye.position.set(0, 2.6, 0.4); a.group.add(eye); const range = o.range || 5, half = o.half || 0.5;
     const g = new THREE.CircleGeometry(range, 16, -half, half * 2); g.rotateX(-Math.PI / 2);
-    const cone = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: o.color || 0xff4040, transparent: true, opacity: 0.22, depthWrite: false })); cone.position.y = 0.05; this.room.group.add(cone);
+    const cone = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: o.color || 0xff4040, transparent: true, opacity: 0.14, depthWrite: false })); cone.position.y = 0.05; this.room.group.add(cone);
     const gd: Guard = { actor: a, path, i: 0, speed: o.speed || 2.2, range, half, cone, wait: 0, onCatch: o.onCatch, ang: 0, off: 0, pause: o.pause ?? 0.8, active: true }; this.room.guards.push(gd); return gd;
   }
   laser(x0: number, z0: number, x1: number, z1: number, o: { period?: number; duty?: number; phase?: number; onHit: (G: any) => any; color?: number }) {

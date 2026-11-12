@@ -158,7 +158,8 @@ class Game {
   grade(g: Grade, instant = false) { this.gradeBase = { ...this.gradeBase, ...g }; this.applyGrade(instant); }
 
   // ---------- камера и эффекты ----------
-  camSnap() { const p = this.player, room = this.room!; const mx = Math.max(0, room.def.w / 2 - 9), mz = Math.max(0, room.def.d / 2 - 4.5); this.cam.x = clamp(p.x, -mx, mx); this.cam.z = clamp(p.z, -mz, mz); }
+  camBounds() { const d = this.room!.def; const mx = Math.max(0, d.w / 2 - 9); const z0 = Math.min(0, -d.d / 2 + 4.5), z1 = d.camZMax ?? Math.max(z0, d.d / 2 - 7); return { mx, z0, z1 }; }
+  camSnap() { const p = this.player, b = this.camBounds(); this.cam.x = clamp(p.x, -b.mx, b.mx); this.cam.z = clamp(p.z, b.z0, b.z1); }
   focus(x: number, z: number, dist = 18) { this.cam.focus = { x, z, dist }; }
   unfocus() { this.cam.focus = null; }
   shake(a = 0.4) { if (!settings.reduceShake) this.cam.shake = Math.max(this.cam.shake, a); }
@@ -235,20 +236,20 @@ class Game {
         if (g.off > 0) { g.off -= dt; g.cone.visible = Math.floor(g.off * 8) % 2 === 0; }
         if (g.wait > 0) g.wait -= dt; else if (!a.target && g.path.length > 1) { g.i = (g.i + 1) % g.path.length; const [tx, tz] = g.path[g.i]; g.ang = Math.atan2(tz - a.z, tx - a.x); a.walkTo(tx, tz, g.speed).then(() => { g.wait = g.pause; }); }
         g.cone.position.set(a.x, 0.05, a.z); g.cone.rotation.y = -g.ang;
-        if (g.off <= 0 && !p.hidden) { const dx = p.x - a.x, dz = p.z - a.z, l = Math.hypot(dx, dz); let da = Math.atan2(dz, dx) - g.ang; while (da > Math.PI) da -= Math.PI * 2; while (da < -Math.PI) da += Math.PI * 2; if (l < g.range && Math.abs(da) < g.half && this.los(a.x, a.z, p.x, p.z)) { this.cut(() => g.onCatch(this)).catch((e) => console.error(e)); break; } }
+        if (g.off <= 0 && !p.hidden && !(p as any).stealth) { const dx = p.x - a.x, dz = p.z - a.z, l = Math.hypot(dx, dz); let da = Math.atan2(dz, dx) - g.ang; while (da > Math.PI) da -= Math.PI * 2; while (da < -Math.PI) da += Math.PI * 2; if (l < g.range && Math.abs(da) < g.half && this.los(a.x, a.z, p.x, p.z)) { this.cut(() => g.onCatch(this)).catch((e) => console.error(e)); break; } }
       }
-      for (const lz of room.lasers) { lz.on = lz.active && ((this.t + lz.phase) % lz.period) < lz.duty * lz.period; lz.mesh.visible = lz.on; if (lz.on && !p.hidden) { const vx = lz.x1 - lz.x0, vz = lz.z1 - lz.z0, l2 = vx * vx + vz * vz; let u = ((p.x - lz.x0) * vx + (p.z - lz.z0) * vz) / l2; u = clamp(u, 0, 1); if (Math.hypot(p.x - lz.x0 - vx * u, p.z - lz.z0 - vz * u) < 0.4) { this.cut(() => lz.onHit(this)).catch((e) => console.error(e)); break; } } }
+      for (const lz of room.lasers) { lz.on = lz.active && ((this.t + lz.phase) % lz.period) < lz.duty * lz.period; lz.mesh.visible = lz.on; if (lz.on && !p.hidden && !(p as any).stealth) { const vx = lz.x1 - lz.x0, vz = lz.z1 - lz.z0, l2 = vx * vx + vz * vz; let u = ((p.x - lz.x0) * vx + (p.z - lz.z0) * vz) / l2; u = clamp(u, 0, 1); if (Math.hypot(p.x - lz.x0 - vx * u, p.z - lz.z0 - vz * u) < 0.4) { this.cut(() => lz.onHit(this)).catch((e) => console.error(e)); break; } } }
     } else { for (const a of room.actors) if (!a.target && a !== p && !this.followers.includes(a)) a.moving = false; }
     for (const fl of room.flick) fl.l.intensity = fl.base * (1 + (Math.sin(this.t * 13 + fl.base) * 0.5 + Math.sin(this.t * 31) * 0.5) * fl.s);
     for (const u of room.updaters) u(dt, this.t);
     if (room.def.update) room.def.update(this, dt, this.t);
     // ближайший интерактивный объект
     let best: Inter | null = null, bd = 1e9;
-    if (this.lock === 0 && !ui.modal) for (const it of room.inters) { if (!it.enabled || (it.cond && !it.cond())) { if (it.marker) it.marker.visible = false; continue; } const d = Math.hypot(it.x - p.x, it.z - p.z); if (it.marker) { it.marker.visible = d < 9; it.marker.position.y = it.y + 0.5 + Math.sin(this.t * 3 + it.x) * 0.08; it.marker.rotation.y = this.t * 2; } if (d < it.r && d < bd) { bd = d; best = it; } }
+    if (this.lock === 0 && !ui.modal) for (const it of room.inters) { if (!it.enabled || (it.cond && !it.cond())) { if (it.marker) it.marker.visible = false; continue; } const d = Math.hypot(it.x - p.x, it.z - p.z); if (it.marker) { it.marker.visible = d < 5; it.marker.position.y = it.y + 0.5 + Math.sin(this.t * 3 + it.x) * 0.08; it.marker.rotation.y = this.t * 2; } if (d < it.r && d < bd) { bd = d; best = it; } }
     this.near = best;
     // камера
-    const c = this.cam, f = c.focus; const mx = Math.max(0, room.def.w / 2 - 9), mz = Math.max(0, room.def.d / 2 - 4.5);
-    const tx = f ? f.x : clamp(p.x, -mx, mx), tz = f ? f.z : clamp(p.z, -mz, mz), td = f ? f.dist : (room.def.camDist || 24); const k = Math.min(1, dt * 3.5);
+    const c = this.cam, f = c.focus; const cb = this.camBounds();
+    const tx = f ? f.x : clamp(p.x, -cb.mx, cb.mx), tz = f ? f.z : clamp(p.z, cb.z0, cb.z1), td = f ? f.dist : (room.def.camDist || 24); const k = Math.min(1, dt * 3.5);
     c.x += (tx - c.x) * k; c.z += (tz - c.z) * k; c.dist += (td - c.dist) * k; c.shake = Math.max(0, c.shake - dt * 1.2);
     const sx = (Math.random() - 0.5) * c.shake, sy = (Math.random() - 0.5) * c.shake; const aspectFix = this.R.cam.aspect < 1 ? 1.25 : 1;
     this.R.cam.position.set(c.x + sx, c.yOff + Math.sin(c.pitch) * c.dist * aspectFix + sy, c.z + Math.cos(c.pitch) * c.dist * aspectFix);

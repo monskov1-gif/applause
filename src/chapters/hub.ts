@@ -101,7 +101,7 @@ const corridor: RoomDef = {
 
 function seats(R: Builder) { for (const z of [5.4, 7.6]) for (let x = -13.5; x <= 13.5; x += 1.5) { if (Math.abs(x) < 1.6) continue; R.box(x, z, 1.25, 0.9, 1.25, { tex: 'velvet', cast: false }); } }
 const stage: RoomDef = {
-  name: 'Главная сцена', w: 34, d: 18, music: 'theater', amb: 'hall', step: 'wood', grade: { vig: 0.5, bloom: 0.6 },
+  name: 'Главная сцена', w: 34, d: 18, camZMax: 0.5, camDist: 22, music: 'theater', amb: 'hall', step: 'wood', grade: { vig: 0.5, bloom: 0.6 },
   build(R, G) {
     const f = G.f, n = G.doneCount();
     R.floor('stage'); R.floor('carpet', { z: 6.2, d: 5.6, y: 0.02 }); R.walls('black', { h: 9 }); R.ambient(0x3a2c30, 1.5, 0x8a7480); R.particles('dust', { count: 140, top: 8 });
@@ -120,8 +120,9 @@ const stage: RoomDef = {
     const kn = n >= 5 ? 5 : n >= 3 ? 3 : n >= 1 ? 1 : 0;
     if (kn && !f['kn' + kn]) { R.sprite(canvasTex(8, 6, (c) => { c.fillStyle = '#f4ecd4'; c.fillRect(0, 0, 8, 6); c.fillStyle = '#3a2a5a'; c.fillRect(1, 1, 5, 1); c.fillRect(1, 3, 4, 1); }, 'knote'), -11.4, 1.3, { y: 1.15, glow: true }); R.inter('knote', -11.8, 2.1, { label: 'Записка от К.', r: 1.3, fn: async (G) => { await G.ui.paper((D as any)['kNote' + kn]); f['kn' + kn] = 1; G.note('knotes'); await G.rebuild(); } }); }
     // репетиционное зеркало на колёсах — рядом с ним появляется Алла Ева
-    R.box(10.5, -1.5, 0.3, 3, 4.2, { tex: 'mirror' }); R.box(10.5, -1.5, 0.5, 3.3, 0.3, { tex: 'gold', solid: false }); R.box(10.5, -1.5, 0.5, 3.3, 0.25, { tex: 'gold', y: 4.2, solid: false });
-    if (!f.met_cast || !f.act1) { const pos: any = { polina: [-5.5, -1.5], ruben: [-3.2, -4], matvey: [-0.8, -1.8], erika: [1.6, -4.2], liza: [3.8, -1.6], angelina: [6, -3.6] }; for (const id of FRIENDS) R.npc(id, pos[id][0], pos[id][1], { talk: (D as any)['t_' + id + '0'] }); }
+    R.box(9.6, -2.5, 0.3, 3, 4.2, { tex: 'mirror' }); R.box(9.6, -2.5, 0.5, 3.3, 0.3, { tex: 'gold', solid: false }); R.box(9.6, -2.5, 0.5, 3.3, 0.25, { tex: 'gold', y: 4.2, solid: false });
+    for (let x = -14; x <= 14; x += 2) { R.light(x, 0.4, 3.1, 0xffc070, 1.6, 5); } R.box(0, 3.1, 30, 0.2, 0.25, { tex: 'gold', solid: false, cast: false });
+    if (!f.met_cast || !f.act1) { const pos: any = { polina: [-5.5, -1.5], ruben: [-3.2, -4], matvey: [1.4, -2.4], erika: [2.4, -5], liza: [4.6, -1.8], angelina: [6.6, -4.2] }; for (const id of FRIENDS) R.npc(id, pos[id][0], pos[id][1], { talk: (D as any)['t_' + id + '0'] }); }
     else {
       if (G.done('polina')) { R.npc('polina_coat', -4, 1.6, { id: 'polina', talk: (G: any) => G.run(G.state.mask === 'drama' ? D.h_polinaDr : D.h_polina) }); R.light(-3.6, 1.4, 1.8, 0xffd070, 8, 6, { flicker: 0.08 }); R.sprite('lantern', -3.2, 1.9); }
       if (G.done('angelina')) { R.npc('angelina', 4.5, -4.5, { talk: (G: any) => G.run(G.state.mask === 'drama' ? D.h_angelinaDr : D.h_angelina) }); R.sprite('mic', 5.4, -3.9); }

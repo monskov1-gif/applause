@@ -14,11 +14,15 @@ const poppy = (x: number, y: number, s: number) => `<g transform="translate(${x}
   ${[0, 90, 180, 270].map((a, i) => `<path transform="rotate(${a + 20})" d="M0,0 C-44,-6 -58,-48 -30,-66 C-8,-80 22,-70 30,-50 C40,-24 22,-4 0,0Z" fill="${i % 2 ? RED : '#c8202e'}" stroke="${RED2}" stroke-width="2"/>`).join('')}
   ${[0, 60, 120, 180, 240, 300].map((a) => `<path transform="rotate(${a})" d="M0,0 C-6,-14 -4,-30 0,-40" stroke="${RED2}" stroke-width="1.5" fill="none" opacity=".7"/>`).join('')}
   <circle r="14" fill="#1c1416"/>${[0, 45, 90, 135, 180, 225, 270, 315].map((a) => `<circle transform="rotate(${a})" cx="0" cy="-20" r="2.4" fill="#1c1416"/>`).join('')}</g>`;
-const hand = `<g transform="translate(1012 26) rotate(16)">
-  <path d="M58,-34 C90,-20 120,-26 150,-44 L170,4 C138,22 106,30 76,32Z" fill="#2a1e22" stroke="${IV2}" stroke-width="2"/>${[0, 1, 2, 3, 4].map((i) => `<path d="M${56 + i * 4},${-30 + i * 14} C${44 + i * 4},${-26 + i * 14} ${44 + i * 4},${-16 + i * 14} ${58 + i * 4},${-14 + i * 14}" fill="${IV}" stroke="${IV2}" stroke-width="1.5"/>`).join("")}
-  <path d="M-10,0 C10,-26 52,-28 74,-8 C88,6 84,30 70,40 C46,56 6,50 -14,32 C-24,22 -22,10 -10,0Z" fill="${IV}" stroke="${IV2}" stroke-width="2"/>
-  ${[[-14, 26, 70, 12], [4, 40, 82, 6], [24, 44, 80, -2], [44, 40, 66, -10]].map(([x, y, l, r]) => `<g transform="translate(${x} ${y}) rotate(${r})"><rect x="-7" y="-4" width="14" height="${l * 0.5}" rx="7" fill="${IV}" stroke="${IV2}" stroke-width="2"/><g transform="translate(0 ${l * 0.48}) rotate(${-r * 0.6 + 8})"><rect x="-6" y="-4" width="12" height="${l * 0.48}" rx="6" fill="${IV}" stroke="${IV2}" stroke-width="2"/></g></g>`).join('')}
-  <path d="M70,24 C92,30 104,46 100,62 C98,70 90,70 86,62 C84,52 76,44 64,40Z" fill="${IV}" stroke="${IV2}" stroke-width="2"/></g>`;
+const finger = (x: number, y: number, len: number, rot: number) => `<g transform="translate(${x} ${y}) rotate(${rot})"><path d="M-6,0 C-6,${len * 0.3} -5,${len * 0.55} -4,${len * 0.62} L-3.4,${len * 0.66} C-4,${len * 0.8} -3,${len * 0.95} 0,${len} C3,${len * 0.95} 4,${len * 0.8} 3.4,${len * 0.66} L4,${len * 0.62} C5,${len * 0.55} 6,${len * 0.3} 6,0Z" fill="${IV}" stroke="#7a6a52" stroke-width="1.6"/>${[0.3, 0.62].map((k) => `<path d="M-4,${len * k} C-1,${len * k + 3} 1,${len * k + 3} 4,${len * k}" stroke="#7a6a52" stroke-width="1.2" fill="none"/>`).join('')}<path d="M-2.4,${len - 7} C-1,${len - 3} 1,${len - 3} 2.4,${len - 7}" stroke="#a89878" stroke-width="1.2" fill="none"/></g>`;
+const hand = `<g transform="translate(1010 34) rotate(14)">
+  <path d="M84,-40 C110,-30 140,-38 168,-60 L184,-20 C160,0 128,10 100,8Z" fill="#1c1416" stroke="${IV2}" stroke-width="1.5"/>
+  ${[0, 1, 2, 3, 4, 5].map((i) => `<path d="M${84 + i * 3},${-38 + i * 8} l-10,4 l10,3" stroke="${IV2}" stroke-width="1.4" fill="none"/>`).join('')}
+  <path d="M86,-36 C60,-30 34,-24 10,-6 C0,4 -4,18 2,30 C18,44 46,46 70,38 C84,30 96,10 100,4Z" fill="${IV}" stroke="#7a6a52" stroke-width="2"/>
+  ${[[20, -2], [36, -4], [52, -4], [66, 0]].map(([x, y]) => `<path d="M${x},${y} C${x + 4},${y + 8} ${x + 6},${y + 16} ${x + 4},${y + 26}" stroke="#a89878" stroke-width="1.3" fill="none"/>`).join('')}
+  ${finger(6, 22, 58, 22)}${finger(24, 32, 70, 10)}${finger(44, 36, 72, -2)}${finger(62, 32, 60, -14)}
+  <g transform="translate(86 20) rotate(-58)"><path d="M-7,0 C-7,20 -5,34 0,40 C5,34 7,20 7,0Z" fill="${IV}" stroke="#7a6a52" stroke-width="1.6"/></g>
+  ${[[10, 10], [30, 22], [50, 26], [70, 20]].map(([x, y]) => `<path d="M${x},${y} l4,2" stroke="#7a6a52" stroke-width="1.4"/>`).join('')}</g>`;;
 const mask = `<g transform="translate(1046 232) rotate(-14) scale(.85)"><path d="M-46,-38 C-20,-56 26,-56 50,-40 C58,-12 54,26 38,52 C26,70 6,78 -6,70 C-16,62 -8,40 -26,30 C-44,20 -56,-12 -46,-38Z" fill="${IV}" stroke="${IV2}" stroke-width="2.5"/>
   <path d="M-30,-14 C-20,-24 -4,-22 2,-10 C-6,-2 -22,-2 -30,-14Z" fill="${INK}"/><path d="M14,-12 C22,-24 38,-22 42,-10 C36,0 22,0 14,-12Z" fill="${INK}"/>
   <path d="M-48,-30 C-20,-46 26,-48 50,-34" stroke="${GOLD}" stroke-width="2.5" fill="none"/><path d="M4,8 C6,20 10,30 18,34" stroke="${IV2}" stroke-width="2" fill="none"/></g>`;
@@ -38,9 +42,9 @@ export function logoSVG(id = 'lg') {
   <filter id="${id}worn" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="1" seed="7" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -9 6.6" result="m"/><feComposite in="SourceGraphic" in2="m" operator="in"/></filter>
   <radialGradient id="${id}vig"><stop offset="0" stop-color="#000" stop-opacity=".75"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
   <clipPath id="${id}arch"><path d="M376,262 C378,184 448,134 524,128 C560,124 586,114 600,100 C614,114 640,124 676,128 C752,134 822,184 824,262Z"/></clipPath>
-  <filter id="${id}glow"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <filter id="${id}glow" x="-10%" y="-30%" width="120%" height="160%"><feGaussianBlur stdDeviation="5" result="b0"/><feColorMatrix in="b0" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .55 0" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
 </defs>
-<g class="lg-orn">
+<g class="lg-orn" stroke-linejoin="round"><g transform="translate(600 262) scale(1.32) translate(-600 -262)">
   <path d="M360,262 C360,170 440,118 520,112 C556,108 584,96 600,78 C616,96 644,108 680,112 C760,118 840,170 840,262" stroke="${GOLD}" stroke-width="5" fill="none"/>
   <path d="M376,262 C378,184 448,134 524,128 C560,124 586,114 600,100 C614,114 640,124 676,128 C752,134 822,184 824,262" stroke="${IV2}" stroke-width="2" fill="none"/>
   ${[400, 470, 730, 800].map((x, i) => `<circle cx="${x}" cy="${[196, 142, 142, 196][i]}" r="5" fill="${GOLD}"/>`).join('')}
@@ -51,23 +55,28 @@ export function logoSVG(id = 'lg') {
     ${[420, 530, 670, 780].map((x) => `<path d="M${x},128 C${x + 10},160 ${x - 6},180 ${x + 4},200" stroke="#e2283c" stroke-width="2" fill="none" opacity=".5"/>`).join('')}
     <path d="M370,130 C410,170 420,230 400,270 L370,270Z" fill="${RED}"/><path d="M830,130 C790,170 780,230 800,270 L830,270Z" fill="${RED}"/></g>
   ${[470, 730].map((x) => `<path d="M${x},170 L${x},214" stroke="${GOLD}" stroke-width="2"/><path d="M${x - 6},214 L${x + 6},214 L${x + 4},236 L${x - 4},236Z" fill="${GOLD}"/>`).join('')}
-  ${burst(600, 92, 46)}
+  ${burst(600, 92, 40)}</g>
   <path d="M372,262 L828,262" stroke="${GOLD}" stroke-width="4"/><path d="M386,268 L814,268" stroke="${IV2}" stroke-width="1.5"/>
   ${film('M40,560 C90,520 160,540 190,600 C220,660 300,700 380,690', 'f1')}
   ${film('M1060,420 C1100,392 1150,402 1162,444 C1172,480 1150,506 1124,504', 'f2')}
-  <path d="M1110,330 C1170,300 1190,350 1170,390" stroke="${RED}" stroke-width="9" fill="none" opacity=".8" stroke-linecap="round"/>
+  
   ${lily(110, 440, 0.85, -18)}${lily(162, 486, 0.55, 24)}
-  ${poppy(1150, 628, 0.72)}
+  ${poppy(1104, 610, 0.68)}
   ${hand}
-  ${[[1018, 116, 1030, 196], [1040, 126, 1070, 200], [1062, 120, 960, 300], [1084, 112, 1140, 420]].map(([a, b, c, d]) => `<path d="M${a},${b} L${c},${d}" stroke="${IV2}" stroke-width="1.6" opacity=".85"/>`).join('')}
+  ${[[1002, 104, 1030, 196], [1026, 120, 1070, 200], [1052, 126, 940, 290], [1076, 118, 1140, 420]].map(([a, b, c, d]) => `<path d="M${a},${b} L${c},${d}" stroke="${IV2}" stroke-width="1.6" opacity=".85"/>`).join('')}
   ${mask}
+  <g stroke="${IV2}" stroke-width="2.2" fill="none" stroke-linecap="round">
+    <path d="M268,372 C226,352 196,370 200,398 C204,422 236,424 244,404 C250,388 232,380 224,392"/><path d="M268,372 C240,330 260,300 290,300"/><path d="M262,440 C230,450 210,474 226,494"/>
+    <path d="M940,372 C982,352 1012,370 1008,398 C1004,422 972,424 964,404 C958,388 976,380 984,392"/><path d="M940,440 C972,450 992,474 976,494"/>
+    ${[[212, 470], [236, 316], [998, 470]].map(([x, y]) => `<path d="M${x},${y} l-8,-10 M${x},${y} l10,-6"/>`).join('')}
+  </g>
 </g>
 <g filter="url(#${id}worn)">
-  <text x="612" y="290" text-anchor="middle" font-family="Aurelia, serif" font-size="40" fill="url(#${id}iv)" letter-spacing="16">THE</text>
-  <text x="600" y="418" text-anchor="middle" fill="url(#${id}iv)" stroke="#2a1e1a" stroke-width="1.5" paint-order="stroke"><tspan font-family="Highcrest, serif" font-size="168" dy="4">O</tspan><tspan font-family="Aurelia, serif" font-size="170" dx="-2" dy="-4" letter-spacing="3">THER</tspan><tspan font-family="Highcrest, serif" font-size="168" dx="26" dy="4">M</tspan><tspan font-family="Aurelia, serif" font-size="170" dx="0" dy="-4">E</tspan><tspan font-family="Aurelia, serif" font-size="150" fill="${GOLD}" dx="8">:</tspan></text>
-  <text x="612" y="590" text-anchor="middle" font-family="Cintarini, cursive" font-size="98" fill="url(#${id}rd)" stroke="url(#${id}rd)" stroke-width="3" transform="rotate(-4 600 570)">Applause, Please!</text>
-</g>
-<g class="lg-orn2" transform="translate(0 52)">
+  <text x="248" y="246" font-family="Aurelia, serif" font-size="58" fill="url(#${id}iv)" letter-spacing="8">THE</text><path d="M246,258 L360,258" stroke="${GOLD}" stroke-width="2"/>
+  <text x="600" y="418" text-anchor="middle" font-family="Aurelia, serif" fill="url(#${id}iv)" stroke="#2a1e1a" stroke-width="1.5" paint-order="stroke"><tspan font-size="212" dy="10">O</tspan><tspan font-size="168" dy="-10" letter-spacing="4">THER</tspan><tspan font-size="212" dx="30" dy="10">M</tspan><tspan font-size="168" dy="-10">E</tspan><tspan font-size="150" fill="${GOLD}" dx="10">:</tspan></text>
+  </g>
+<text x="612" y="528" text-anchor="middle" font-family="Cintarini, cursive" font-size="104" fill="url(#${id}rd)" stroke="url(#${id}rd)" stroke-width="3.2" transform="rotate(-4 600 510)" filter="url(#${id}glow)">Applause, Please!</text>
+<g class="lg-orn2" transform="translate(0 -20)">
   <path d="M280,630 C380,612 470,640 540,626 C570,620 586,614 600,604 C614,614 630,620 660,626 C730,640 820,612 920,630" stroke="${IV2}" stroke-width="2.5" fill="none"/>
   <path d="M330,618 C300,600 300,580 322,578 M870,618 C900,600 900,580 878,578" stroke="${IV2}" stroke-width="2" fill="none"/>
   <path d="M560,640 L600,736 L640,640 C626,652 612,650 600,644 C588,650 574,652 560,640Z" fill="${RED}"/><path d="M582,650 L600,712 L618,650" stroke="${RED2}" stroke-width="2" fill="none"/>

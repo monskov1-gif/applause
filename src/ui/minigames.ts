@@ -130,3 +130,34 @@ export function calibrate(): Promise<number | null> {
       timer = setTimeout(() => { if (taps.length < 4) { st.textContent = 'Мало нажатий — попробуйте ещё раз'; start = 0; return; } taps.sort((a, b) => a - b); const med = taps[Math.floor(taps.length / 2)]; out = Math.max(-200, Math.min(200, Math.round(med / 5) * 5)); st.textContent = `Поправка: ${out} мс`; start = 0; setTimeout(() => ui.close(m), 1200); }, (8 * beat + 1) * 1000); };
   });
 }
+/** Погоня: три полосы, препятствия по ритму трека. Возвращает число столкновений. */
+export function runner(o: { track: string; title: string; sub?: string; duration?: number; lives?: number; skin?: 'bike' | 'carriage'; onDone?: () => void }): Promise<{ hits: number; ok: boolean }> {
+  if (G.fast) return Promise.resolve({ hits: 0, ok: true });
+  return new Promise((res) => {
+    const easy = settings.rhythmEasy, dur = o.duration || 34, lives = (o.lives || 4) + (easy ? 3 : 0);
+    const wrap = el('div', 'mg', '', document.getElementById('ui')!); const cv = el('canvas', '', '', wrap) as HTMLCanvasElement; const W = cv.width = 480, H = cv.height = 640; cv.style.height = 'min(92vh, 640px)'; cv.style.imageRendering = 'pixelated'; const c = cv.getContext('2d')!;
+    const t0 = audio.music(o.track, { restart: true, fade: 0.3, delay: 1.2 }); const step = audio.stepDur((audio as any).cur?.tr || { bpm: 140 } as any);
+    let lane = 1, x = 1, hits = 0, raf = 0, inv = 0; const obs: { lane: number; t: number; kind: number; hit?: boolean }[] = [];
+    for (let t = 2; t < dur - 1; t += step * (easy ? 12 : 8)) { const n = Math.random() < (easy ? 0.15 : 0.35) ? 2 : 1; const used = new Set<number>(); for (let k = 0; k < n; k++) { let l = Math.floor(Math.random() * 3); while (used.has(l)) l = (l + 1) % 3; used.add(l); obs.push({ lane: l, t, kind: Math.floor(Math.random() * 3) }); } }
+    const kd = (e: KeyboardEvent) => { if (ui.modal) return; if (['ArrowLeft', 'KeyA'].includes(e.code)) { lane = Math.max(0, lane - 1); e.preventDefault(); } if (['ArrowRight', 'KeyD'].includes(e.code)) { lane = Math.min(2, lane + 1); e.preventDefault(); } };
+    window.addEventListener('keydown', kd, true); cv.addEventListener('pointerdown', (e) => { const r = cv.getBoundingClientRect(); lane = (e.clientX - r.left) / r.width < 0.5 ? Math.max(0, lane - 1) : Math.min(2, lane + 1); });
+    const LX = [W * 0.25, W * 0.5, W * 0.75], PY = H - 120, SPD = 260; let prev = performance.now();
+    const frame = () => { const n = performance.now(), dt = (n - prev) / 1000; prev = n; const t = audio.now() - t0;
+      x += (lane - x) * Math.min(1, dt * 14); inv = Math.max(0, inv - dt);
+      const city = o.skin !== 'carriage'; const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, city ? '#120a2a' : '#2a3a5a'); g.addColorStop(1, city ? '#2a0a3a' : '#5a7a4a'); c.fillStyle = g; c.fillRect(0, 0, W, H);
+      for (let i = 0; i < 14; i++) { const yy = ((i * 60 + t * SPD) % (H + 60)) - 60; c.fillStyle = city ? (i % 2 ? '#ff4fa0' : '#40e0d0') : '#e8c36a'; c.globalAlpha = 0.5; c.fillRect(W * 0.375 - 2, yy, 4, 30); c.fillRect(W * 0.625 - 2, yy, 4, 30); c.globalAlpha = 1; c.fillStyle = city ? '#1a1030' : '#3a2a1a'; c.fillRect(0, yy, 40, 40); c.fillRect(W - 40, yy + 30, 40, 50); if (city) { c.fillStyle = '#ffd060'; c.fillRect(10, yy + 8, 6, 6); c.fillRect(W - 28, yy + 40, 6, 6); } }
+      for (const ob of obs) { const y = PY - (ob.t - t) * SPD; if (y < -60 || y > H + 40) continue; const ox = LX[ob.lane];
+        if (city) { c.fillStyle = ['#ff3050', '#7a7aff', '#ffb030'][ob.kind]; c.fillRect(ox - 26, y - 20, 52, 34); c.fillStyle = '#111'; c.fillRect(ox - 18, y - 12, 36, 6); c.fillStyle = '#fff'; c.fillRect(ox - 4, y + 4, 8, 4); }
+        else { c.fillStyle = ['#5a4029', '#2e5038', '#888'][ob.kind]; c.fillRect(ox - 26, y - 18, 52, 30); }
+        if (!ob.hit && Math.abs(y - PY) < 26 && Math.abs(ox - (W * 0.25 + x * W * 0.25)) < 40 && inv <= 0) { ob.hit = true; hits++; inv = 0.8; audio.sfx('crash'); G.shake(0.3); } }
+      const px = W * 0.25 + x * W * 0.25; c.globalAlpha = inv > 0 && Math.floor(inv * 12) % 2 ? 0.4 : 1;
+      if (city) { c.fillStyle = '#ff9a3c'; c.fillRect(px - 16, PY - 18, 32, 40); c.fillStyle = '#26262e'; c.fillRect(px - 20, PY + 6, 40, 12); c.fillStyle = '#40e0d0'; c.fillRect(px - 22, PY + 20, 44, 4); c.fillStyle = '#5a341f'; c.fillRect(px - 6, PY - 30, 12, 12); c.fillStyle = '#ff4fa0'; c.fillRect(px - 6, PY - 42, 12, 12); }
+      else { c.fillStyle = '#f0f0f0'; c.fillRect(px - 16, PY - 10, 32, 30); c.fillStyle = '#c9a0dc'; c.fillRect(px - 6, PY - 30, 12, 20); }
+      c.globalAlpha = 1; c.fillStyle = '#f0d478'; c.font = '20px "Playfair Display", serif'; c.textAlign = 'center'; c.fillText(o.title, W / 2, 30); c.font = '13px "Pixelify Sans", monospace'; c.fillStyle = '#efe3c4'; c.fillText(o.sub || '← → или A / D', W / 2, 52);
+      c.fillText('♥'.repeat(Math.max(0, lives - hits)), W / 2, 74); c.fillStyle = '#2a0a10'; c.fillRect(60, H - 22, W - 120, 8); c.fillStyle = '#d4ae48'; c.fillRect(60, H - 22, (W - 120) * Math.max(0, Math.min(1, t / dur)), 8);
+      if (t < 0) { c.font = '48px "Playfair Display", serif'; c.fillStyle = '#fff'; c.fillText(String(Math.ceil(-t)), W / 2, H / 2); }
+      if (t >= dur || hits >= lives) { window.removeEventListener('keydown', kd, true); wrap.remove(); res({ hits, ok: hits < lives }); return; }
+      raf = requestAnimationFrame(frame); };
+    raf = requestAnimationFrame(frame);
+  });
+}
