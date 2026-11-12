@@ -18,7 +18,7 @@ const C: CharDef[] = [
     role: 'Художественный руководитель', bio: 'Его никто не видел. Он оставляет письма, пометки на полях и распоряжения, всегда вовремя.' },
   { id: 'polina', name: 'Полина', color: '#c9a7ff', pitch: 610, skin: FAIR, hair: '#f0d98a', style: 'fluffy', eyes: '#3f9b57', h: 32, build: 'thin', top: '#8f7fc4', bottom: '#3b4a6b', shoes: '#eeeeee', brows: 'soft',
     role: 'Подруга', bio: 'Боится почти всего и смеётся, когда страшно. Замечает то, что другие пропускают.' },
-  { id: 'ruben', name: 'Рубен', color: '#ffb057', pitch: 240, skin: TAN2, hair: '#1d1512', style: 'curlyMid', eyes: '#3b2416', h: 40, build: 'strong', top: '#26262e', bottom: '#2d3440', trim: '#ff9a3c', shoes: '#111', brows: 'strict',
+  { id: 'ruben', name: 'Рубен', color: '#ffb057', pitch: 240, skin: TAN2, hair: '#1d1512', style: 'curlyMid', eyes: '#3b2416', h: 40, build: 'strong', top: '#26262e', bottom: '#2d3440', trim: '#ff9a3c', shoes: '#111', brows: 'strict', acc: ['glasses'],
     role: 'Друг', bio: 'Спокойный и надёжный. Считает, что план нужен, чтобы было от чего отступать.' },
   { id: 'matvey', name: 'Матвей', color: '#ff8fd0', pitch: 400, skin: FAIR2, hair: '#6a4326', style: 'curlyShort', eyes: '#5b3a1e', h: 37, build: 'thin', top: '#f2c230', bottom: '#3a62c9', trim: '#e84a6f', shoes: '#e84a6f', acc: ['freckles', 'scarf', 'bracelets', 'pins'], brows: 'soft',
     role: 'Друг', bio: 'Яркий снаружи, осторожный внутри. Сто раз отрепетирует фразу и так её и не скажет.' },
@@ -79,7 +79,7 @@ export function variant(base: string, id: string, patch: Partial<CharDef>): Char
 variant('varya', 'varya_noir', { top: '#6a6a6a', bottom: '#2a2a2a', acc: ['hat'] });
 variant('varya', 'varya_pjm', { top: '#d8c8e8', bottom: '#b8a8d0', acc: [] });
 variant('erika', 'erika_noir', { top: '#9a9a8a', bottom: '#2a2a2a', acc: ['hat', 'coat'] });
-variant('ruben', 'ruben_heist', { top: '#16161c', bottom: '#1c2028', trim: '#40e0d0', acc: ['visor'] });
+variant('ruben', 'ruben_heist', { top: '#16161c', bottom: '#1c2028', trim: '#40e0d0', acc: ['glasses'] });
 variant('matvey', 'matvey_school', { top: '#2c3550', bottom: '#2a2a33', trim: '#f2c230', acc: ['freckles', 'scarf', 'bracelets', 'pins'] });
 variant('angelina', 'angelina_idol', { top: '#f0f0f8', bottom: '#ff9ad8', trim: '#ff4fa0' });
 variant('angelina', 'angelina_own', { top: '#1a1420', bottom: '#7a1f3d', trim: '#e8c36a' });

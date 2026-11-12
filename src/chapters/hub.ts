@@ -84,8 +84,8 @@ const corridor: RoomDef = {
     // ковровые дорожки (плитка текстуры без растяжения)
     R.floor('carpet', { w: 42, d: 2.6, z: -9.6, y: 0.015 }); R.floor('carpet', { w: 4, d: 10, z: -1.5, y: 0.015 }); R.floor('carpet', { w: 42, d: 2.6, z: 7.5, y: 0.015 });
     // массивы стен между галереями (в потолок, прозрачнеют, когда закрывают героиню)
-    R.wall(-22, -7.2, -2.8, 3.6, { h: 4.4, tex: 'wallpaper', tint: '#c88870' }); R.wall(2.8, -7.2, 22, 3.6, { h: 4.4, tex: 'wallpaper', tint: '#c88870' });
-    for (const [x0, x1] of [[-22, -2.8], [2.8, 22]]) { const cap = R.box((x0 + x1) / 2, -1.8, x1 - x0, 10.8, 0.06, { tex: 'woodwall', tint: '#8a6248', emissive: 0x3a2618, y: 4.41, solid: false, cast: false }); (cap.material as THREE.MeshLambertMaterial).transparent = true; R.room.occluders.push({ mesh: cap as THREE.Mesh, x0: x0 - 0.4, x1: x1 + 0.4, z: 3.6, h: 4.4 }); }
+    R.wall(-22, -7.2, -2.8, 3.6, { h: 4.4, tex: 'wallpaper', tint: '#c88870', wide: true, depth: 20 }); R.wall(2.8, -7.2, 22, 3.6, { h: 4.4, tex: 'wallpaper', tint: '#c88870', wide: true, depth: 20 });
+    for (const [x0, x1] of [[-22, -2.8], [2.8, 22]]) { const cap = R.box((x0 + x1) / 2, -1.8, x1 - x0, 10.8, 0.06, { tex: 'woodwall', tint: '#8a6248', emissive: 0x3a2618, y: 4.41, solid: false, cast: false }); (cap.material as THREE.MeshLambertMaterial).transparent = true; R.room.occluders.push({ mesh: cap as THREE.Mesh, x0: -22, x1: 22, z: 3.6, h: 4.4, depth: 20 } as any); }
     R.door('d_props', -12, { z: 3.65, to: 'hub_props', label: 'Реквизиторская', sign: 'РЕКВИЗИТ', col: '#3a2a1c' });
     R.door('d_work', 12, { z: 3.65, to: 'hub_workshop', label: 'Склад декораций и мастерская', sign: 'ЦЕХ', cond: () => G.done('polina'), locked: D.workshopLocked });
     const plaque = (text: string, x: number, z: number, key: string, y = 3.4) => { const cw = Math.ceil(text.length * 5.4 + 14); return R.decal(canvasTex(cw, 15, (c) => { c.fillStyle = '#2a1408'; c.fillRect(0, 0, cw, 15); c.strokeStyle = '#d4ae48'; c.strokeRect(0.5, 0.5, cw - 1, 14); ptext(c, text, cw / 2, 3, { size: 8, col: '#f0d478', align: 'center' }); }, key), { x, z, y, w: Math.min(cw * 0.03, 4.6), h: 0.6, noSlot: true }); };
@@ -112,6 +112,7 @@ const corridor: RoomDef = {
     for (const x of [-18, -4, 4, 18]) R.light(x, 3.6, 8, n >= 1 ? 0xffc880 : 0xc8b8a0, n >= 1 ? 7 : 4, 9, { flicker: n >= 1 ? 0.03 : 0.12 });
     R.sprite('chair', -20, 11.6, { solid: 0.4 }); R.sprite('flowerpot', 3.4, 10.4, { scale: 1.4 }); sofa(R, 1.2, -11.5, { w: 2.2, col: 0x8a3a3a }); R.sprite(PROPTEX.stool(), 20.5, 11.4, {}); R.box(-3.4, 10.4, 0.5, 0.5, 0.7, { color: 0x2a2a3a }); for (const [dx, col] of [[-0.1, 0xc41e3a], [0.1, 0x2f7f82]] as number[][]) R.box(-3.4 + dx, 10.4, 0.05, 0.05, 1.1, { color: col, y: 0.4, solid: false }); for (const sx of [-1, 1]) { R.table(sx * 5.1, 4.3, 2.4, 0.6); R.sprite('flowerpot', sx * 5.1 + 0.6, 4.3, { y: 1.15, scale: 0.8, thin: true }); R.sprite('book', sx * 5.1 - 0.5, 4.3, { y: 1.15, scale: 0.8 }); } R.light(0, 3.2, -1.5, 0xffc890, 8, 9); for (const [x0, x1] of [[-22, -2.8], [2.8, 22]]) for (const zz of [-7.2, 3.6]) R.box((x0 + x1) / 2, zz, x1 - x0, 0.12, 0.1, { tex: 'gold', y: 4.42, solid: false, cast: false }); sofa(R, -14, 11.2, { w: 2.6, col: 0x8a3a3a });
     if (G.done('matvey')) { for (let x = -20; x <= 20; x += 2.6) { R.sprite('lantern', x, -12.4, { y: 4.6 + Math.sin(x) * 0.2, glow: true }); R.box(x, -12.4, 0.03, 0.03, 0.27 - Math.sin(x) * 0.2, { color: 0x2a2018, y: 5.45 + Math.sin(x) * 0.2, solid: false, cast: false }); } R.box(0, -12.4, 41, 0.03, 0.03, { color: 0x2a2018, y: 5.7, solid: false, cast: false }); R.npc('matvey', -7, -10.4, { talk: (G: any) => G.run(G.state.mask === 'drama' ? D.h_matveyDr : D.h_matvey) }); }
+    (R.room as any).cutFollow = R.room.group.children.filter((o) => o.position.z > 3.55 && o.position.z < 4.8 && Math.abs(o.position.x) > 2.9 && !(o as any).isLight);
     R.spawn('start', 0, -10); R.spawn('dressing', -16, -11.4); R.spawn('diva', -9.5, -11.4); R.spawn('costume', -3, -11.4); R.spawn('props', -12, 4.6, 'f'); R.spawn('work', 12, 4.6, 'f'); R.spawn('stage', 20.2, 7.5, 'l'); R.spawn('stair', -20.2, 7.5, 'r'); R.spawn('foyer', -8, 10.6, 'b'); R.spawn('trap', 12, 10.6, 'b');
   },
 };
@@ -185,7 +186,7 @@ const stage: RoomDef = {
   async enter(G, from) {
     const f = G.f;
     if (!f.met_cast) { G.focus(0, -10.5, 20); await G.wait(0.8); await G.run(D.stageFirst); G.unfocus(); return; }
-    if (G.doneCount() >= 6 && !f.act4 && !f.ret) return act4(G);
+    if (G.doneCount() >= 6 && !f.act4 && !f.ret && f.a_ledger && f.a_contract && f.know_k) return act4(G);
   },
 };
 const vanish = async (G: any, ids: string[]) => { G.sfx('buzz', { dur: 0.8 }); for (let k = 0; k < 4; k++) { G.grade({ bright: k % 2 ? 1 : 0.15 }, true); await G.wait(0.12); } for (const id of ids) { const a = G.actor(id); if (a) { a.hidden = true; } } G.grade({ bright: 1 }, true); G.sfx('whoosh'); };
@@ -250,7 +251,7 @@ const backstage: RoomDef = {
     const voidP = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 12), new THREE.MeshBasicMaterial({ color: 0x141c30 })); voidP.rotation.x = -Math.PI / 2; voidP.position.set(-4, -3, 0); R.room.group.add(voidP);
     for (const [x, z] of [[-6, 0], [-2, 0]]) R.box(x, z, 0.12, 12, 3, { color: 0x0a0c14, y: -3, solid: false, cast: false });
     R.collider(-6, -6, -2, -1.1); R.collider(-6, 1.1, -2, 6); for (const ex of [-6.05, -1.95]) for (const [z0, z1] of [[-5.8, -1.5], [1.5, 5.8]]) { R.box(ex, (z0 + z1) / 2, 0.07, z1 - z0, 0.07, { tex: 'gold', y: 0.95, solid: false, cast: false }); for (let zz = z0; zz <= z1 + 0.01; zz += (z1 - z0) / 3) R.box(ex, zz, 0.08, 0.08, 0.95, { tex: 'metal', solid: false, cast: false }); } R.sprite('ladder', -4, -5.4, { y: -2.6, scale: 1.4, thin: true }); R.light(-4, -1.5, 0, 0x6080c0, 6, 6); const mid = R.collider(-6, -1.1, -2, 1.1); mid.on = !f.bridge;
-    const shadow = R.decal(canvasTex(64, 34, (c) => { c.fillStyle = 'rgba(4,3,8,0.92)'; c.fillRect(0, 8, 64, 20); for (let i = 0; i < 8; i++) c.fillRect(2 + i * 8, 0, 3, 34); c.fillRect(0, 0, 64, 3); c.fillRect(0, 31, 64, 3); }, 'shadowbridge'), { flat: true, x: -4, z: 0, y: 0.02, w: 4.4, h: 2.3, glow: true }); shadow.visible = !!f.bridge; R.room.named.shadow = shadow; R.room.named.mid = mid;
+    const shadow = R.decal(canvasTex(64, 34, (c) => { c.fillStyle = 'rgba(4,3,8,0.92)'; c.fillRect(0, 8, 64, 20); for (let i = 0; i < 8; i++) c.fillRect(2 + i * 8, 0, 3, 34); c.fillRect(0, 0, 64, 3); c.fillRect(0, 31, 64, 3); }, 'shadowbridge'), { flat: true, x: -4, z: 0, y: 0.02, w: 4.4, h: 2.3, glow: true }); shadow.visible = !!f.bridge && G.state.mask === 'tragedy'; R.room.named.shadow = shadow; R.room.named.mid = mid; R.onUpdate(() => { const on = !!f.bridge && G.state.mask === 'tragedy'; shadow.visible = on; mid.on = !on; }); // мост из тени существует только в маске Трагедии
     for (let x = -20; x <= 20; x += 4.4) R.box(x, -5.6, 0.1, 0.1, 8, { color: 0x6a5a3a, solid: false, cast: false });
     for (const x of [-19.4, 8, 16]) R.box(x, 3.8, 1.6, 1.4, 1.4, { tex: 'wood' }); R.box(-19.4, 3.8, 1.2, 1, 1, { tex: 'wood', y: 1.4, solid: false });
     for (const ex of [-6, -2]) for (let k = 0; k < 12; k++) R.box(ex + (ex < -4 ? 0.12 : -0.12), -5.5 + k + 0.25, 0.22, 0.5, 0.02, { color: k % 2 ? 0x1a1a1a : 0xe8c230, y: 0.01, solid: false, cast: false });
@@ -271,9 +272,10 @@ const backstage: RoomDef = {
     const cutPos = [[-12.6, 4.2], [-8.4, 0]], cp = cutPos[f.cut ? 1 : 0];
     const cut = R.sprite('bridgecut', cp[0], cp[1], { scale: 0.75, solid: 1.2 }); R.room.named.cut = cut;
     const cutI = R.inter('cut', cp[0], cp[1] + 0.8, { label: 'Фанерный мостик на колёсах (катить)', cond: () => !f.bridge, fn: async (G) => { if (!f.cut_seen) { f.cut_seen = 1; await G.run(D.cutMove); } f.cut = f.cut ? 0 : 1; G.sfx('gear'); f.spot = 0; await G.rebuild(); } });
-    R.box(-15.6, -1.4, 0.16, 0.16, 2.2, { tex: 'metal' }); for (let k = 0; k < 3; k++) { const leg = R.box(-15.6 + Math.cos(k * 2.1) * 0.35, -1.4 + Math.sin(k * 2.1) * 0.35, 0.06, 0.06, 1.0, { tex: 'metal', solid: false }); leg.rotation.set(Math.sin(k * 2.1) * 0.5, 0, -Math.cos(k * 2.1) * 0.5); } R.sprite('stagelight', -15.6, -1.3, { y: 2.2, scale: 1.3 });
+    R.box(-15.6, -1.4, 0.16, 0.16, 2.2, { tex: 'metal' }); for (let k = 0; k < 3; k++) { const leg = R.box(-15.6 + Math.cos(k * 2.1) * 0.35, -1.4 + Math.sin(k * 2.1) * 0.35, 0.06, 0.06, 1.0, { tex: 'metal', solid: false }); leg.rotation.set(Math.sin(k * 2.1) * 0.5, 0, -Math.cos(k * 2.1) * 0.5); } 
     const aims = [[-11.8, -5], [-14, -4], [-2, 0]]; const aim = aims[f.spot || 0];
-    R.spot(-15.6, 2.9, -1.4, aim[0], aim[1], 0xfff0d0, 120, { angle: 0.32, pen: 0.3 });
+    { const head = new THREE.Group(); head.position.set(-15.6, 2.55, -1.4); const body = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.42, 0.9, 14), new THREE.MeshLambertMaterial({ color: 0x22242a })); body.rotation.x = Math.PI / 2; head.add(body); const lens = new THREE.Mesh(new THREE.CircleGeometry(0.36, 16), new THREE.MeshBasicMaterial({ color: 0xfff4d0 })); lens.position.z = 0.46; head.add(lens); const yoke = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.04, 6, 16, Math.PI), new THREE.MeshLambertMaterial({ color: 0x3a3a40 })); yoke.rotation.z = Math.PI; head.add(yoke); R.room.group.add(head); head.lookAt(aim[0], 0, aim[1]);
+      R.spot(-15.6 + (aim[0] + 15.6) * 0.04, 2.55, -1.4 + (aim[1] + 1.4) * 0.04, aim[0], aim[1], 0xfff0d0, 140, { angle: 0.3, pen: 0.35, cone: 0.06 }); }
     R.inter('spot', -15.6, -0.4, { label: 'Прожектор (повернуть)', cond: () => !f.bridge, fn: async (G) => { f.spot = ((f.spot || 0) + 1) % 3; G.sfx('spot'); await G.rebuild(); if (f.spot === 0) await G.run(D.spotAim0); else if (f.spot === 1) await G.run(D.bridgeWrong); else if (!f.cut) await G.run(D.bridgeNoCut); else { G.focus(-4, 0, 16); await G.wait(0.8); await G.run(D.bridgeOn); G.unfocus(); await G.rebuild(); } } });
     // зеркальная рама под колосниками (после главы Лизы)
     if (G.done('liza')) {

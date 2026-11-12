@@ -6,7 +6,7 @@ import { NOTES, ITEMS, CATS } from '../data/notes';
 import { CHARS } from '../data/chars';
 import { portrait } from '../gfx/portraits';
 import { itemIcon } from '../gfx/icons';
-import { objective, MECH, EGGS } from '../data/quests';
+import { objective, MECH, EGGS, solution } from '../data/quests';
 import { G, MASK_NAMES } from '../world/game';
 
 const root = () => document.getElementById('ui')!;
@@ -43,8 +43,8 @@ class UI {
     this.loadingEl = el('div', 'savemark', 'Меняем декорации…', r); this.loadingEl.style.right = 'auto'; this.loadingEl.style.left = '.8rem';
     this.dlg.addEventListener('click', (e) => { const a = (e.target as HTMLElement).dataset?.a; if (a === 'hist') this.history(); else if (a === 'auto') { this.auto = !this.auto; (e.target as HTMLElement).style.background = this.auto ? '#8e1830' : ''; if (this.auto && this.advance) this.advance(); } else if (a === 'skip') { this.skipping = true; if (this.advance) this.advance(); } else if (this.advance) this.advance(); });
     input.onAction((a) => { if (this.modal) { if (a === 'pause') this.closeTop(); return; } if (a === 'act' && this.advance) this.advance(); });
-    this.hudR.innerHTML = `<button class="hbtn" data-a="cam" title="Фотоаппарат (C)">◉</button><button class="hbtn" data-a="inv" title="Инвентарь (I)">▣<span class="hb-n"></span></button><button class="hbtn" data-a="note" title="Журнал (Tab)">✎</button><button class="hbtn" data-a="pause" title="Пауза (Esc)">❚❚</button>`;
-    this.hudR.addEventListener('click', (e) => { const a = (e.target as HTMLElement).closest('[data-a]')?.getAttribute('data-a'); if (a === 'cam') input.fire('camera'); if (a === 'inv') input.fire('inventory'); if (a === 'note') input.fire('notebook'); if (a === 'pause') input.fire('pause'); });
+    this.hudR.innerHTML = `<button class="hbtn" data-a="cam" title="Фотоаппарат (C)">◉</button><button class="hbtn" data-a="inv" title="Инвентарь (I)">▣<span class="hb-n"></span></button><button class="hbtn" data-a="note" title="Журнал (Tab)">✎</button><button class="hbtn" data-a="help" title="Подсказка: что делать дальше (?)">?</button><button class="hbtn" data-a="pause" title="Пауза (Esc)">❚❚</button>`;
+    this.hudR.addEventListener('click', (e) => { const a = (e.target as HTMLElement).closest('[data-a]')?.getAttribute('data-a'); if (a === 'cam') input.fire('camera'); if (a === 'inv') input.fire('inventory'); if (a === 'note') input.fire('notebook'); if (a === 'pause') input.fire('pause'); if (a === 'help') input.fire('help'); });
     this.questEl = el('div', 'questbox', '', this.hudEl); this.questEl.addEventListener('click', () => this.notebook('quests')); this.questEl.addEventListener('mouseenter', () => this.questEl.classList.remove('mini'));
     this.maskRow.addEventListener('click', (e) => { const m = (e.target as HTMLElement).closest('.maskb') as HTMLElement | null; if (m) G.setMask(m.dataset.m!); });
     this.buildTouch(); this.applySettings();
@@ -142,6 +142,7 @@ class UI {
     else if (t) { t.classList.remove('on'); const tt = t; setTimeout(() => tt.remove(), 800); await new Promise((r) => setTimeout(r, 350)); }
   }
   /** Письмо, документ, страница сценария. */
+  help() { const sol = solution(G); audio.sfx('paper'); return this.paper({ title: 'Подсказка', cls: 'help', body: `<p class="help-goal">${esc(sol.title)}</p><ol class="help-steps">${sol.steps.map((x) => `<li>${esc(x)}</li>`).join('')}</ol><p class="help-foot">Кнопка «?» доступна всегда. Подсказка меняется вместе с сюжетом.</p>` }); }
   paper(o: { title?: string; body: string; sign?: string; stamp?: string; cls?: string; hand?: boolean; btn?: string }): Promise<void> {
     if (G.fast) return Promise.resolve(); audio.sfx('paper');
     return new Promise((res) => { const m = this.open(`<div class="paper ${o.cls || ''}">${o.stamp ? `<div class="stamp">${o.stamp}</div>` : ''}${o.title ? `<h3>${o.title}</h3>` : ''}<div class="${o.hand ? 'hand' : ''}">${o.body}</div>${o.sign ? `<div class="sign">${o.sign}</div>` : ''}<button class="btn small ok" data-x>${o.btn || 'Отложить'}</button></div>`, { raw: true, onClose: () => { audio.sfx('paper'); res(); } }); (m.querySelector('.ok') as HTMLElement).focus({ preventScroll: true }); });

@@ -71,7 +71,7 @@ class Game {
     if (!this.running) return; const s = this.state; if (this.player) { s.px = this.player.x; s.pz = this.player.z; }
     try { await writeSave(slot, s); ui.saved(slot); } catch (e) { console.error('[save] не удалось сохранить', e); ui.toast('Не удалось сохранить игру: хранилище браузера недоступно', '⚠'); }
   }
-  private clearRoom() { for (const w of this.waits) w.res(); this.waits = []; if (this.room) { this.R.scene.remove(this.room.group); this.room.dispose(); this.room = null; } this.followers = []; this.trail = []; this.near = null; this.override = null; ui.prompt(null); }
+  private clearRoom() { this.faded.clear(); for (const w of this.waits) w.res(); this.waits = []; if (this.room) { this.R.scene.remove(this.room.group); this.room.dispose(); this.room = null; } this.followers = []; this.trail = []; this.near = null; this.override = null; ui.prompt(null); }
   async loadRoom(id: string): Promise<RoomDef> {
     if (ROOMS[id]) return ROOMS[id];
     const pre = id.split('_')[0], ld = LOADERS[pre]; if (!ld) throw new Error('Неизвестная локация: ' + id);
@@ -118,10 +118,14 @@ class Game {
 
   // ---------- диалоги ----------
   async say(who: string, text: string, expr = 'neutral', nameOverride?: string) {
-    const thought = who === '~', narr = who === '*', id = thought ? 'varya' : who, d = CHARS[id];
+    const thought = who === '~', narr = who === '*'; const pc = this.player?.charId || 'varya';
+    // мысли принадлежат тому, кем мы сейчас играем; портрет следует за костюмом персонажа в сцене
+    let id = thought ? pc : who; if (thought) text = text.replace(/^\[[^\]]+\]\s*/, '');
+    if (!thought && !narr && this.room) { const a = this.room.actors.find((x: any) => x.id === who && !x.hidden) || (this.player?.id === who ? this.player : null); if (a && a.charId && a.charId !== who && CHARS[a.charId]) id = a.charId; }
+    const d = CHARS[id]; const base = CHARS[(id.split('_')[0])] || d;
     if (!narr && !d) console.warn('[dialogue] неизвестный говорящий', who);
     const key = who + ':' + text; const seen = !!this.state.seen[hash(key)];
-    await ui.say({ name: narr ? '' : (nameOverride || d?.name || who), color: d?.color || '#e8d8a8', portrait: narr || !d ? '' : portrait(id, expr as any), text, italic: thought || narr, pitch: d?.pitch || 300, seen });
+    await ui.say({ name: narr ? '' : (nameOverride || (thought ? (base || d)?.name : (CHARS[who]?.name || d?.name)) || who), color: d?.color || '#e8d8a8', portrait: narr || !d ? '' : portrait(id, expr as any), text, italic: thought || narr, pitch: d?.pitch || 300, seen });
     this.state.seen[hash(key)] = 1;
   }
   async line(s: string) {
@@ -166,11 +170,26 @@ class Game {
     for (const e of room.masked) { const on = e.mask === 'none' ? !m : e.mask === m; e.obj.visible = on; if (e.box) e.box.on = on; }
     for (const it of room.inters) { if (it.mask) { it.enabled = it.mask === 'none' ? !m : it.mask === m; if (it.marker) it.marker.visible = it.enabled; } }
   }
-  applyGrade(instant = false) { const m = this.room?.def.noMasks ? null : this.state.mask; const g = { ...this.gradeBase, ...(m ? mix(this.gradeBase, MASK_GRADE[m]) : {}) }; this.R.setGrade(g, instant); }
+  applyGrade(instant = false) { const m = this.room?.def.noMasks ? null : this.state.mask; const g = { ...this.gradeBase, ...(m ? mix(this.gradeBase, (this.room?.def as any).maskGrade?.[m] || MASK_GRADE[m]) : {}) }; this.R.setGrade(g, instant); }
   grade(g: Grade, instant = false) { this.gradeBase = { ...this.gradeBase, ...g }; this.applyGrade(instant); }
 
   // ---------- камера и эффекты ----------
   camBounds() { const d = this.room!.def; const mx = Math.max(0, d.w / 2 - 9); const z0 = Math.min(0, -d.d / 2 + 4.5), z1 = d.camZMax ?? Math.max(z0, d.d / 2 - 7); return { mx, z0, z1 }; }
+  // ---------- прозрачность того, что заслоняет героиню или висит прямо у камеры ----------
+  private fadeT = 0; private faded = new Map<THREE.Mesh, { orig: any; clone: any; a: number; tgt: number }>(); private ray = new THREE.Raycaster();
+  private fadeBlockers(dt: number) {
+    const room = this.room; if (!room) return; const cam = this.R.cam, p = this.player;
+    this.fadeT -= dt; if (this.fadeT <= 0) {
+      this.fadeT = 0.12; const want = new Set<THREE.Mesh>(); const skip = new Set<THREE.Object3D>(room.occluders.map((o) => o.mesh)); for (const a of room.actors) skip.add(a.group); skip.add(p.group);
+      const ok = (o: THREE.Object3D): o is THREE.Mesh => { if (!(o as any).isMesh || (o as any).isInstancedMesh && false) return false; let q: THREE.Object3D | null = o; while (q) { if (skip.has(q)) return false; q = q.parent; } const m: any = (o as THREE.Mesh).material; if (!m || Array.isArray(m) || m.isShaderMaterial || m.blending === THREE.AdditiveBlending) return false; const g = (o as THREE.Mesh).geometry; if (!g.boundingBox) g.computeBoundingBox(); const bb = g.boundingBox!; const sy = (bb.max.y - bb.min.y) * o.scale.y; const wy = o.getWorldPosition(new THREE.Vector3()).y; if (sy < 0.5 && wy < 0.6) return false; return true; };
+      this.ray.camera = cam; const from = cam.position.clone();
+      for (const hy of [0.5, 1.3, 2.1]) { const to = new THREE.Vector3(p.x, hy, p.z); const dir = to.clone().sub(from); const dist = dir.length(); this.ray.set(from, dir.normalize()); this.ray.far = dist - 0.6; for (const h of this.ray.intersectObjects(room.group.children, true)) if (ok(h.object)) want.add(h.object as THREE.Mesh); }
+      const wp = new THREE.Vector3(); room.group.traverse((o) => { if ((o as any).isMesh && o.visible) { o.getWorldPosition(wp); if (wp.distanceTo(from) < 7.5 && ok(o)) want.add(o as THREE.Mesh); } });
+      for (const m of want) { let e = this.faded.get(m); if (!e) { const orig = m.material; const clone = (orig as THREE.Material).clone(); clone.transparent = true; e = { orig, clone, a: 1, tgt: 0.22 }; m.material = clone; this.faded.set(m, e); } e.tgt = 0.22; }
+      for (const [m, e] of this.faded) if (!want.has(m)) e.tgt = 1;
+    }
+    for (const [m, e] of this.faded) { e.a += (e.tgt - e.a) * Math.min(1, dt * 8); e.clone.opacity = e.a * ((e.orig as any).opacity ?? 1); e.clone.depthWrite = e.a > 0.9; if (e.tgt === 1 && e.a > 0.98) { m.material = e.orig; e.clone.dispose(); this.faded.delete(m); } }
+  }
   camSnap() { const p = this.player, b = this.camBounds(); this.cam.x = clamp(p.x, -b.mx, b.mx); this.cam.z = clamp(p.z, b.z0, b.z1); }
   focus(x: number, z: number, dist = 18) { this.cam.focus = { x, z, dist }; }
   unfocus() { this.cam.focus = null; }
@@ -209,7 +228,7 @@ class Game {
     if (this.lock > 0) return;
     if (a === 'act' && this.near) { const it = this.near; this.sfx('click'); (this.state.f.used ||= {})[this.room!.id + ':' + it.id] = 1; this.cut(() => it.fn(this)).catch((e) => console.error('[game] ошибка взаимодействия', it.id, e)); }
     else if (a === 'mask1') this.setMask('comedy'); else if (a === 'mask2') this.setMask('tragedy'); else if (a === 'mask3') this.setMask('drama'); else if (a === 'mask0') { if (this.state.mask) this.setMask(this.state.mask); }
-    else if (a === 'camera') this.photoMode(); else if (a === 'notebook') ui.notebook(); else if (a === 'inventory') ui.notebook('items');
+    else if (a === 'help') { if (!ui.modal) this.cut(() => ui.help()); } else if (a === 'camera') this.photoMode(); else if (a === 'notebook') ui.notebook(); else if (a === 'inventory') ui.notebook('items');
     else if (this.room?.def.onKey) this.room.def.onKey(this, a);
   }
   /** Ближайшая свободная точка (спираль), чтобы героиня никогда не появлялась внутри мебели. */
@@ -241,6 +260,7 @@ class Game {
     this.t += dt; this.state.time += dt; const p = this.player;
     if (this.waits.length) { for (const w of this.waits) w.t -= dt; const done = this.waits.filter((w) => w.t <= 0); this.waits = this.waits.filter((w) => w.t > 0); for (const w of done) w.res(); }
     // управление
+    if (this.lock === 0) { if (this.runDepth !== 0) this.runDepth = 0; if (ui.dialogOpen) ui.sayHide(); } // страховка: окно диалога не остаётся висеть после сцены
     if (this.override) this.override(dt);
     else if (this.lock === 0 && !ui.modal) {
       if (!p.hidden && this.hits(p.x, p.z)) { const fp = this.freeSpot(p.x, p.z); p.x = fp.x; p.z = fp.z; } // страховка: героиню поставили внутрь мебели в сценке
@@ -271,7 +291,8 @@ class Game {
       for (const lz of room.lasers) { lz.on = lz.active && ((this.t + lz.phase) % lz.period) < lz.duty * lz.period; lz.mesh.visible = lz.on; if (lz.on && !p.hidden && !(p as any).stealth) { const vx = lz.x1 - lz.x0, vz = lz.z1 - lz.z0, l2 = vx * vx + vz * vz; let u = ((p.x - lz.x0) * vx + (p.z - lz.z0) * vz) / l2; u = clamp(u, 0, 1); if (Math.hypot(p.x - lz.x0 - vx * u, p.z - lz.z0 - vz * u) < 0.4) { this.cut(() => lz.onHit(this)).catch((e) => console.error(e)); break; } } }
     } else { for (const a of room.actors) if (!a.target && a !== p && !this.followers.includes(a)) a.moving = false; }
     for (const fl of room.flick) fl.l.intensity = fl.base * (1 + (Math.sin(this.t * 13 + fl.base) * 0.5 + Math.sin(this.t * 31) * 0.5) * fl.s);
-    for (const oc of room.occluders) { const hide = p.z < oc.z - 0.2 && p.z > oc.z - 12 && p.x > oc.x0 - 0.8 && p.x < oc.x1 + 0.8; const o: any = oc; if (o.by == null) { o.by = oc.mesh.position.y; o.k = 1; } const tgt = hide ? 0.14 : 1; o.k += (tgt - o.k) * Math.min(1, dt * 7); oc.mesh.scale.y = o.k; oc.mesh.position.y = o.by * o.k; const m = oc.mesh.material as THREE.MeshLambertMaterial; m.opacity = 1; m.depthWrite = true; } // стены-«срезы»: опускаются до пояса, когда закрывают героиню
+    for (const oc of room.occluders) { const hide = p.z < oc.z - 0.2 && p.z > oc.z - ((oc as any).depth || 12) && p.x > oc.x0 - 0.8 && p.x < oc.x1 + 0.8; const o: any = oc; if (o.by == null) { o.by = oc.mesh.position.y; o.k = 1; } const tgt = hide ? 0.14 : 1; o.k += (tgt - o.k) * Math.min(1, dt * 7); oc.mesh.scale.y = o.k; oc.mesh.position.y = o.by * o.k; const m = oc.mesh.material as THREE.MeshLambertMaterial; m.opacity = 1; m.depthWrite = true; } // стены-«срезы»: опускаются до пояса, когда закрывают героиню
+    { const rr: any = room; if (rr.cutFollow) { const cut = room.occluders.some((o: any) => o.k != null && o.k < 0.6); for (const ob of rr.cutFollow) ob.visible = !cut; } }
     for (const u of room.updaters) u(dt, this.t);
     if (room.def.update) room.def.update(this, dt, this.t);
     this.questT -= dt; if (this.questT < 0) { this.questT = 0.5; ui.quest(); }
@@ -286,6 +307,7 @@ class Game {
     const sx = (Math.random() - 0.5) * c.shake, sy = (Math.random() - 0.5) * c.shake; const aspectFix = this.R.cam.aspect < 1 ? 1.25 : 1;
     this.R.cam.position.set(c.x + sx, c.yOff + Math.sin(c.pitch) * c.dist * aspectFix + sy, c.z + Math.cos(c.pitch) * c.dist * aspectFix);
     this.R.cam.up.set(Math.sin(c.roll), Math.cos(c.roll), 0); this.R.cam.lookAt(c.x + sx, c.yOff, c.z);
+    this.fadeBlockers(dt);
     this.R.render(dt);
     ui.letterbox(!!this.cam.focus && this.lock > 0);
     if (best) { const v = new THREE.Vector3(best.x, best.y + 0.9, best.z).project(this.R.cam); ui.prompt(best.label, (v.x + 1) / 2, (1 - v.y) / 2); } else ui.prompt(null);

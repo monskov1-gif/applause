@@ -9,7 +9,7 @@ const ALIASES: Record<string, string> = {
   KeyW: 'up', ArrowUp: 'up', KeyS: 'down', ArrowDown: 'down', KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right',
   KeyE: 'act', Enter: 'act', Space: 'act', Escape: 'pause', KeyP: 'pause',
   Digit1: 'mask1', Digit2: 'mask2', Digit3: 'mask3', Digit0: 'mask0', KeyQ: 'mask0',
-  KeyC: 'camera', KeyF: 'camera', Tab: 'notebook', KeyN: 'notebook', KeyJ0: 'notebook', KeyI: 'inventory', KeyB: 'inventory', KeyH: 'history', KeyL: 'history',
+  KeyC: 'camera', KeyF: 'camera', Tab: 'notebook', KeyN: 'notebook', KeyJ0: 'notebook', KeyI: 'inventory', KeyB: 'inventory', KeyH: 'history', Slash: 'help', F1: 'help', KeyL: 'history',
   ControlLeft: 'skip', ControlRight: 'skip', ShiftLeft: 'run', ShiftRight: 'run',
   KeyJ: 'laneJ', KeyK: 'laneK', KeyG: 'laneG',
 };

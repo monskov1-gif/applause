@@ -11,7 +11,7 @@ export interface Inter { id: string; x: number; z: number; r: number; label: str
 export interface Trigger { x0: number; z0: number; x1: number; z1: number; fn: (G: any) => any; once: boolean; done: boolean; inside: boolean; }
 export interface RoomDef {
   name: string; chapter?: string; floor?: string; w: number; d: number; music?: string | null; amb?: string | null; grade?: Grade; step?: string;
-  camDist?: number; camZMax?: number; noMasks?: boolean; noCamera?: boolean; dark?: boolean;
+  camDist?: number; camZMax?: number; noMasks?: boolean; noCamera?: boolean; dark?: boolean; maskGrade?: Record<string, Grade>;
   card?: (G: any) => any[] | null;
   build: (R: Builder, G: any) => void; enter?: (G: any, from: string) => any; update?: (G: any, dt: number, t: number) => void; onKey?: (G: any, action: string) => any; photo?: (G: any, subjects: string[]) => any;
 }
@@ -83,6 +83,13 @@ export class Room {
   }
 }
 
+/** Объёмный луч: мягкое затухание к краям конуса (по углу к камере) и по длине, аддитивно, как свет в пыли. */
+function volumeMat(color: number, strength: number) {
+  return new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
+    uniforms: { col: { value: new THREE.Color(color) }, k: { value: strength }, time: { value: 0 } },
+    vertexShader: 'varying vec3 vN; varying vec3 vV; varying float vL; void main(){ vec4 wp = modelMatrix * vec4(position,1.0); vN = normalize(mat3(modelMatrix) * normal); vV = normalize(cameraPosition - wp.xyz); vL = uv.y; gl_Position = projectionMatrix * viewMatrix * wp; }',
+    fragmentShader: 'uniform vec3 col; uniform float k; varying vec3 vN; varying vec3 vV; varying float vL; float h(vec2 p){ return fract(sin(dot(p, vec2(12.9898,78.233))) * 43758.5453); } void main(){ float edge = pow(abs(dot(normalize(vN), vV)), 1.6); float along = pow(clamp(vL, 0.0, 1.0), 0.8); float n = 0.85 + 0.15 * h(floor(gl_FragCoord.xy / 3.0)); gl_FragColor = vec4(col * edge * along * k * n, 1.0); }' });
+}
 export class Builder {
   constructor(public room: Room, public G: any) {}
   slots: Record<string, { a0: number; a1: number; y0: number; y1: number; fixed: boolean; obj?: THREE.Object3D; axis?: 'x' | 'z'; follow: THREE.Object3D[] }[]> = { n: [], w: [], e: [] };
@@ -215,8 +222,8 @@ export class Builder {
   wall(x0: number, z0: number, x1: number, z1: number, o: any = {}) {
     const w = Math.abs(x1 - x0) || 0.4, d = Math.abs(z1 - z0) || 0.4, h = o.h || 4.2;
     const m = this.box((x0 + x1) / 2, (z0 + z1) / 2, w, d, h, { tex: o.tex || 'plaster', tint: o.tint, ...o }); const mat = m.material as THREE.MeshLambertMaterial; mat.transparent = true;
-    this.room.occluders.push({ mesh: m, x0: Math.min(x0, x1) - 0.4, x1: Math.max(x0, x1) + 0.4, z: Math.max(z0, z1), h });
-    if (o.trim !== false) { const tr = this.box((x0 + x1) / 2, (z0 + z1) / 2, w + 0.06, d + 0.06, 0.25, { tex: 'darkwood', y: h - 0.25, solid: false, cast: false }); const tm = tr.material as THREE.MeshLambertMaterial; tm.transparent = true; this.room.occluders.push({ mesh: tr, x0: Math.min(x0, x1) - 0.4, x1: Math.max(x0, x1) + 0.4, z: Math.max(z0, z1), h }); }
+    const ox0 = o.wide ? -this.w / 2 : Math.min(x0, x1) - 0.4, ox1 = o.wide ? this.w / 2 : Math.max(x0, x1) + 0.4; this.room.occluders.push({ mesh: m, x0: ox0, x1: ox1, z: Math.max(z0, z1), h, depth: o.depth } as any);
+    if (o.trim !== false) { const tr = this.box((x0 + x1) / 2, (z0 + z1) / 2, w + 0.06, d + 0.06, 0.25, { tex: 'darkwood', y: h - 0.25, solid: false, cast: false }); const tm = tr.material as THREE.MeshLambertMaterial; tm.transparent = true; this.room.occluders.push({ mesh: tr, x0: ox0, x1: ox1, z: Math.max(z0, z1), h, depth: o.depth } as any); }
     return m;
   }
   /** Ступени: визуальная лестница вверх вдоль -Z (без коллизии подъёма — это переход между этажами). */
@@ -233,8 +240,8 @@ export class Builder {
     if (o.shadow !== false) { l.castShadow = true; l.shadow.mapSize.set(1024, 1024); l.shadow.bias = -0.003; l.shadow.camera.near = 1; l.shadow.camera.far = 50; }
     this.room.group.add(l, l.target);
     if (o.cone) { // видимый «объёмный» луч
-      const len = Math.hypot(tx - x, y, tz - z), rad = Math.tan(o.angle || 0.45) * len; const g = new THREE.ConeGeometry(rad, len, 20, 1, true); g.translate(0, -len / 2, 0); g.rotateX(-Math.PI / 2);
-      const cm = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color, transparent: true, opacity: o.cone === true ? 0.07 : o.cone, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending }));
+      const len = Math.hypot(tx - x, y, tz - z), rad = Math.tan(o.angle || 0.45) * len; const g = new THREE.ConeGeometry(rad, len, 32, 8, true); g.translate(0, -len / 2, 0); g.rotateX(-Math.PI / 2);
+      const cm = new THREE.Mesh(g, volumeMat(color, (o.cone === true ? 0.07 : o.cone) * 2.2));
       cm.position.set(x, y, z); cm.lookAt(tx, 0, tz); cm.rotateY(Math.PI); this.room.group.add(cm); (l as any).cone = cm;
     }
     if (o.name) this.room.named[o.name] = l; if (o.mask) this.room.masked.push({ obj: l, mask: o.mask }); return l;
