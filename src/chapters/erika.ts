@@ -178,7 +178,7 @@ const office: RoomDef = {
         left: { title: 'Показания', items: [{ id: 't1', title: 'Сол, бармен', text: '«Ушла в полночь, одна, в слезах».' }, { id: 't2', title: 'Мэй, певица', text: '«Мы не общались. Соперницы».' }, { id: 't3', title: 'Грей, режиссёр', text: '«В пятницу была счастлива, главная роль!»' }, { id: 't4', title: 'Вейс, коллекционер', text: '«Не был знаком лично».' }, { id: 't5', title: 'Кассир', text: '«На вокзале не появлялась».' }] },
         right: { title: 'Улики', items: [{ id: 'e1', title: 'Фото из гримёрки Мэй', text: '«Сестрёнке, от той, кто в третьем ряду. Л.»' }, { id: 'e2', title: 'Контракт', text: 'Роль «передана» в четверг.' }, { id: 'e3', title: 'Записка', text: '«Аркадий, спасибо за цветы… у моря. Л.»' }, { id: 'e4', title: 'Квитанция', text: 'Суббота. Чемодан. Сдала: Вронская Л.' }, { id: 'e5', title: 'Спички', text: 'Клуб «Синяя нота».' }] },
         pairs: [['t2', 'e1', 'Мэй и Лидия, подруги. Мэй прикрывает её.'], ['t3', 'e2', 'Роль отобрали до пятницы. «Счастлива», заученная ложь.'], ['t4', 'e3', 'Вейс знал её и помогал ей.'], ['t5', 'e4', 'Чемодан на вокзале, значит, и она была там.']], wrong: E.wrong });
-      if (r.done) { f.eri_board = 1; G.sfx('stamp'); await G.run(E.boardDone); await G.rebuild(); } } });
+      if (r.done) { f.eri_board = 1; G.sfx('stamp'); await G.run(E.boardDone); await G.run(E.version); if (f.eri_false) await G.run(E.versionMei); await G.rebuild(); } } });
     R.npc('erika_noir', 2.2, 0.6, { id: 'erika', talk: (G: any) => G.run(f.eri_board ? ['erika: Вокзал. Полночь. Не опаздывай, поезда в этом городе ходят точнее людей.'] : ['erika: Опроси всех. Смотри на руки, а не на лица. Лица здесь давно научились врать.']) });
     const cab = canvasTex(22, 40, (c) => { px(c, 0, 0, 22, 40, '#1e1e1e'); for (let k = 0; k < 4; k++) { px(c, 1, 1 + k * 10, 20, 9, '#5a5a5a'); px(c, 1, 1 + k * 10, 20, 1, '#8a8a8a'); px(c, 8, 4 + k * 10, 6, 2, '#c8c8c8'); px(c, 9, 7 + k * 10, 4, 1, '#d8d8d8'); } }, 'ncabinet');
     pbox(R, -6.4, -4, 1.4, 1, 2.6, cab, { side: 0x3a3a3a }); R.sprite('suitcase', -6.4, -3.5, { y: 2.6 });
@@ -375,7 +375,7 @@ const platform: RoomDef = {
 async function platformScene(G: any) {
   const ly = G.actor('lydia'), er = G.actor('erika'); G.unfollow(er); await er.walkTo(5.6, -1.4, 3); er.face(ly.x, ly.z); G.player.face(ly.x, ly.z); G.focus(6, -1.4, 16);
   await G.run(E.platform); await G.run(E.choice.slice(0, 1)); await G.run(E.choice.slice(1, 4));
-  G.sfx('bell'); await ly.walkTo(16, -2.6, 2); ly.hidden = true; G.sfx('engine'); G.shake(0.2); await G.run(E.choice.slice(4)); G.unfocus();
+  G.sfx('bell'); await ly.walkTo(16, -2.6, 2); ly.hidden = true; G.sfx('engine'); G.shake(0.2); await G.run(E.choice.slice(4)); await G.run(G.f.eri_false ? E.endFalse : E.endTrue); G.unfocus();
   G.sfx('applause', { dur: 3 });
   await finishChapter(G, 'erika', [['THE CITY NEVER SLEEPS', 'act'], 'Эрика закрыла дело по-своему.', ['Иногда пропавший человек просто нашёл выход.', 'sm']]);
 }

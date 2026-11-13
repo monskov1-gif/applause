@@ -369,7 +369,7 @@ const mid: RoomDef = {
     paintedGear(R, 4.6, 4.8, -4.5, 1.5, 0.22); paintedGear(R, 7.0, 3.2, -4.6, 0.9, -0.37); paintedGear(R, -1, -2.2, -3.6, 2.6, 0.12, { depth: 0.5 });
     { const chain = canvasTex(4, 32, (c) => { for (let y = 0; y < 32; y += 4) { c.fillStyle = '#5a5a60'; c.fillRect(1, y, 2, 3); c.fillStyle = '#9a9aa0'; c.fillRect(1, y, 1, 1); } }, 'lchain'); for (const x of [-5.6, 2.4, 9.8]) R.decal(chain, { x, y: 4.4, z: -4.9, w: 0.16, h: 5, noSlot: true }); }
     hairTrail(R, G, { xMax: -3.6 });
-    R.inter('gap', -3.8, 0, { label: f.liz_bridge ? 'Мост из косы' : 'Провал', fn: async (G) => { if (f.liz_bridge) return G.run(['liza_long: Не наступай на пробор!']); await G.run(L.gap); await G.run(L.bridge); G.sfx('rope'); f.liz_bridge = 1; await G.rebuild(); } });
+    R.inter('gap', -3.8, 0, { label: f.liz_bridge ? 'Мост из косы' : 'Провал', fn: async (G) => { if (f.liz_bridge) return G.run(['liza_long: Не наступай на пробор!']); await G.run(L.gap); await G.run(L.plan); await G.run(L.bridge); G.sfx('rope'); f.liz_bridge = 1; await G.rebuild(); } });
     // шестерня и гиря
     if (!G.has('gear') && !f.liz_gear) { R.sprite('gear', -9, -3, { scale: 1.3, name: 'gearSpr' }); R.inter('gear', -9, -2.2, { label: 'Груда шпилек', fn: async (G) => { await G.run(L.gearGot); G.give('gear'); G.room.named.gearSpr.visible = false; } }); }
     if (!G.has('weight') && !f.liz_weight) { R.sprite('weight', -11, 2, { scale: 1.6, name: 'wSpr' }); R.inter('weight', -11, 2.8, { label: 'Тяжёлая гиря', fn: async (G) => { await G.run(L.weightGot); G.give('weight'); G.room.named.wSpr.visible = false; } }); }
