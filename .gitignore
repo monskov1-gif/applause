@@ -3,3 +3,4 @@ dist
 *.log
 tests/shots
 .claude/
+screenshots/*.mp3
