@@ -175,7 +175,7 @@ class Game {
   grade(g: Grade, instant = false) { this.gradeBase = { ...this.gradeBase, ...g }; this.applyGrade(instant); }
 
   // ---------- камера и эффекты ----------
-  camBounds() { const d = this.room!.def; const dist = d.camDist || 24; const halfW = Math.tan((this.R.cam.fov * Math.PI / 180) / 2) * dist * this.R.cam.aspect * 0.9; const mx = Math.max(0, d.w / 2 - Math.min(halfW - 2, Math.max(9, halfW * 0.5))); const z0 = Math.min(0, -d.d / 2 + 4.5), z1 = d.camZMax ?? Math.max(z0, d.d / 2 - 7); return { mx, z0, z1 }; }
+  camBounds() { const d = this.room!.def; const dist = d.camDist || 24; const halfW = Math.tan((this.R.cam.fov * Math.PI / 180) / 2) * dist * this.R.cam.aspect * 0.9; const mx = Math.max(0, d.w / 2 - Math.min(halfW - 2, Math.max(9, halfW * 0.5))); const z0 = Math.min(0, -d.d / 2 + 4.5), z1 = d.camZMax ?? Math.max(z0, d.d / 2 - 3.5); // героиня не обрезается нижним краем кадра return { mx, z0, z1 }; }
   // ---------- манга-эффекты и «целебные глазки» ----------
   private fxTex: Record<string, THREE.Texture> = {};
   private fxT(name: string) { if (!this.fxTex[name]) { const t = new THREE.TextureLoader().load('fx/' + name + '.png'); t.colorSpace = THREE.SRGBColorSpace; this.fxTex[name] = t; } return this.fxTex[name]; }
