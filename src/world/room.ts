@@ -247,7 +247,7 @@ export class Builder {
   private nLights = 0;
   /** Бюджет: не больше 10 настоящих точечных источников на комнату, остальные становятся световыми пятнами на полу. */
   light(x: number, y: number, z: number, color: number, int: number, dist = 12, o: any = {}) { const l = new THREE.PointLight(color, int, dist, 1.4); l.position.set(x, y, z);
-    if (o.pool || (++this.nLights > 10 && !o.force && !o.name && !o.mask)) { const r = Math.min(4, dist * 0.32); const pm = new THREE.Mesh(new THREE.PlaneGeometry(r * 2, r * 2), new THREE.MeshBasicMaterial({ map: lightPool(), color, transparent: true, opacity: Math.min(0.55, 0.06 * int), blending: THREE.AdditiveBlending, depthWrite: false })); pm.rotation.x = -Math.PI / 2; pm.position.set(x, 0.03, z); pm.renderOrder = 2; this.room.group.add(pm); return l; }
+    if (o.pool || (!o.force && !o.name && !o.mask && ++this.nLights > 10)) { const r = Math.min(4, dist * 0.32); const pm = new THREE.Mesh(new THREE.PlaneGeometry(r * 2, r * 2), new THREE.MeshBasicMaterial({ map: lightPool(), color, transparent: true, opacity: Math.min(0.55, 0.06 * int), blending: THREE.AdditiveBlending, depthWrite: false })); pm.rotation.x = -Math.PI / 2; pm.position.set(x, 0.03, z); pm.renderOrder = 2; this.room.group.add(pm); return l; }
     this.room.group.add(l); if (o.flicker) this.room.flick.push({ l, base: int, s: o.flicker }); if (o.mask) this.room.masked.push({ obj: l, mask: o.mask }); if (o.name) this.room.named[o.name] = l; return l; }
   spot(x: number, y: number, z: number, tx: number, tz: number, color: number, int: number, o: any = {}) {
     const l = new THREE.SpotLight(color, int, o.dist || 40, o.angle || 0.45, o.pen ?? 0.5, 1.1); l.position.set(x, y, z); l.target.position.set(tx, 0, tz);

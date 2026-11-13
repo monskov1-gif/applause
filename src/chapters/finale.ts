@@ -62,7 +62,7 @@ const diva: RoomDef = {
 // ---------- АКТ VI: белая пустота за театром ----------
 const PATH: [number, number][] = []; for (let x = -36; x <= 33; x += 1.5) PATH.push([x, Math.sin(x * 0.09) * 2.2 + Math.sin(x * 0.27) * 0.6]);
 const voidRoom: RoomDef = {
-  name: 'За театром', chapter: 'Акт VI · Обрушение', w: 84, d: 14, music: 'fin_argue', amb: 'wind', step: 'wood', grade: { sat: 0.7, tint: [0.95, 1.0, 1.08], vig: 0.15, bright: 1.12, bloom: 0.9, contrast: 0.95 }, noMasks: true, camDist: 22,
+  name: 'За театром', chapter: 'Акт VI · Обрушение', w: 84, d: 14, music: 'fin_argue', amb: 'wind', step: 'wood', grade: { sat: 0.75, tint: [0.94, 0.98, 1.08], vig: 0.3, bright: 0.98, bloom: 0.55, contrast: 1.04 }, noMasks: true, camDist: 22,
   build(R, G) {
     const f = G.f; R.room.group.userData.bg = 0xdcebf8; fog(R, 0xe8f2fc, 18, 60); R.ambient(0xc8d8f0, 3.4, 0xffffff); R.sun(0xffffff, 1.4, 6, 18, 10); R.particles('dust', { count: 200, top: 10, color: 0xffffff });
     const wood = new THREE.MeshLambertMaterial({ map: tex('wood', '#c8a078') }); const planks: { m: THREE.Mesh; x: number; z: number; gone: boolean; vy: number }[] = [];
