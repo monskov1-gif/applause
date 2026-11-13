@@ -230,17 +230,14 @@ async function musicalShow(G: any) {
   const P = F.play as any, A = (id: string) => G.actor(id), own = (id: string) => f['cast_' + id] !== 'assigned';
   const enterTo = async (id: string, sp = 3) => { const a = A(id), [x, z] = MARK[id]; a.hidden = false; a.place(x < 0 ? -15 : 15, z, x < 0 ? 'r' : 'l'); await a.walkTo(x, z, sp); a.dir = 'f'; };
   const lights = (k: number) => { N.key.intensity = 90 * k; N.red.intensity = 36 * k; N.teal.intensity = 36 * k; };
-  (globalThis as any).__ms = '0';
   // 0. За кулисой: обратная сторона сценария
   p.place(-13, -4, 'r'); G.focus(-10, -4, 13);
   await G.ui.card([['АКТ VII', 'act'], ['ПРЕМЬЕРА', 'big'], ['Главная сцена. Тот же зал, тот же скрипучий пол.', 'sm']]);
   await G.ui.paper(P.scriptBack); await G.run(P.backAfter);
   G.focus(0, 6, 26); await G.run(F.audience);
-  (globalThis as any).__ms = '1';
   // 1. Пролог перед занавесом
   G.focus(0, -2, 16); await p.walkTo(0, -1.1, 3); p.dir = 'f'; N.setFollow(p); await G.run(P.prologue); N.setFollow(null); await p.walkTo(-13, -4, 3.4); p.hidden = true;
   G.cam.pitch = 0.3; G.cam.yOff = 3.4;
-  (globalThis as any).__ms = '2';
   // 2. Увертюра: занавес вверх, замок прилетает с колосников, луна на палке
   G.audio.music('fin_overture', { restart: true }); G.focus(0, -8, 25); G.grade({ tint: [0.8, 0.86, 1.15], sat: 0.9 }); lights(0.5); G.sfx('curtain');
   const lyr = lyricRun(G, F.lyrics_over, 13); await tween(G, 4, (k) => { cur.position.y = k * 10; });
@@ -248,7 +245,6 @@ async function musicalShow(G: any) {
   A('ruben').hidden = false; A('ruben').place(own('ruben') ? 6.4 : 4.6, -9.4, 'f'); if (own('ruben')) A('ruben').setChar('ruben_tux');
   await tween(G, 2.5, (k) => { N.moon.position.y = -8 + k * 7.6; }); await lyr;
   await G.run(own('ruben') ? P.moonOwn : P.moonAsg);
-  (globalThis as any).__ms = '3';
   // 3. Двор: летописец, шут, затемнение
   for (const id of ['erika', 'polina', 'angelina', 'matvey']) enterTo(id, 3.6); await G.wait(3.2);
   N.setFollow(A('erika')); await G.run(own('erika') ? P.chron1Own : P.chron1Asg);
@@ -258,24 +254,20 @@ async function musicalShow(G: any) {
   G.sfx('switch'); G.grade({ bright: 0.18 }); lights(0); await G.run(own('polina') ? P.blackOwn.slice(0, 3) : P.blackAsg.slice(0, 2));
   if (own('polina')) { N.lantern.intensity = 14; G.grade({ bright: 0.5 }); await G.run(P.blackOwn.slice(3)); } else await G.run(P.blackAsg.slice(2));
   N.lantern.intensity = 0; G.sfx('lighton'); G.grade({ bright: 1 }); lights(1);
-  (globalThis as any).__ms = '4';
   // 4. Королева: хлопки в такт
   q.hidden = false; q.place(15, -6.6, 'l'); G.audio.music('fin_queen', { restart: true }); G.grade({ tint: [1.12, 0.92, 0.9], sat: 1.15 }); N.red.intensity = 70; N.setFollow(q);
   await G.run(F.queenSpeech); await q.walkTo(0, -7.4, 3); q.dir = 'f'; q.pose = 'arms'; await G.run(P.queenIn);
   G.toast('Королеве нужны аплодисменты: держи ритм', '♪');
   await rhythm({ track: 'fin_queen', part: 2, loops: 1, title: 'Хлопайте!', sub: 'зал хлопает в такт, D F J K или стрелки', lyrics: F.lyrics_queen as any, onBeat: (b) => { q.pose = b % 2 ? 'arms' : 'point'; if (b % 4 === 0) G.sfx('clap'); for (const id of FRIENDS) { const a = A(id); if (a && !a.hidden) { a.pose = 'dance'; a.danceBeat = b; } } } });
   G.sfx('applause', { dur: 3 }); q.pose = null; for (const id of FRIENDS) A(id).pose = null; N.setFollow(null); N.red.intensity = 36;
-  (globalThis as any).__ms = '5';
   // 5. Дама в окне
   const lz = A('liza'); lz.hidden = false; lz.place(-7.5, -9.9, 'f'); lz.y = 3.0; G.focus(-6, -8, 14); await G.run(own('liza') ? P.windowOwn.slice(0, 2) : P.windowAsg);
   if (own('liza')) { lz.z = -9.2; G.sfx('whoosh'); await tween(G, 2.2, (k) => { lz.y = 3 * (1 - k); N.tower.rotation.z = Math.sin(k * 9) * 0.05 * (1 - k); }); lz.y = 0; await lz.walkTo(-6.6, -7.2, 2); await G.run(P.windowOwn.slice(2)); }
-  (globalThis as any).__ms = '6';
   // 6. Девушка
   G.focus(0, -7.5, 22); G.setPlayerChar('girl'); p.hidden = false; p.place(15, -6.4, 'l'); G.audio.music('fin_girl', { restart: true }); G.grade({ tint: [1.02, 1.0, 1.04], sat: 1 }); N.setFollow(p);
   await G.run(F.girlEnter); await p.walkTo(4, -7.2, 2.4); p.dir = 'f'; q.face(p.x, p.z);
   await lyricRun(G, F.lyrics_girl, 19.5); N.setFollow(null);
   const an = A('angelina'); if (own('angelina')) { await an.walkTo(5.4, -7.2, 2.4); an.dir = 'f'; await G.run(P.duetOwn); } else { await an.walkTo(-1, -7, 2.4); an.dir = 'f'; await G.run(P.duetAsg); await an.walkTo(-2.4, -8.4, 2.4); }
-  (globalThis as any).__ms = '7';
   // 7. Менуэт: солнце встаёт, тёплый свет, весь двор танцует
   G.audio.music('fin_minuet', { restart: true }); N.skyN.visible = false; N.skyD.visible = true; G.sfx('whoosh'); await tween(G, 2, (k) => { N.moon.position.y = -0.4 - k * 7.6; N.sun.position.y = -8 + k * 8.2; });
   G.grade({ tint: [1.14, 1.02, 0.86], sat: 1.2, bloom: 1, vig: 0.4, bright: 1.05 }); N.key.color.set(0xffd090); N.sweep = 1; await G.run(P.minuetIn);
@@ -286,7 +278,6 @@ async function musicalShow(G: any) {
     onShow: () => { for (const a of all()) { if (a !== p) { a.pose = 'dance'; a.danceBeat++; } } G.sfx('hit', { f: 660 }); }, onInput: (d, ok) => { p.pose = 'dance'; p.danceBeat++; if (!ok) G.sfx('miss'); } });
   for (const a of all()) a.pose = null; N.sweep = 0; aim(N.red, -3, -8); aim(N.teal, 3, -8);
   await G.run(P.minuetAfter.slice(0, 1)); await tween(G, 0.8, (k) => { N.treeR.rotation.x = k * k * 1.5; }); G.sfx('crash'); await G.run(P.minuetAfter.slice(1)); N.treeR.rotation.x = 0;
-  (globalThis as any).__ms = '8';
   // 8. Королева забирает всё; гроза из картона
   G.audio.music('fin_queen'); G.grade({ tint: [1, 1, 1], sat: 1, bloom: 0.8, vig: 0.55, bright: 1 }); N.key.color.set(0xffe2b0);
   await G.run(F.queenTakes.slice(0, 1)); await q.walkTo(2.4, -7.6, 2); q.pose = 'point'; G.sfx('whoosh'); p.setChar('varya_pj'); await G.wait(0.6); q.pose = null;
@@ -296,7 +287,6 @@ async function musicalShow(G: any) {
   for (let i = 0; i < 3; i++) { G.flash(0.75); G.sfx('thunder'); await G.wait(0.9); }
   await G.run(P.storm); await G.run(own('erika') ? P.chron2Own : P.chron2Asg); G.flash(0.6); G.sfx('thunder');
   await G.run(P.cloudGag.slice(0, 3)); await tween(G, 1.6, (k) => { N.clouds[1].position.y = 8.6 + k * 4.4; }); await G.run(P.cloudGag.slice(3)); for (const c of N.clouds) c.position.y = 13;
-  (globalThis as any).__ms = '9';
   // 9. Зеркальная хореография: зеркала в картонных рамах
   G.audio.music('fin_mirror', { restart: true }); lights(1); G.grade({ tint: [0.95, 0.95, 1.08], vig: 0.5, bloom: 0.9, sat: 1.2 }); await tween(G, 2, (k) => { N.mirrors.position.y = 13 * (1 - k); });
   p.setChar('girl'); await G.run(F.mirrorIntro); await p.walkTo(1.6, -7.4, 3); await q.walkTo(-1.6, -7.4, 3); p.dir = 'l'; q.dir = 'r'; N.sweep = 1;
@@ -304,7 +294,6 @@ async function musicalShow(G: any) {
   await sequence({ title: 'Зеркальная хореография', sub: 'Королева ведёт. Ты, её отражение.', bpm: 126, mirror: [true, true, false], roundSub: ['Королева: смотри…', 'Быстрее. Смотри…', 'Теперь, не зеркально. Одинаково.'], rounds: [['left', 'up', 'right', 'down'], ['right', 'right', 'up', 'left', 'down', 'up'], ['up', 'left', 'left', 'down', 'right', 'up', 'down', 'up']],
     onShow: () => { q.pose = 'dance'; q.danceBeat++; G.sfx('hit', { f: 520 }); }, onInput: (d, ok) => { p.pose = 'dance'; p.danceBeat++; if (ok) q.danceBeat = p.danceBeat; } });
   G.ui.lyric(F.lyrics_mirror[1].text, F.lyrics_mirror[1].who); q.pose = 'arms'; p.pose = 'arms'; await G.wait(2.5); G.ui.lyric(null); N.sweep = 0;
-  (globalThis as any).__ms = '10';
   // 10. Раскрытие: декорации уходят вверх, остаётся пустая сцена этого зала
   G.audio.music('fin_reveal', { restart: true }); q.pose = null; p.pose = null; for (const id of FRIENDS) await A(id).walkTo(MARK[id][0] < 0 ? -14 : 14, A(id).z, 4).then(() => { A(id).hidden = true; });
   await G.run(F.reveal.slice(0, 1)); const up = tween(G, 7, (k) => { set.position.y = k * 14; N.moon.position.y = -8; N.skyN.visible = k < 0.5; }); G.sfx('curtain'); await G.run(F.reveal.slice(1, 2)); await up;
@@ -313,14 +302,12 @@ async function musicalShow(G: any) {
   await G.run(F.reveal.slice(2)); await G.run(P.revealAfter); const lr = lyricRun(G, F.lyrics_reveal, 13);
   await G.wait(2); await tween(G, 3.5, (k) => { q.x = -0.4 + k * 0.4; p.x = 0.4 - k * 0.4; q.alpha = 1 - k * 0.5; });
   G.flash(0.7); G.sfx('bell'); p.setChar('varya_queen'); await tween(G, 3, (k) => { q.alpha = 0.5 * (1 - k); }); q.hidden = true; await lr;
-  (globalThis as any).__ms = '11';
   // 11. Финальный номер: тёплый свет, все шестеро выходят сами
   G.audio.music('fin_bows', { restart: true }); G.unfocus(); G.focus(0, -7, 22); G.grade({ tint: [1.16, 1.0, 0.84], sat: 1.15, bloom: 1.1, vig: 0.4, bright: 1.06 }); N.key.color.set(0xffc880); lights(1); N.sweep = 1;
   await G.run(P.ensemble); FRIENDS.forEach((id, i) => { const a = A(id); a.hidden = false; a.place(i < 3 ? -15 : 15, -6.4, i < 3 ? 'r' : 'l'); a.walkTo(-7.5 + i * 3 + (i >= 3 ? 3 : 0), -6.4, 5); });
   await G.wait(2.6); for (const id of FRIENDS) A(id).dir = 'f';
   let beat = 0; const dance = setInterval(() => { beat++; for (const a of [p, ...FRIENDS.map(A)]) { a.pose = 'dance'; a.danceBeat = beat + (a === p ? 1 : 0); } }, 500);
   N.conf.visible = true; G.sfx('firework'); await lyricRun(G, P.lyrics_final, 17); clearInterval(dance); for (const a of [p, ...FRIENDS.map(A)]) a.pose = null; N.sweep = 0;
-  (globalThis as any).__ms = '12';
   // 12. Поклоны и объятия режиссёрки
   await G.run(F.bowsIntro); G.sfx('applause', { dur: 6, dens: 60 });
   for (const id of FRIENDS) { const a = A(id), r = ROLES[id][own(id) ? 1 : 0]; a.pose = 'bow'; await G.run([`*: ${CHARS[id].name}, «${r}». ${own(id) ? 'Эту роль ' + CHARS[id].name + ' выбрал' + (id === 'ruben' || id === 'matvey' ? '' : 'а') + ' сам' + (id === 'ruben' || id === 'matvey' ? '' : 'а') + '. Зал встаёт.' : 'Роль из листа распределения: сидит аккуратно, но не совсем по плечу. Хлопают вежливо.'}`]); if (own(id)) G.sfx('applause', { dur: 2 }); a.pose = null; }
