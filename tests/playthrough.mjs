@@ -41,7 +41,7 @@ const log = await p.evaluate(async () => {
   await act('w_liza'); await act('call'); await act('call'); expect(room() === 'liz_top', 'башня'); await act('lasso'); expect(G.has('tower_key'), 'ключ'); await act('down'); await act('gap'); await act('gear'); await act('weight'); await act('lift');
   expect(room() === 'liz_ground' && G.f.liz_cut, 'Лиза срезала косу'); await act('exit'); expect(G.f.done_liza && G.has('braid'), 'глава Лизы'); out.push('Лиза ✓');
   // ---- Ангелина ----
-  await act('w_angelina'); await act('concept'); await act('ang_practice'); await talk('trainer'); await act('vocal'); expect(G.f.ang_vocal, 'вокал'); await act('out'); await act('ang_photo'); await talk('stylist'); await act('out');
+  await act('w_angelina'); expect(room() === 'ang_home', 'дом Ангелины'); await act('makeup'); await act('agency'); expect(room() === 'ang_lobby', 'агентство'); await act('concept'); await act('ang_practice'); await talk('trainer'); await act('vocal'); expect(G.f.ang_vocal, 'вокал'); await act('out'); await act('ang_photo'); await talk('stylist'); await act('out'); await act('home'); while (G.lock > 0) await tick(50); expect(G.f.ang_double, 'двойная жизнь'); await act('agency');
   await act('ang_record'); await act('mixer'); expect(G.f.ang_mix, 'демо'); await act('out'); await act('ang_stage'); await act('desk'); expect(G.f.done_angelina, 'глава Ангелины'); out.push('Ангелина ✓');
   // ---- Сохранение / загрузка посреди игры ----
     G.state.px = G.player.x; await G.save('slot1'); out.push('сохранение в слот ✓');

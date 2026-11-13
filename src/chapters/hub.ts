@@ -242,7 +242,7 @@ const DOORS: { id: string; x: number; to: string; label: string; col: string; si
   { id: 'matvey', x: 9.5, to: 'mat_yard', label: 'Раздвижная школьная дверь', col: '#c8aa78', sign: '2-Б', fade: 'flash', glow: 0xffc0dc, ask: 'За дверью звенит школьный звонок и падают лепестки. Слишком красиво падают. Как по команде.' },
   { id: 'erika', x: 13.5, to: 'eri_office', label: 'Дверь с матовым стеклом', col: '#3a3a3a', sign: 'СЫСК', fade: 'iris', ask: 'За стеклом, силуэт в шляпе и дождь. Цвета вокруг двери выцветают, как на старой плёнке.' },
   { id: 'liza', x: 17.5, to: 'liz_base', label: 'Огромная книга на подставке', col: '#b89858', sign: 'ЖИЛА-БЫЛА', fade: 'page', glow: 0xffe9a0, ask: 'Книга в рост человека. На обложке, башня. Страницы шелестят сами, будто их кто-то торопит.' },
-  { id: 'angelina', x: 20.8, to: 'ang_lobby', label: 'Гримёрное зеркало с лампами', col: '#ff9ad8', sign: 'DEBUT', fade: 'mirror', glow: 0xff80c0, ask: 'В зеркале вместо отражения, коридор агентства. Белый, глянцевый, с экранами. На каждом, одно и то же улыбающееся лицо. Не Ангелины.' },
+  { id: 'angelina', x: 20.8, to: 'ang_home', label: 'Гримёрное зеркало с лампами', col: '#ff9ad8', sign: 'DEBUT', fade: 'mirror', glow: 0xff80c0, ask: 'В зеркале вместо отражения, коридор агентства. Белый, глянцевый, с экранами. На каждом, одно и то же улыбающееся лицо. Не Ангелины.' },
 ];
 const backstage: RoomDef = {
   name: 'Карман сцены', w: 46, d: 12, music: 'backstage', amb: 'hall', step: 'wood', grade: { tint: [0.92, 0.96, 1.08], vig: 0.6 },
