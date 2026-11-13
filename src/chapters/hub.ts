@@ -29,6 +29,26 @@ const people = (c: CanvasRenderingContext2D, cols: string[], y = 9) => cols.forE
 
 function dustAndBase(R: Builder, warm = true) { R.particles('dust', { count: 90, top: 6 }); R.ambient(warm ? 0x4a3830 : 0x30344a, 1.1, warm ? 0xffe6c8 : 0xc8d8ff); }
 
+/** Стена «Мои роли»: настоящие фото Вари, пикселизованные (public/photos). */
+const VPH: [string, number, number, string[]][] = [
+  ['kvn', 54, 72, ['~: Школьный КВН. Первый раз вышла на сцену и забыла, что надо бояться. Вспомнила только дома.']],
+  ['shoot', 72, 48, ['~: Лучшая фотосессия. Фотограф сказал: «Смотри так, будто тебе что-то недоговорили». Я посмотрела. Сработало.']],
+  ['fury', 72, 48, ['~: «Глупее дурака, умнее умного». Я играла Фурию, злость как смертный грех.', '~: Злиться на сцене оказалось легко. Перестать после поклона, гораздо труднее.']],
+  ['album', 54, 72, ['~: Фотосессия на выпускной альбом. Единственный кадр, где я не держу лицо. Мама говорит, что он лучший.']],
+  ['komsomol', 72, 48, ['~: «Люди любят». В одной части я комсомолочка, в другой мужененавистница, в третьей страдающая влюблённая.', '~: Три роли за вечер, и ни одна не я. Тогда мне это нравилось.']],
+  ['love', 72, 48, ['~: Та же постановка, третья часть. Страдать по сценарию гораздо проще, чем по-настоящему.']],
+];
+function varyaPhotos(R: Builder) {
+  const L = new THREE.TextureLoader();
+  VPH.forEach(([id, pw, ph, lines], i) => {
+    const x = -6.4 + (i % 3) * 1.7, y = i < 3 ? 3.75 : 2.3, w = pw / 50, hh = ph / 50;
+    const t = L.load('photos/varya_' + id + '.png'); t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestFilter; t.colorSpace = THREE.SRGBColorSpace;
+    R.decal(canvasTex(8, 8, (c) => { c.fillStyle = '#86641c'; c.fillRect(0, 0, 8, 8); c.fillStyle = '#d4ae48'; c.fillRect(1, 1, 6, 6); c.fillStyle = '#86641c'; c.fillRect(2, 2, 4, 4); }, 'vphFrame'), { x, y, w: w + 0.16, h: hh + 0.16, z: -4.95 });
+    R.decal(t, { x, y, w, h: hh, z: -4.93 });
+    R.look('vph_' + id, x, -3.7, 'Фото на стене', lines);
+  });
+  R.decal(canvasTex(48, 8, (c) => { c.fillStyle = '#2a1410'; c.fillRect(0, 0, 48, 8); ptext(c, 'МОИ РОЛИ', 24, 0, { size: 7, col: '#e8c060', align: 'center' }); }, 'vphTitle'), { x: -4.7, y: 4.75, w: 2.4, h: 0.4, z: -4.95 });
+}
 const dressing: RoomDef = {
   name: 'Гримёрка режиссёра', chapter: 'Акт I · Приглашение', w: 16, d: 10, music: 'backstage', amb: 'hall', step: 'wood', grade: { tint: [1.05, 0.98, 0.9], vig: 0.45 },
   build(R, G) {
@@ -60,7 +80,7 @@ const dressing: RoomDef = {
     R.sprite('plant', 7.3, -4.3, { solid: 0.3 }); R.sprite('lamp', -2.6, -4.4); R.light(-2.6, 2.6, -4, 0xffc890, 6, 8);
     screen3D(R, -6.9, 0.4, { ry: 0.5 }); for (let i = 0; i < 6; i++) { const fd = R.decal(featherTex(), { flat: true, x: 5.8 + hsh(i) * 1.6, z: 2.4 + hsh(i + 3) * 1.4, y: 0.03 + i * 0.002, w: 0.75, h: 0.25 }); fd.rotation.z = hsh(i + 7) * 3; } R.sprite(PROPTEX.feathers(), 7.1, 3.4, { scale: 0.7 });
     R.sprite(PROPTEX.hatbox(), 6.6, -2.8, { scale: 1 }); R.sprite(PROPTEX.hatbox(), 7.35, -2.5, { scale: 0.85 }); R.sprite(PROPTEX.hatbox(), 6.65, -2.78, { y: 1.08, scale: 0.75 }); R.collider(6.0, -3.2, 7.9, -2.2);
-    photoWall(R, -4.6, 2.9, 6); R.light(-0.2, 2, -2.6, 0xffc070, 3, 6);
+    varyaPhotos(R); R.light(-0.2, 2, -2.6, 0xffc070, 3, 6);
     R.poster('ЗАВТРА', 'премьера', { x: 2.4, y: 3.6, w: 1.5, h: 2.1 });
     R.inter('journal', 2.2, -4.0, { label: 'Журнал помрежа (сохранить)', y: 1.4, fn: () => G.ui.saveLoad('save') });
     R.sprite('book', 2.2, -4.5, { y: 0, scale: 1.4 });
