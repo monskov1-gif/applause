@@ -50,12 +50,13 @@ function drawFrame(c: Ctx, ox: number, oy: number, d: CharDef, frame: string, di
   const acc = d.acc || []; const has = (a: string) => acc.includes(a);
   const H = d.h * SS; // рост в пикселях листа
   const build = d.build;
-  const shW = build === 'thin' ? 13 : build === 'mid' ? 15 : build === 'strong' ? 19 : 18; // ширина плеч
+  const shW = build === 'thin' ? 14 : build === 'mid' ? 16 : build === 'strong' ? 19 : 19; // ширина плеч
   const waW = build === 'thin' ? 10 : build === 'mid' ? 12 : build === 'strong' ? 15 : 16; // талия
-  const legW = build === 'thin' ? 5 : build === 'strong' ? 6.5 : 6;
+  const legW = build === 'thin' ? 5.5 : build === 'strong' ? 7 : 6.5;
   const armW = build === 'strong' ? 5 : 4;
   const headH = Math.round(H * 0.27), headW = Math.round(headH * 0.86);
-  const legLen = Math.round(H * 0.4), torsoH = Math.round(H * 0.29), armLen = Math.round(H * 0.32);
+  const legLen = Math.round(H * 0.33), torsoH = Math.round(H * 0.25), armLen = Math.round(H * 0.27);
+  const HK = 1.4; // чиби-пропорции HD-2D: голова и причёска крупнее, ~2.7 головы в росте
   const cx = PW / 2, foot = PH - 2;
   c.save(); c.translate(ox, oy);
   if (p.lie) { c.translate(cx, foot - 6); c.rotate(-Math.PI / 2); c.translate(-cx - 4, -foot + 18); }
@@ -68,26 +69,27 @@ function drawFrame(c: Ctx, ox: number, oy: number, d: CharDef, frame: string, di
   const shoe = d.shoes || '#221c22';
   const st = d.style;
   const longLen: Record<string, number> = { curls: 0.62, long: 0.62, wavy: 0.72, halfup: 0.68, longStraight: 0.74, shag: 0.36, mop: 0.16, curlyBig: 0.22, longStyled: 0.66, glam: 0.7, rapunzel: 1.2, bob: 0.26, bobLong: 0.38, curlyMid: 0.3, fluffy: 0.22, twin: 0.2, ponytail: 0.2, short: 0.1, curlyShort: 0.12, bun: 0.1 };
-  const hl = Math.round((longLen[st] || 0) * H * 0.55);
+  const hl = Math.round((longLen[st] || 0) * H * 0.45);
   // --- торс с наклоном (поклон), голова качается с ним ---
   const leanX = Math.sin(p.lean) * torsoH;
   const headCX = cx + leanX + (side ? 2 : 0), headY = shY - headH + 3 + Math.round(p.lean * 6);
 
   // волосы сзади (за телом)
   const backHair = () => {
-    if (hl < 6 || st === 'ponytail' || st === 'twin' || st === 'bun') return; const w = headW + (st === 'wavy' ? 9 : st === 'curls' || st === 'glam' || st === 'curlyMid' || st === 'fluffy' ? 6 : st === 'shag' ? 5 : 3);
+    if (hl < 6 || st === 'ponytail' || st === 'twin' || st === 'bun') return; const w = headW + (st === 'wavy' ? 5 : st === 'curls' || st === 'glam' || st === 'curlyMid' || st === 'fluffy' ? 6 : st === 'shag' ? 5 : 3);
     const x0 = (side ? headCX - 3 : headCX) - w / 2, y0 = headY + 2;
     c.fillStyle = hair; c.beginPath(); c.moveTo(x0, y0 + 4); c.quadraticCurveTo(x0 - 1, y0 + headH * 0.5 + hl * 0.5, x0 + 2, y0 + headH * 0.4 + hl); c.lineTo(x0 + w - 2, y0 + headH * 0.4 + hl); c.quadraticCurveTo(x0 + w + 1, y0 + headH * 0.5 + hl * 0.5, x0 + w, y0 + 4); c.closePath(); c.fill();
     c.fillStyle = hairD; c.fillRect(x0 + w - 3, y0 + 6, 2, hl * 0.8); if (st === 'curls' || st === 'curlyMid') for (let i = 0; i < 5; i++) { ell(c, x0 + 1, y0 + 8 + i * hl / 5, 2.5, 3, i % 2 ? hairD : hair); ell(c, x0 + w - 1, y0 + 10 + i * hl / 5, 2.5, 3, i % 2 ? hair : hairD); }
     if (st === 'rapunzel') for (let i = 0; i < 6; i++) rect(c, x0 + w / 2 - 2 + (i % 2) * 2, y0 + headH + i * 7, 4, 5, i % 2 ? hairL : hair);
     const yb = y0 + headH * 0.4 + hl;
-    if (st === 'wavy' || st === 'halfup') { for (let i = 0; i < 6; i++) { const yy = y0 + 10 + i * (hl + headH * 0.3) / 6; ell(c, x0 + (i % 2 ? 0 : 1.5), yy, 2.6, 3.2, i % 2 ? hairD : hair); ell(c, x0 + w - (i % 2 ? 1.5 : 0), yy + 2, 2.6, 3.2, i % 2 ? hair : hairD); }
+    if (st === 'wavy' || st === 'halfup') { for (let i = 0; i < 6; i++) { const yy = y0 + 10 + i * (hl + headH * 0.3) / 6; ell(c, x0 + (i % 2 ? 0.4 : 1.4), yy, 1.6, 2.4, i % 2 ? hairD : hair); ell(c, x0 + w - (i % 2 ? 1.4 : 0.4), yy + 2, 1.6, 2.4, i % 2 ? hair : hairD); }
       for (let k = 0; k < 4; k++) { c.strokeStyle = k % 2 ? hairL : hairD; c.lineWidth = 0.9; c.beginPath(); const sx0 = x0 + 3 + k * (w - 6) / 3; c.moveTo(sx0, y0 + 8); for (let yy = y0 + 8; yy < yb - 1; yy += 3) c.lineTo(sx0 + Math.sin(yy * 0.35 + k) * 1.4, yy); c.stroke(); }
       for (let i = 0; i < 4; i++) ell(c, x0 + 3 + i * (w - 6) / 3, yb - 1, 3, 2.4, i % 2 ? hair : hairD); }
     if (st === 'longStraight') { c.fillStyle = hairL; c.fillRect(x0 + 3, y0 + 8, 1, hl); c.fillStyle = hairD; c.fillRect(x0 + w / 2, y0 + 10, 1, hl - 4); }
     if (st === 'shag') for (let i = 0; i < 5; i++) { c.fillStyle = i % 2 ? hairD : hair; c.beginPath(); const xx = x0 + i * w / 5; c.moveTo(xx, yb - 3); c.lineTo(xx + w / 10, yb + 2.5); c.lineTo(xx + w / 5, yb - 3); c.closePath(); c.fill(); }
   };
-  if (!back) backHair();
+  const headScale = () => { const chinY = headY + headH; c.translate(headCX, chinY); c.scale(HK, HK); c.translate(-headCX, -chinY); };
+  if (!back) { c.save(); headScale(); backHair(); c.restore(); }
   if (has('cape')) { const cw = shW + 6; c.fillStyle = shade(d.trim || '#a22', -0.1); c.beginPath(); c.moveTo(cx - cw / 2 + leanX, shY + 1); c.lineTo(cx + cw / 2 + leanX, shY + 1); c.lineTo(cx + cw / 2 + 3, foot - 4); c.lineTo(cx - cw / 2 - 3, foot - 4); c.closePath(); c.fill(); }
   if (has('wings') && !side) { for (const s of [-1, 1]) { c.fillStyle = 'rgba(230,220,255,0.85)'; c.beginPath(); c.ellipse(cx + s * (shW / 2 + 6), shY + 8, 7, 11, s * 0.4, 0, Math.PI * 2); c.fill(); } }
 
@@ -159,7 +161,7 @@ function drawFrame(c: Ctx, ox: number, oy: number, d: CharDef, frame: string, di
 
   // --- шея и голова ---
   rect(c, headCX - 2, headY + headH - 3, 4, 5, skinD);
-  c.save(); c.translate(headCX, headY + headH * 0.55); c.rotate(p.tilt); c.translate(-headCX, -(headY + headH * 0.55));
+  c.save(); c.translate(headCX, headY + headH * 0.55); c.rotate(p.tilt); c.translate(-headCX, -(headY + headH * 0.55)); headScale();
   const hx = headCX - headW / 2;
   if (st !== 'none' || d.id !== 'kukolnik') {
     ell(c, headCX, headY + headH * 0.5, headW / 2, headH / 2, skin); ell(c, headCX + (side ? 2 : 0), headY + headH * 0.62, headW / 2 - 1, headH * 0.36, skin);
@@ -168,8 +170,13 @@ function drawFrame(c: Ctx, ox: number, oy: number, d: CharDef, frame: string, di
   }
   if (!back) {
     const ey = headY + Math.round(headH * 0.48), ec = shade(d.eyes, -0.2);
-    const eye = (x: number) => { rect(c, x, ey - 1, 2.6, 3.4, '#f6f0e6'); rect(c, x + 0.6, ey - 1, 2, 3.4, ec); rect(c, x + 0.8, ey - 0.6, 0.8, 0.8, '#fff'); rect(c, x - 0.3, ey - 1.6, 3.2, 0.8, shade(d.hair, -0.45)); };
-    if (side) eye(headCX + 1.5); else { eye(headCX - 4.2); eye(headCX + 1.6); }
+    const male = d.pitch <= 400, lash = shade(d.hair, -0.55);
+    // тень от чёлки на лбу и нос
+    c.fillStyle = shade(skin, -0.1); c.fillRect(headCX - headW / 2 + 1, headY + headH * 0.28, headW - 2, 1.2);
+    if (!side) rect(c, headCX - 0.2, ey + 2.4, 0.8, 0.8, skinD); else rect(c, headCX + headW / 2 - 0.2, ey + 1.6, 1.2, 1.2, skin);
+    const eye = (x: number, outer: number) => { rect(c, x - 0.2, ey - 1.4, 3, 4, '#f8f2ea'); rect(c, x + 0.4, ey - 1.2, 2.2, 3.8, ec); rect(c, x + 0.4, ey + 1.2, 2.2, 1.2, shade(d.eyes, 0.25)); rect(c, x + 0.9, ey - 0.2, 1.2, 1.6, shade(ec, -0.4)); rect(c, x + 0.5, ey - 0.8, 0.9, 0.9, '#fff');
+      rect(c, x - 0.5, ey - 2, 3.6, male ? 0.9 : 1.2, lash); if (!male) rect(c, outer < 0 ? x - 1.1 : x + 3.1, ey - 2.2, 0.9, 0.9, lash); };
+    if (side) eye(headCX + 1.6, 1); else { eye(headCX - 4.4, -1); eye(headCX + 1.6, 1); }
     const by = ey - 3; c.fillStyle = shade(d.hair, -0.4);
     if (!side) { if (d.brows === 'strict') { c.fillRect(headCX - 4.6, by, 3.4, 1); c.fillRect(headCX + 1.4, by, 3.4, 1); } else if (d.brows === 'arch') { c.fillRect(headCX - 4.4, by - 0.4, 3, 0.8); c.fillRect(headCX + 1.6, by - 0.4, 3, 0.8); } else { c.fillRect(headCX - 4, by + 0.2, 2.6, 0.7); c.fillRect(headCX + 1.6, by + 0.2, 2.6, 0.7); } }
     ell(c, headCX - 4 + (side ? 6 : 0), ey + 3.2, 1.6, 0.9, 'rgba(240,120,120,0.35)'); if (!side) ell(c, headCX + 4, ey + 3.2, 1.6, 0.9, 'rgba(240,120,120,0.35)');
@@ -199,9 +206,9 @@ function drawFrame(c: Ctx, ox: number, oy: number, d: CharDef, frame: string, di
     }
     if (!back && !side && (d.part === 'center' || st === 'longStraight')) { rect(c, headCX - 0.4, headY - 0.5, 0.9, headH * 0.22, hairD); }
     if (!back && (st === 'shag' || d.bangs === 'curtain' as any)) { c.fillStyle = hair; for (const s of side ? [1] : [-1, 1]) { c.beginPath(); c.moveTo(headCX + s * 0.5, headY + headH * 0.12); c.quadraticCurveTo(headCX + s * w * 0.18, headY + headH * 0.46, headCX + s * (w / 2 + 0.5), headY + headH * 0.62); c.lineTo(headCX + s * (w / 2 + 0.5), headY + headH * 0.18); c.closePath(); c.fill(); } c.fillStyle = hairD; c.fillRect(headCX + w / 2 - 1.5, headY + headH * 0.3, 1.2, headH * 0.5); }
-    if (st === 'curlyBig' || st === 'mop') { const R0 = w / 2 + (st === 'curlyBig' ? 3.2 : 2.2), n = st === 'curlyBig' ? 13 : 11;
-      for (let i = 0; i < n; i++) { const a = Math.PI * (0.92 + i / (n - 1) * 1.16); ell(c, headCX + (side ? -1 : 0) + Math.cos(a) * R0, headY + headH * 0.42 + Math.sin(a) * headH * 0.56, 3.1 + (i % 2) * 0.5, 2.9 + ((i * 7) % 3) * 0.3, i % 3 === 0 ? shade(hair, 0.16) : i % 3 === 1 ? hair : hairD); }
-      for (let i = 0; i < 5; i++) ell(c, headCX - w * 0.3 + i * w * 0.15, headY + headH * 0.02 - (i % 2), 2.8, 2.6, i % 2 ? shade(hair, 0.16) : hair);
+    if (st === 'curlyBig' || st === 'mop') { const R0 = w / 2 + (st === 'curlyBig' ? 1.6 : 0.9), n = st === 'curlyBig' ? 13 : 11;
+      for (let i = 0; i < n; i++) { const a = Math.PI * (0.92 + i / (n - 1) * 1.16); ell(c, headCX + (side ? -1 : 0) + Math.cos(a) * R0, headY + headH * 0.42 + Math.sin(a) * headH * 0.56, 2.4 + (i % 2) * 0.4, 2.3 + ((i * 7) % 3) * 0.25, i % 3 === 0 ? shade(hair, 0.16) : i % 3 === 1 ? hair : hairD); }
+      for (let i = 0; i < 5; i++) ell(c, headCX - w * 0.3 + i * w * 0.15, headY + headH * 0.06 - (i % 2), 2.3, 2.1, i % 2 ? shade(hair, 0.16) : hair);
       if (!back) { const fy = headY + headH * (st === 'mop' ? 0.36 : 0.22), nf = side ? 3 : 5; for (let i = 0; i < nf; i++) ell(c, headCX + (side ? 1 : -w * 0.36) + i * w * 0.18, fy + (i % 2) * 1.6, 2.4, st === 'mop' ? 3 : 2.2, i % 2 ? hairD : hair); } }
     const curly = st === 'curlyMid' || st === 'curlyShort' || st === 'curls' || st === 'fluffy';
     if (curly) { const n = st === 'curlyShort' ? 6 : 8; for (let i = 0; i < n; i++) { const a = Math.PI * (1.05 + i / (n - 1) * 0.9); const r = w / 2 + (st === 'fluffy' ? 2.5 : 1.5); ell(c, headCX + Math.cos(a) * r, headY + headH * 0.42 + Math.sin(a) * headH * 0.5, st === 'fluffy' ? 3.4 : 2.8, st === 'fluffy' ? 3.4 : 2.8, i % 2 ? hairL : hair); } }
@@ -229,7 +236,8 @@ function finishSheet(c: Ctx, w: number, h: number) {
   const o = [26, 18, 22];
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     if (op(x, y)) continue; const fx = x % PW, fy = y % PH; if (fx === 0 || fx === PW - 1 || fy === 0 || fy === PH - 1) continue;
-    if (op(x - 1, y) || op(x + 1, y) || op(x, y - 1) || op(x, y + 1)) { const i = (y * w + x) * 4; a[i] = o[0]; a[i + 1] = o[1]; a[i + 2] = o[2]; a[i + 3] = 255; }
+    const nb = op(x, y - 1) ? (y - 1) * w + x : op(x - 1, y) ? y * w + x - 1 : op(x + 1, y) ? y * w + x + 1 : op(x, y + 1) ? (y + 1) * w + x : -1;
+    if (nb >= 0) { const i = (y * w + x) * 4, j = nb * 4; a[i] = Math.round(src[j] * 0.3 + o[0] * 0.5); a[i + 1] = Math.round(src[j + 1] * 0.25 + o[1] * 0.5); a[i + 2] = Math.round(src[j + 2] * 0.3 + o[2] * 0.5); a[i + 3] = 255; }
   }
   c.putImageData(img, 0, 0); void OUT;
 }
@@ -241,7 +249,7 @@ export function charSheet(id: string): HTMLCanvasElement {
   cv = document.createElement('canvas'); cv.width = PW * FRAMES.length; cv.height = PH * DIRS.length;
   const c = cv.getContext('2d', { willReadFrequently: true })!; c.imageSmoothingEnabled = false;
   DIRS.forEach((dir, r) => FRAMES.forEach((f, i) => {
-    const special = i >= 6; drawFrame(c, i * PW, r * PH, d, f, special && dir === 'b' && f !== 'sit' && f !== 'arms' && f !== 'dance1' && f !== 'dance2' ? 'f' : dir);
+    const special = i >= 6; c.save(); c.beginPath(); c.rect(i * PW, r * PH, PW, PH); c.clip(); drawFrame(c, i * PW, r * PH, d, f, special && dir === 'b' && f !== 'sit' && f !== 'arms' && f !== 'dance1' && f !== 'dance2' ? 'f' : dir); c.restore();
   }));
   finishSheet(c, cv.width, cv.height);
   if (id === 'kukolnik' || id === 'narrator') { c.globalCompositeOperation = 'source-in'; c.fillStyle = '#0a0808'; c.fillRect(0, 0, cv.width, cv.height); }
