@@ -43,11 +43,11 @@ function varyaPhotos(R: Builder) {
   VPH.forEach(([id, pw, ph, lines], i) => {
     const x = -6.4 + (i % 3) * 1.7, y = i < 3 ? 3.75 : 2.3, w = pw / 50, hh = ph / 50;
     const t = L.load('photos/varya_' + id + '.png'); t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestFilter; t.colorSpace = THREE.SRGBColorSpace;
-    R.decal(canvasTex(8, 8, (c) => { c.fillStyle = '#86641c'; c.fillRect(0, 0, 8, 8); c.fillStyle = '#d4ae48'; c.fillRect(1, 1, 6, 6); c.fillStyle = '#86641c'; c.fillRect(2, 2, 4, 4); }, 'vphFrame'), { x, y, w: w + 0.16, h: hh + 0.16, z: -4.95 });
-    R.decal(t, { x, y, w, h: hh, z: -4.93 });
+    R.decal(canvasTex(8, 8, (c) => { c.fillStyle = '#86641c'; c.fillRect(0, 0, 8, 8); c.fillStyle = '#d4ae48'; c.fillRect(1, 1, 6, 6); c.fillStyle = '#86641c'; c.fillRect(2, 2, 4, 4); }, 'vphFrame'), { x, y, w: w + 0.16, h: hh + 0.16, z: -4.95, noSlot: true });
+    R.decal(t, { x, y, w, h: hh, z: -4.92, noSlot: true });
     R.look('vph_' + id, x, -3.7, 'Фото на стене', lines);
   });
-  R.decal(canvasTex(48, 8, (c) => { c.fillStyle = '#2a1410'; c.fillRect(0, 0, 48, 8); ptext(c, 'МОИ РОЛИ', 24, 0, { size: 7, col: '#e8c060', align: 'center' }); }, 'vphTitle'), { x: -4.7, y: 4.75, w: 2.4, h: 0.4, z: -4.95 });
+  R.decal(canvasTex(48, 8, (c) => { c.fillStyle = '#2a1410'; c.fillRect(0, 0, 48, 8); ptext(c, 'МОИ РОЛИ', 24, 0, { size: 7, col: '#e8c060', align: 'center' }); }, 'vphTitle'), { x: -4.7, y: 4.75, w: 2.4, h: 0.4, z: -4.95, noSlot: true });
 }
 const dressing: RoomDef = {
   name: 'Гримёрка режиссёра', chapter: 'Акт I · Приглашение', w: 16, d: 10, music: 'backstage', amb: 'hall', step: 'wood', grade: { tint: [1.05, 0.98, 0.9], vig: 0.45 },
