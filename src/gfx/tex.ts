@@ -86,8 +86,13 @@ export function tex(kind: string, tint?: string): THREE.CanvasTexture {
 }
 export function canvasTex(w: number, h: number, draw: (c: CanvasRenderingContext2D, w: number, h: number) => void, key?: string): THREE.CanvasTexture {
   if (key && cache.has(key)) return cache.get(key)!;
-  const cv = document.createElement('canvas'); cv.width = w; cv.height = h; const c = cv.getContext('2d')!; c.imageSmoothingEnabled = false; draw(c, w, h);
-  const t = finish(cv, false); if (key) cache.set(key, t); return t;
+  let cv = document.createElement('canvas'); cv.width = w; cv.height = h; const c = cv.getContext('2d')!; c.imageSmoothingEnabled = false;
+  // текст на мелком холсте превращается в кашу: если в рисунке есть текст, перерисовываем в 3x (пиксель-арт остаётся тем же)
+  let usedText = false, usedPixels = false; const ft = c.fillText.bind(c), st = c.strokeText.bind(c), gi = c.getImageData.bind(c);
+  c.fillText = (...a: any[]) => { usedText = true; return (ft as any)(...a); }; c.strokeText = (...a: any[]) => { usedText = true; return (st as any)(...a); }; c.getImageData = (...a: any[]) => { usedPixels = true; return (gi as any)(...a); };
+  draw(c, w, h);
+  if (usedText && !usedPixels && w * h <= 512 * 512) { const k = 3; const cv2 = document.createElement('canvas'); cv2.width = w * k; cv2.height = h * k; const c2 = cv2.getContext('2d')!; c2.imageSmoothingEnabled = false; c2.scale(k, k); draw(c2, w, h); cv = cv2; }
+  const t = finish(cv, false); t.userData.lw = w; t.userData.lh = h; if (key) cache.set(key, t); return t;
 }
 export const PIX = '"Pixelify Sans", monospace';
 /** Пиксельный текст с переносом строк. */

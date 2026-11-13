@@ -142,7 +142,7 @@ export class Builder {
   }
   /** Плоская картинка: на стене ('n' | 'w' | 'e') или в произвольном месте. */
   decal(t: THREE.Texture, o: any = {}) {
-    const img: any = t.image, w = o.w || img.width / PPU, h = o.h || img.height / PPU;
+    const img: any = t.image, w = o.w || (t.userData.lw ?? img.width) / PPU, h = o.h || (t.userData.lh ?? img.height) / PPU;
     const mat = o.glow ? new THREE.MeshBasicMaterial({ map: t, transparent: true, alphaTest: 0.1, color: o.color || 0xffffff }) : new THREE.MeshLambertMaterial({ map: t, transparent: true, alphaTest: 0.1 });
     if (o.opacity != null) { mat.opacity = o.opacity; mat.alphaTest = 0.01; }
     const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat); const y = (o.y ?? 2.4);
@@ -156,7 +156,7 @@ export class Builder {
   poster(title: string, sub: string, o: any = {}) { return this.decal(poster(title, sub, o), o); }
   /** Билборд-реквизит (спрайт стоит на полу лицом к камере). */
   sprite(kind: string | THREE.Texture, x: number, z: number, o: any = {}) {
-    const t = typeof kind === 'string' ? propTex(kind) : kind, img: any = t.image, s = o.scale || 1, w = img.width / PPU * s, h = img.height / PPU * s;
+    const t = typeof kind === 'string' ? propTex(kind) : kind, img: any = t.image, s = o.scale || 1, w = (t.userData.lw ?? img.width) / PPU * s, h = (t.userData.lh ?? img.height) / PPU * s;
     const g = new THREE.PlaneGeometry(w, h); g.translate(0, h / 2, 0); if (!o.glow) litNormals(g);
     const mat = o.glow ? new THREE.MeshBasicMaterial({ map: t, alphaTest: 0.3, side: THREE.DoubleSide, transparent: o.opacity != null, opacity: o.opacity ?? 1 }) : new THREE.MeshLambertMaterial({ map: t, alphaTest: 0.3, side: THREE.DoubleSide, emissive: o.emissive || 0 });
     const m = new THREE.Mesh(g, mat); m.position.set(x, o.y || 0, z); m.castShadow = o.cast !== false && !o.glow; if (o.flipX) m.scale.x = -1; this.room.group.add(m);
