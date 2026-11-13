@@ -108,7 +108,7 @@ export function pixColor(col: number): THREE.CanvasTexture {
 }
 /** Мягкое световое пятно (вместо настоящего источника света). */
 let poolTex: THREE.CanvasTexture | null = null;
-export function lightPool(): THREE.CanvasTexture { if (poolTex) return poolTex; const cv = document.createElement('canvas'); cv.width = cv.height = 32; const c = cv.getContext('2d')!; for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) { const d = Math.hypot(x - 15.5, y - 15.5) / 16; const a = Math.max(0, 1 - d); const q = Math.round(a * a * 6) / 6; c.fillStyle = `rgba(255,255,255,${q * 0.9})`; c.fillRect(x, y, 1, 1); } poolTex = finish(cv, false); return poolTex; }
+export function lightPool(): THREE.CanvasTexture { if (poolTex) return poolTex; const cv = document.createElement('canvas'); cv.width = cv.height = 64; const c = cv.getContext('2d')!; for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) { const d = Math.hypot(x - 31.5, y - 31.5) / 32; const a = Math.max(0, 1 - d); const q = Math.round(a * a * 14) / 14; c.fillStyle = `rgba(255,255,255,${q * 0.9})`; c.fillRect(x, y, 1, 1); } poolTex = finish(cv, false); return poolTex; }
 export const PIX = '"Pixelify Sans", monospace';
 /** Пиксельный текст с переносом строк. */
 export function ptext(c: CanvasRenderingContext2D, s: string, x: number, y: number, o: { size?: number; col?: string; w?: number; align?: CanvasTextAlign; font?: string; lh?: number } = {}) {
