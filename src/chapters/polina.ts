@@ -121,6 +121,20 @@ function bushTex(v: number) {
     const cl = [[10, 16, 8], [22, 12, 10], [34, 15, 9], [42, 18, 6], [16, 19, 6]]; for (const [x, y, r] of cl) circ(x, y + 1, r + 1, '#04070a'); for (const [x, y, r] of cl) circ(x, y + 1, r, '#1a2c20'); for (const [x, y, r] of cl) circ(x + 2, y - 1, r * 0.6, v ? '#2a4430' : '#2e4a34'); for (const [x, y, r] of cl) px(c, x + 2, y - r * 0.6, 2, 1, '#5a8496'); px(c, 0, 23, 48, 1, '#04070a'); }, 'pbush' + v);
 }
 function fernTex() { return bushTex(0); }
+/** Папоротник: веер листьев-перьев с лунным бликом. */
+function fern2Tex(v: number) {
+  return canvasTex(40, 24, (c) => { for (let k = 0; k < 7; k++) { const a = -1.25 + k * 0.42 + v * 0.1, len = 15 + (k % 3) * 3; for (let t = 0; t < len; t++) { const x = 20 + Math.sin(a) * t, y = 23 - Math.cos(a) * t * (1 - t / (len * 2.2)); px(c, Math.round(x), Math.round(y), 1, 1, '#0a140e'); if (t > 2 && t % 2 === 0) { px(c, Math.round(x - 2), Math.round(y - 1), 2, 1, t > len * 0.6 ? '#2e4c34' : '#1c3222'); px(c, Math.round(x + 1), Math.round(y - 1), 2, 1, k > 3 && t > len * 0.5 ? '#4a7480' : '#22392a'); } } } }, 'pfern2' + v);
+}
+function rockTex(v: number) {
+  return canvasTex(24, 14, (c) => { c.fillStyle = '#05070a'; c.beginPath(); c.ellipse(12, 9, 11, 5 + v, 0, 0, 7); c.fill(); c.fillStyle = '#2a3038'; c.beginPath(); c.ellipse(12, 9, 10, 4 + v, 0, 0, 7); c.fill(); c.fillStyle = '#4a5462'; c.beginPath(); c.ellipse(14, 7, 6, 2 + v * 0.5, 0, 0, 7); c.fill(); px(c, 4, 10, 6, 1, '#1e3a24'); px(c, 15, 6, 3, 1, '#6a7888'); px(c, 0, 13, 24, 1, '#05070a'); }, 'prock' + v);
+}
+/** Склейка одинаковых билбордов в один меш (один вызов отрисовки на текстуру): дальний лес. */
+function forestBatch(R: Builder, t: THREE.Texture, items: number[][]) {
+  if (!items.length) return; const img: any = t.image, W = img.width / PPU, H = img.height / PPU; const pos: number[] = [], uv: number[] = [], nrm: number[] = [], idx: number[] = [];
+  items.forEach(([x, z, s], i) => { const w = W * s / 2, h = H * s; pos.push(x - w, 0, z, x + w, 0, z, x + w, h, z, x - w, h, z); uv.push(0, 0, 1, 0, 1, 1, 0, 1); for (let k = 0; k < 4; k++) nrm.push(0, 0.45, 0.89); const b = i * 4; idx.push(b, b + 1, b + 2, b, b + 2, b + 3); });
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nrm, 3)); g.setIndex(idx);
+  const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ map: t, alphaTest: 0.3, side: THREE.DoubleSide })); m.castShadow = false; R.room.group.add(m); return m;
+}
 function deadTreeTex() {
   return canvasTex(48, 96, (c) => {
     const col = '#06070a', hi = '#2a3646'; px(c, 21, 30, 6, 66, col); px(c, 25, 34, 1, 60, hi);
@@ -262,25 +276,41 @@ const road: RoomDef = {
     const f = G.f; R.room.group.userData.bg = 0x1a2438; fog(R, 0x1a2438, 16, 46);
     R.floor('grass', { tint: '#3e5040', w: 240, d: 70, z: -12, y: -0.02 }); const amb = R.ambient(0x3a4868, 3.6, 0x9ab0e0); R.sun(0xa8c0ff, 2.2, 10, 14, 6); carriedLight(R, G, 0xd8e4ff, 16, 10);
     // шоссе только в начале; дальше тропа
-    R.floor('asphalt', { x: -86, w: 110, d: 4.4, z: 1.2, y: 0.01 }); for (let x = -140; x <= -33; x += 3.2) R.box(x, 1.2, 1.4, 0.14, 0.02, { color: 0x9a9a8a, y: 0.03, solid: false, cast: false }); for (const z of [-1.05, 3.45]) R.box(-86, z, 110, 0.12, 0.05, { color: 0x4a4a3a, y: 0.02, solid: false, cast: false });
+    R.floor('asphalt', { x: -60, w: 44, d: 4.4, z: 1.2, y: 0.01 }); for (let x = -80; x <= -42; x += 3.2) R.box(x, 1.2, 1.4, 0.14, 0.02, { color: 0x9a9a8a, y: 0.03, solid: false, cast: false }); for (const z of [-1.05, 3.45]) R.box(-61, z, 40, 0.12, 0.05, { color: 0x4a4a3a, y: 0.02, solid: false, cast: false });
     R.decal(canvasTex(24, 14, (c) => { px(c, 0, 0, 24, 14, '#1a1a1e'); px(c, 1, 1, 22, 12, '#e8d8a0'); px(c, 2, 2, 20, 10, '#1a1a1e'); px(c, 3, 3, 18, 8, '#e8d8a0'); ptext(c, '3 км', 12, 3, { size: 7, col: '#1a1a1e', align: 'center' }); }, 'roadsign'), { x: -40, y: 2.4, z: -1.9, w: 1.4, h: 0.85, noSlot: true }); R.box(-40, -1.95, 0.1, 0.1, 2.4, { tex: 'metal', solid: false });
+    // асфальт обрывается в грязь: размытые края, наносы грязи на полотно
+    const mud = canvasTex(32, 16, (c) => { for (let y = 0; y < 16; y++) for (let x = 0; x < 32; x++) { const k = Math.sin((y / 15) * Math.PI) * Math.sin((x / 31) * Math.PI); if (hsh(x, y, 41) < k * 1.3) px(c, x, y, 1, 1, hsh(x, y, 42) < 0.3 ? '#2a1e14' : '#3a2a1c'); } }, 'mudsplat');
+    for (let i = 0; i < 9; i++) R.decal(mud, { flat: true, x: -44 + i * 1.6 - hsh(i, 3), z: 1.2 + (hsh(i, 4) - 0.5) * 3.4, y: 0.018 + i * 0.001, w: 3 + hsh(i, 5) * 2, h: 1.6 + hsh(i, 6) });
+    for (const z of [-0.8, 3.3]) for (let i = 0; i < 10; i++) R.decal(mud, { flat: true, x: -78 + i * 4 + hsh(i, 7) * 2, z: z + (hsh(i, 8) - 0.5) * 0.5, y: 0.017, w: 3.4, h: 1.0 });
     // грязная извилистая тропа, лужи, корни поперёк
     const tz = (x: number) => 1.4 + Math.sin(x * 0.11) * 1.1;
-    for (let x = -36, i = 0; x <= PATH_X + 2; x += 3, i++) R.floor('dirt', { x, w: 3.6, d: 3 + (i % 3) * 0.4, z: tz(x), y: 0.004 + (i % 2) * 0.004, tint: '#6a5038' });
+    for (let x = -42, i = 0; x <= PATH_X + 2; x += 3, i++) R.floor('dirt', { x, w: 3.6, d: 3 + (i % 3) * 0.4, z: tz(x), y: 0.004 + (i % 2) * 0.004, tint: '#6a5038' });
     const puddle = canvasTex(24, 10, (c) => { c.fillStyle = '#1a2438'; c.beginPath(); c.ellipse(12, 5, 11, 4, 0, 0, 7); c.fill(); px(c, 6, 3, 6, 1, '#5a6a90'); px(c, 14, 6, 4, 1, '#3a4a6a'); }, 'puddle');
     for (let i = 0; i < 12; i++) { const x = -32 + i * 7.3 + hsh(i, 1) * 2; R.decal(puddle, { flat: true, x, z: tz(x) + (hsh(i, 2) - 0.5), y: 0.02, w: 1.6 + hsh(i, 3), h: 0.7, glow: true, opacity: 0.8 }); }
     const roots = canvasTex(32, 12, (c) => { for (let k = 0; k < 4; k++) { let y = 2 + k * 2.5; for (let x = 0; x < 32; x++) { y += (hsh(x, k, 3) - 0.5) * 1.2; px(c, x, Math.round(y), 1, 2, '#120c08'); if (x % 5 === 0) px(c, x, Math.round(y), 1, 1, '#3a2a1c'); } } }, 'roots');
-    void roots;
+    for (let i = 0; i < 16; i++) { const x = -34 + i * 5.6 + hsh(i, 9) * 2; R.decal(roots, { flat: true, x, z: tz(x) + (hsh(i, 10) < 0.5 ? -1.4 : 1.4), y: 0.022, w: 2.6, h: 1.2 }); }
     // ЛЕС: слои. Задние ряды в тумане, средние густые, у тропы кусты и пни, впереди у края кадра тёмные стволы
-    const pines = [0, 1, 2, 3].map(pineTex), oaks = [0, 4].map(oakTex), dead = deadTreeTex(), trunks = [0, 1].map(trunkTex), bushes = [0, 1].map(bushTex);
+    const pines = [0, 1, 2, 3].map(pineTex), oaks = [0, 4].map(oakTex), dead = deadTreeTex(), bushes = [0, 1].map(bushTex);
     const X0 = -72, X1 = 74; let n = 0; const tree = (i: number, j: number) => (j > 0.9 ? dead : (i + Math.floor(j * 7)) % 3 === 0 ? oaks[i % 2] : pines[(i + Math.floor(j * 5)) % 4]);
-    for (let x = X0; x <= X1; x += 2.2, n++) { const j = hsh(n, 1); if (Math.abs(x - PATH_X) < 2.4) continue; R.sprite(tree(n, j), x + j, -3.2 - j * 1.4, { scale: 0.8 + j * 0.35, thin: true }); }
-    for (let x = X0, i = 0; x <= X1; x += 2.6, i++) { const j = hsh(i, 2); if (Math.abs(x - PATH_X) < 2) continue; R.sprite(tree(i + 1, j), x + j * 1.5, -6.5 - j * 2, { scale: 0.95 + j * 0.4, thin: true }); }
-    for (let x = X0, i = 0; x <= X1; x += 3.1, i++) { const j = hsh(i, 3); R.sprite(tree(i + 2, j), x + j * 2, -10.5 - j * 2.5, { scale: 1.1 + j * 0.4, thin: true }); }
-    for (let x = X0, i = 0; x <= X1; x += 3.8, i++) { const j = hsh(i, 4); R.sprite(pines[i % 4], x + j * 2, -15 - j * 3, { scale: 1.3 + j * 0.4, thin: true }); }
-    for (let x = X0, i = 0; x <= X1; x += 2.9, i++) { const j = hsh(i, 5); R.sprite(bushes[i % 2], x + j, -1.7 - j * 0.5, { scale: 0.9 + j * 0.4, thin: true }); if (j > 0.35) R.sprite(bushes[(i + 1) % 2], x + j * 2, 5.4 + j * 1.2, { scale: 1 + j * 0.5, thin: true }); }
-    for (let x = X0, i = 0; x <= X1; x += 4.1, i++) { const j = hsh(i, 6); R.sprite(j > 0.5 ? pines[i % 4] : dead, x + j * 2, 8.2 + j, { scale: 0.62 + j * 0.15, thin: true }); }
-    for (let x = X0, i = 0; x <= X1; x += 5.2, i++) { const j = hsh(i, 7); R.sprite(trunks[i % 2], x + j * 3, 12.5 + j * 2, { scale: 0.85 + j * 0.2, thin: true }); }
+    const batch = new Map<THREE.Texture, number[][]>(); const add = (t: THREE.Texture, x: number, z: number, sc: number) => { if (!batch.has(t)) batch.set(t, []); batch.get(t)!.push([x, z, sc]); };
+    for (let x = X0; x <= X1; x += 1.8, n++) { const j = hsh(n, 1); if (Math.abs(x - PATH_X) < 2.4) continue; add(tree(n, j), x + j, -3.2 - j * 1.4, 0.8 + j * 0.35); }
+    for (let x = X0, i = 0; x <= X1; x += 2.0, i++) { const j = hsh(i, 2); if (Math.abs(x - PATH_X) < 2) continue; add(tree(i + 1, j), x + j * 1.5, -6.2 - j * 2, 0.95 + j * 0.4); }
+    for (let x = X0, i = 0; x <= X1; x += 2.4, i++) { const j = hsh(i, 3); add(tree(i + 2, j), x + j * 2, -10 - j * 2.5, 1.1 + j * 0.4); }
+    for (let x = X0, i = 0; x <= X1; x += 2.9, i++) { const j = hsh(i, 4); add(pines[i % 4], x + j * 2, -14.5 - j * 3, 1.3 + j * 0.4); }
+    for (let x = X0, i = 0; x <= X1; x += 3.4, i++) { const j = hsh(i, 11); add(pines[(i + 2) % 4], x + j * 2, -19 - j * 3, 1.5 + j * 0.4); }
+    // за тропой к камере: молодые ели и кусты за краем прохода, впереди у рамки кадра тёмные кроны и стволы
+    for (let x = X0, i = 0; x <= X1; x += 1.7, i++) { const j = hsh(i, 6); R.sprite(j > 0.7 ? oaks[i % 2] : j > 0.15 ? pines[i % 4] : dead, x + j * 1.2, 7.0 + j * 1.4, { scale: 0.5 + j * 0.25, thin: true }); }
+    for (let x = X0, i = 0; x <= X1; x += 2.6, i++) { const j = hsh(i, 12); add(tree(i + 5, j), x + j * 2, 9.6 + j * 1.5, 0.7 + j * 0.2); }
+    batch.forEach((items, t) => forestBatch(R, t, items));
+    // низкий подлесок по обе стороны тропы по всей длине (отдельные спрайты: затухают, если заслоняют героиню)
+    const ferns = [0, 1, 2].map(fern2Tex), rocks = [0, 1].map(rockTex), under = [...ferns, ...bushes, ...rocks];
+    for (let x = X0, i = 0; x <= X1; x += 1.25, i++) { const j = hsh(i, 13), k = hsh(i, 14);
+      const zN = Math.min(tz(x) - 1.7, -1.6) - j * 0.8; R.sprite(under[i % under.length], x + k, zN, { scale: 0.8 + j * 0.5, thin: true });
+      const zS = Math.max(tz(x) + 1.9, 3.6) + j * 2.6; if (x < -40 && x > -82) { if (zS < 4.4) continue; } R.sprite(under[(i + 3) % under.length], x + k * 0.8, zS, { scale: 0.75 + k * 0.55, thin: true }); }
+    // струи дождя у самой камеры: тонкие линии, падают и сносятся ветром
+    { const N = 260, pos = new Float32Array(N * 6), sp = new Float32Array(N); for (let i = 0; i < N; i++) { sp[i] = 14 + Math.random() * 8; const x = (Math.random() - 0.5) * 30, y = Math.random() * 12, z = 4 + Math.random() * 10; pos.set([x, y, z, x - 0.12, y - 0.9, z], i * 6); }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); const streaks = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: 0xa8c0e8, transparent: true, opacity: 0.35, depthWrite: false, fog: false })); R.room.group.add(streaks);
+      R.onUpdate((dt) => { const cx = G.player ? G.player.x : 0; streaks.position.x = cx; for (let i = 0; i < N; i++) { const o = i * 6; const d = sp[i] * dt; pos[o + 1] -= d; pos[o + 4] -= d; pos[o] -= d * 0.12; pos[o + 3] -= d * 0.12; if (pos[o + 4] < 0) { const x = (Math.random() - 0.5) * 30, y = 12 + Math.random() * 2, z = 4 + Math.random() * 10; pos.set([x, y, z, x - 0.12, y - 0.9, z], o); } } g.attributes.position.needsUpdate = true; }); }
     // поваленные деревья и пни
     logMesh(R, -20, -2.2, 5, 0.25); logMesh(R, 6, 5.2, 6, -0.2); logMesh(R, 28, -2.3, 4.5, 0.4); logMesh(R, 41, 5.6, 5, 0.1);
     const stump = canvasTex(16, 14, (c) => { px(c, 2, 4, 12, 10, '#04070a'); px(c, 3, 5, 10, 9, '#2a2016'); px(c, 3, 3, 10, 3, '#5a4630'); px(c, 5, 4, 6, 1, '#7a6040'); px(c, 1, 12, 3, 2, '#2a2016'); px(c, 12, 12, 3, 2, '#2a2016'); px(c, 9, 7, 1, 6, '#14100a'); }, 'stump');
