@@ -43,7 +43,7 @@ export class Actor {
   get def() { return CHARS[this.charId]; }
   place(x: number, z: number, dir?: string) { this.x = x; this.z = z; if (dir) this.dir = dir; this.sync(); return this; }
   face(tx: number, tz: number) { const dx = tx - this.x, dz = tz - this.z; this.dir = Math.abs(dx) > Math.abs(dz) ? (dx > 0 ? 'r' : 'l') : (dz > 0 ? 'f' : 'b'); }
-  walkTo(x: number, z: number, speed = 4): Promise<void> { if (this.target) this.target.res(); return new Promise((res) => { this.target = { x, z, speed, res }; }); }
+  walkTo(x: number, z: number, speed = 4): Promise<void> { if (this.target) this.target.res(); if ((globalThis as any).__G?.fast) { this.place(x, z, this.dir); return Promise.resolve(); } return new Promise((res) => { this.target = { x, z, speed, res }; }); }
   stop() { if (this.target) { const r = this.target.res; this.target = null; r(); } this.moving = false; }
   update(dt: number) {
     this.t += dt;
@@ -279,3 +279,4 @@ export class Builder {
   table(x: number, z: number, w = 2.4, d = 1.2, o: any = {}) { const top = this.box(x, z, w, d, 0.15, { tex: o.tex || 'wood', y: 1.0, ...o }); for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) this.box(x + sx * (w / 2 - 0.15), z + sz * (d / 2 - 0.15), 0.15, 0.15, 1, { tex: 'darkwood', solid: false, mask: o.mask }); return top; }
   curtain(x: number, z: number, w: number, h = 6, o: any = {}) { return this.box(x, z, w, 0.3, h, { tex: 'velvet', solid: o.solid ?? false, ...o }); }
 }
+(globalThis as any).__charSheet = charSheet; // отладка: листы спрайтов

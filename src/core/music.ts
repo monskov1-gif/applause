@@ -29,12 +29,13 @@ export const TRACKS: Record<string, Track> = {
     { inst: 'piano', seq: 'c2:4 .:75', vol: 0.8 },
     { inst: 'box', seq: '.:37 g5:1 gb5:1 f5:2 .:60', vol: 0.4 },
   ] },
-  heist: { bpm: 118, parts: [
-    { inst: 'drums', seq: 'k.h.s.h.k.h.s.hhk.h.s.h.k.khs.h.', vol: 0.8 },
-    { inst: 'bass', d: 2, seq: 'd2 d2 d3 d2 d2 d3 d2 f2 | bb1 bb1 bb2 bb1 bb1 bb2 bb1 c2 | f2 f2 f3 f2 f2 f3 f2 e2 | c2 c2 c3 c2 c2 c3 c2 c#2' },
-    { inst: 'pluck', d: 1, vol: 0.55, seq: 'd4 f4 a4 d5 a4 f4 d4 f4 a4 d5 a4 f4 d4 f4 a4 d5 | bb3 d4 f4 bb4 f4 d4 bb3 d4 f4 bb4 f4 d4 bb3 d4 f4 bb4 | f4 a4 c5 f5 c5 a4 f4 a4 c5 f5 c5 a4 f4 a4 c5 f5 | c4 e4 g4 c5 g4 e4 c4 e4 g4 c5 g4 e4 c4 e4 g4 c5' },
-    { inst: 'lead', d: 2, vol: 0.8, seq: '.:64 | a5:4 . f5 d5:4 .:4 | d5 f5 g5:4 f5:8 | a5:4 . c6 a5:4 f5:4 | g5:6 e5 c5:8' },
-    { inst: 'pad', seq: 'd3+a3:16 bb2+f3:16 f3+c4:16 c3+g3:16' },
+  // Шпионская тема казино: хроматическое остинато баса (ми, фа, фа-диез, фа), струнные удары, медь-«лид» с широкими скачками.
+  heist: { bpm: 108, parts: [
+    { inst: 'drums', seq: 'k...h.s.k.h.s.h.k...h.s.k.hks.hh', vol: 0.55 },
+    { inst: 'bass', d: 2, vol: 0.9, seq: 'e2 e2 f2 f2 f#2 f#2 f2 f2 | e2 e2 f2 f2 f#2 f#2 f2 f2 | c2 c2 c#2 c#2 d2 d2 c#2 c#2 | b1 b1 c2 c2 c#2 c#2 c2 b1' },
+    { inst: 'strings', d: 16, vol: 0.5, seq: 'e3+g3+b3 | e3+g3+c4 | c3+e3+a3 | b2+d#3+f#3+a3' },
+    { inst: 'pluck', d: 2, vol: 0.35, seq: '.:8 b4 . b4 c5 . b4 . | .:8 b4 . b4 c5 . b4 . | .:8 a4 . a4 bb4 . a4 . | .:8 f#4 . f#4 g4 . a4 .' },
+    { inst: 'lead', vol: 0.75, seq: '.:64 | e5:6 g5:2 f#5:8 | b4:6 e5:2 d#5:8 | e5:4 b5:4 g5:4 e5:4 | f#5:12 .:4 | a5:6 g5:2 e5:8 | c5:6 a4:2 b4:8 | e5:4 g5:2 f#5:2 d#5:4 b4:4 | e5:16' },
   ] },
   chase: { bpm: 140, parts: [
     { inst: 'drums', seq: 'k.hkk.h.k.hks.hhk.h.s.hkk.khs.hs', vol: 0.9 },
@@ -53,11 +54,13 @@ export const TRACKS: Record<string, Track> = {
     { inst: 'box', d: 4, vol: 0.7, seq: '.:16 | e5 g5 c6:8 | .:8 a5 g5 | f5:8 e5:8 | d5:16 | .:16 | c5 e5 a5:8 | g5:16' },
     { inst: 'pad', seq: 'c3+g3:32 f3+c4:16 g3+d4:16', vol: 0.8 },
   ] },
-  noir: { bpm: 96, swing: 0.33, parts: [
-    { inst: 'upright', d: 4, seq: 'd2 f2 a2 c3 | g2 bb2 d3 f3 | e2 g2 a2 c#3 | d3 a2 f2 a2 | d2 e2 f2 a2 | bb2 a2 g2 f2 | e2 bb2 a2 e2 | d2 a2 d2 .' },
-    { inst: 'drums', seq: 'b..bb..bb..bb.rb', vol: 0.8 },
-    { inst: 'piano', d: 1, vol: 0.6, seq: '.:6 f3+a3+c4+e4:2 .:8 | .:6 f3+bb3+d4:2 .:3 f3+bb3+d4:2 .:3 | .:6 g3+bb3+d4:2 .:2 g3+c#4+e4:2 .:4 | .:10 f3+a3+c4+e4:3 .:3' },
-    { inst: 'sax', d: 2, vol: 0.8, seq: '.:8 a4:6 c5 | d5:8 .:4 f5 e5 | d5:4 c5 a4 g4:8 | a4:12 .:4 | .:4 d5 f5 a5:6 g5 | f5:4 d5:4 c5 d5:6 | e5:4 g5 f5 e5:4 c#5:4 | d5:12 .:4' },
+  // Нуар: медленный минорный блюз под дождь. Шагающий контрабас, щётки, джазовые аккорды, приглушённый сакс с блюзовыми нотами.
+  noir: { bpm: 62, swing: 0.25, parts: [
+    { inst: 'upright', d: 4, vol: 0.9, seq: 'd2 a1 d2 c2 | bb1 f2 bb1 a1 | g1 d2 g2 bb1 | a1 e2 a1 c#2 | d2 f2 a2 f2 | g1 bb1 d2 g2 | e2 bb1 a1 e2 | d2 a1 d2 .' },
+    { inst: 'drums', seq: 'h.......s.......h.....h.s.....hh', vol: 0.32 },
+    { inst: 'piano', d: 16, vol: 0.42, seq: 'd3+f3+a3+c4+e4 | bb2+d3+f3+a3+c4 | g2+bb2+d3+f3+a3 | a2+c#3+g3+bb3 | d3+f3+a3+c4 | g2+bb2+d3+f3+a3 | e3+g3+bb3+d4 | a2+c#3+g3+f4' },
+    { inst: 'sax', vol: 0.75, seq: '.:8 a4:6 f4:2 | e4:10 d4:2 f4:4 | g4:6 ab4:2 g4:4 f4:2 d4:2 | c#4:12 .:4 | .:4 d5:4 f5:6 e5:2 | d5:8 c5:4 bb4:4 | a4:6 ab4:2 g4:6 e4:2 | d4:16' },
+    { inst: 'pad', vol: 0.22, seq: 'd3+a3:64 g2+d3:32 a2+e3:32' },
   ] },
   fairy: { bpm: 92, parts: [
     { inst: 'box', d: 4, seq: 'c5 f5 a5 | g5:8 e5 | f5 d5 a4 | bb4:8 d5 | c5 f5 a5 | c6:8 g5 | bb5 a5 g5 | f5:12' },

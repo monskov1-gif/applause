@@ -101,7 +101,7 @@ class Game {
       for (const a of this.followers) { const fp = this.freeSpot(this.player.x + 0.8, this.player.z + 0.3); a.place(fp.x, fp.z); }
       if (room.guards.length) this.mech('stealth'); if (room.lasers.length) this.mech('lasers');
       this.R.scene.add(room.group); this.R.scene.background = new THREE.Color(room.group.userData.bg ?? 0x050406); this.R.scene.fog = room.group.userData.fog || null;
-      this.gradeBase = def.grade || {}; this.applyMask(true); this.applyGrade(true);
+      this.gradeBase = def.grade || {}; this.applyMask(true); this.applyGrade(true); document.body.classList.toggle('noir-mode', (def.grade?.sat ?? 1) < 0.15); // нуар: интерфейс и портреты тоже чёрно-белые
       this.cam.dist = def.camDist || 24; this.camSnap();
       if (def.music !== undefined) audio.music(def.music); audio.ambience(def.amb ?? null);
       this.state.room = id; this.state.spot = spot; (this.state.f.visited ||= {})[id] = 1; if (def.chapter) this.state.chapter = def.chapter;
@@ -126,7 +126,7 @@ class Game {
     const d = CHARS[id]; const base = CHARS[(id.split('_')[0])] || d;
     if (!narr && !d) console.warn('[dialogue] неизвестный говорящий', who);
     const key = who + ':' + text; const seen = !!this.state.seen[hash(key)];
-    await ui.say({ name: narr ? '' : (nameOverride || (thought ? (base || d)?.name : (CHARS[who]?.name || d?.name)) || who), color: d?.color || '#e8d8a8', portrait: narr || !d ? '' : portrait(id, expr as any), text, italic: thought || narr, pitch: d?.pitch || 300, seen });
+    await ui.say({ name: narr ? '' : (nameOverride || (thought ? (base || d)?.name : (CHARS[who]?.name || d?.name)) || who), color: d?.color || '#e8d8a8', portrait: narr || !d ? '' : portrait(id, expr as any, !!this.room?.id.startsWith('mat_')), text, italic: thought || narr, pitch: d?.pitch || 300, seen });
     this.state.seen[hash(key)] = 1;
   }
   async line(s: string) {
@@ -152,7 +152,7 @@ class Game {
         else {
           if (n.set) this.set(n.set); if (n.note) this.note(n.note); if (n.give) this.give(n.give); if (n.sfx) this.sfx(n.sfx); if (n.music !== undefined) audio.music(n.music);
           if (n.wait) await this.wait(n.wait); if (n.pose) { const a = this.actor(n.pose[0]); if (a) a.pose = n.pose[1]; }
-          if (n.shake) this.shake(n.shake); if (n.flash) this.flash();
+          if (n.shake) this.shake(n.shake); if (n.flash) this.flash(); if (n.fx) this.fx(n.fx[0], n.fx[1]); if (n.eyes) this.eyes(n.eyes);
         }
       }
     } finally { this.lock--; this.runDepth--; if (this.runDepth === 0) { audio.duck(false); ui.sayHide(); } }
@@ -176,6 +176,25 @@ class Game {
 
   // ---------- камера и эффекты ----------
   camBounds() { const d = this.room!.def; const mx = Math.max(0, d.w / 2 - 9); const z0 = Math.min(0, -d.d / 2 + 4.5), z1 = d.camZMax ?? Math.max(z0, d.d / 2 - 7); return { mx, z0, z1 }; }
+  // ---------- манга-эффекты и «целебные глазки» ----------
+  private fxTex: Record<string, THREE.Texture> = {};
+  private fxT(name: string) { if (!this.fxTex[name]) { const t = new THREE.TextureLoader().load('fx/' + name + '.png'); t.colorSpace = THREE.SRGBColorSpace; this.fxTex[name] = t; } return this.fxTex[name]; }
+  private who(id: string) { return id === 'player' ? this.player : this.actor(id); }
+  /** Эффект из манги над головой: искры, вена злости, капля пота, слёзы, «ХА-ХА». */
+  fx(id: string, kind: string) {
+    const a = this.who(id); if (!a || !this.room || this.fast) return; const h = (CHARS[a.charId]?.h || 32) / PPU;
+    const tex = this.fxT('m_' + kind); const big = kind === 'tears' || kind === 'haha' || kind === 'burst'; const w = big ? 1.5 : 0.8;
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, w), new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, depthTest: false })); m.renderOrder = 20;
+    const off = kind === 'tears' ? [0, h - 0.7] : kind === 'blush' ? [0.25, h - 0.55] : kind === 'sweat' ? [0.45, h - 0.1] : kind === 'haha' ? [0.9, h + 0.2] : [0.55, h + 0.25];
+    m.position.set(off[0], off[1], 0.2); a.group.add(m); this.sfx(kind === 'anger' || kind === 'anger2' ? 'hit' : 'note');
+    let t = 0; const u = (dt: number) => { t += dt; const k = Math.min(1, t / 0.18); m.scale.setScalar(k < 1 ? k * 1.25 : 1 + Math.sin(t * 9) * 0.04); (m.material as THREE.MeshBasicMaterial).opacity = t > 1.6 ? Math.max(0, 1 - (t - 1.6) / 0.4) : 1; if (t > 2) { a.group.remove(m); const i = this.room!.updaters.indexOf(u); if (i >= 0) this.room!.updaters.splice(i, 1); } }; this.room.updaters.push(u);
+  }
+  /** Огромные блестящие «целебные» глаза на лице героя (мем). */
+  eyes(id: string, dur = 3) {
+    const a = this.who(id); if (!a || !this.room || this.fast) return; const h = (CHARS[a.charId]?.h || 32) / PPU;
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(0.78, 0.34), new THREE.MeshBasicMaterial({ map: this.fxT('healing_eyes'), transparent: true, depthWrite: false })); m.renderOrder = 19; m.position.set(0, h - 0.4, 0.08); a.group.add(m); this.sfx('note');
+    let t = 0; const u = (dt: number) => { t += dt; m.scale.y = 1 + Math.sin(t * 6) * 0.06; m.visible = a.dir !== 'b'; if (t > dur) { a.group.remove(m); const i = this.room!.updaters.indexOf(u); if (i >= 0) this.room!.updaters.splice(i, 1); } }; this.room.updaters.push(u);
+  }
   // ---------- маска на лице героини ----------
   private maskMesh: THREE.Mesh | null = null; private maskTexs: Record<string, THREE.Texture> = {};
   private faceMask() {

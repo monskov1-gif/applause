@@ -26,11 +26,12 @@ const log = await p.evaluate(async () => {
   await photo(['lady', 'kids', 'owner', 'cap']); expect(G.f.pol_photos, 'три аномалии'); await act('back'); await act('basement'); expect(G.f.pol_dark, 'Полина одна');
   await act('gal'); await act('g-3.5'); expect(room() === 'pol_kitchen', 'кухня'); await act('fuse'); await act('back'); await act('basement'); expect(G.f.done_polina, 'глава Полины'); expect(room() === 'hub_backstage', 'возврат'); out.push('Полина ✓');
   // ---- Рубен ----
-  await act('w_ruben'); await act('plan'); expect(G.f.rub_plan, 'план'); await act('lift'); expect(room() === 'rub_casino', 'казино'); await act('desk'); await act('lift'); await act('vault'); await act('puppet'); expect(G.f.done_ruben, 'глава Рубена'); expect(G.has('marionette'), 'марионетка'); out.push('Рубен ✓');
+  await act('w_ruben'); expect(room() === 'rub_terrace', 'терраса'); await act('casino'); expect(room() === 'rub_casino', 'казино'); await act('salon'); expect(room() === 'rub_salon', 'салон'); await talk('zero'); expect(G.f.rub_won, 'покер'); await act('safe'); expect(G.f.done_ruben, 'глава Рубена'); expect(G.has('marionette'), 'марионетка'); out.push('Рубен ✓');
   // ---- Матвей ----
-  await act('w_matvey'); await act('umb'); await act('signal'); expect(G.f.mat_s1, 'зонт'); await act('school'); await act('note'); expect(G.f.mat_s2, 'записка'); await act('out'); await act('fest');
-  await talk('matvey'); await talk('artemiy'); expect(G.f.mat_both, 'оба под аркой'); await photo(['pair']); expect(G.f.mat_arch_down, 'арка рухнула'); await talk('matvey'); expect(G.f.mat_steps, 'сто шагов');
-  G.player.x -= 45; await tick(400); while (G.lock > 0 || room() !== 'hub_backstage') await tick(80); expect(G.f.done_matvey, 'глава Матвея'); out.push('Матвей ✓');
+  await act('w_matvey'); expect(room() === 'mat_yard', 'школа'); await act('school'); await talk('artemiy'); while (G.lock > 0) await tick(50); expect(G.f.mat_c1, 'столкновение'); await act('book'); expect(G.f.mat_book, 'тетрадь'); await act('out');
+  await act('umb'); await act('signal'); expect(G.f.mat_s1, 'зонт'); await act('school'); await act('d_class'); await act('lock'); expect(G.f.mat_lock, 'закрытый класс'); await act('note'); expect(G.f.mat_note, 'записка'); await act('out'); await act('out');
+  await act('fest'); await talk('matvey'); await photo(['pair']); expect(G.f.mat_bento, 'бэнто'); await at(2, 1); expect(G.f.mat_break, 'тетрадь найдена, мир картонный');
+  await act('roof'); await talk('matvey'); expect(G.f.mat_roof, 'крыша'); await act('down'); await act('d_club'); while (G.lock > 0 || room() !== 'hub_backstage') await tick(80); expect(G.f.done_matvey, 'глава Матвея'); out.push('Матвей ✓ (' + G.f.mat_end + ')');
   // ---- Эрика ----
   await act('w_erika'); await act('out'); await act('d_eri_club'); await talk('barman'); await talk('singer'); await act('back'); G.setMask('tragedy'); await act('frameTr'); G.setMask('tragedy'); expect(G.has('e_photo'), 'фото Мэй');
   await act('out'); await act('out'); await act('d_eri_studio'); await talk('director'); await act('desk'); await act('out'); await act('d_eri_collector'); await talk('collector'); await act('desk'); await act('out');

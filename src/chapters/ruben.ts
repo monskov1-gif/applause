@@ -1,115 +1,134 @@
-// Глава Рубена, THE LAST HEIST. Футуристическое ограбление.
-// Механики: доска плана (выбор маршрута/гаджета/времени влияет на прохождение), скрытность против охраны с конусами зрения,
-// гаджеты (G), коридор лазеров по ритму, слом плана в хранилище (решение принимает Рубен), погоня на ховербайке.
+// Глава Рубена, ROYAL FLUSH. Шпионский триллер в казино у горного озера (оммаж классике жанра, всё своё).
+// Каркас: роль-ловушка «агент без нервов», желание Рубена сыграть по своему чтению стола, Варя ведёт его через наушник,
+// и это становится контролем; кульминация: Рубен вынимает наушник, Варя решает, молчать ли.
+// Механики: проход в салон (план Вари или честный разговор), покер по «теллам» соперника (маска Трагедии
+// показывает спрятанное), подсказки в наушник против тишины, погоня по серпантину.
+import * as THREE from 'three';
 import type { RoomDef, Builder } from '../world/room';
 import { canvasTex, ptext } from '../gfx/tex';
 import { R as D } from '../data/dialogue/ruben';
-import { pick, runner } from '../ui/minigames';
-import { chapterIntro, finishChapter, fog, actOf } from './common';
+import { runner } from '../ui/minigames';
+import { finishChapter, fog, actOf } from './common';
+import { chandelier, sconce, rug } from '../world/decor';
+import { barCounter, palm, statue, armchair, window3D } from '../world/decor3d';
 
-const GRADE = { sat: 1.25, tint: [0.92, 0.95, 1.12], vig: 0.5, bloom: 0.9, contrast: 1.08 };
-const neonSign = (text: string, col: string, w = 64) => canvasTex(w, 14, (c) => { c.fillStyle = '#0a0a18'; c.fillRect(0, 0, w, 14); c.strokeStyle = col; c.strokeRect(0.5, 0.5, w - 1, 13); ptext(c, text, w / 2, 3, { size: 8, col, align: 'center' }); }, 'neon' + text + col);
-function neonBase(R: Builder, floor = 'metal') {
-  R.room.group.userData.bg = 0x05040c; R.floor(floor); R.walls('neon', { h: 7 }); R.ambient(0x30304a, 2.2, 0x8090c0);
-  R.particles('glitch', { count: 50, top: 6, color: 0x40e0d0 });
+const GRADE = { sat: 1.05, tint: [1.06, 1.0, 0.92], vig: 0.5, bloom: 0.75, contrast: 1.08 };
+const L = (c: number, o: any = {}) => new THREE.MeshLambertMaterial({ color: c, ...o });
+const dressCode = (G: any) => { if (G.player.charId !== 'varya_gown') G.setPlayerChar('varya_gown'); };
+
+/** Низкий серебристый автомобиль у входа. */
+function car(R: Builder, x: number, z: number) {
+  const g = new THREE.Group(); const silver = L(0xb8c0c8), dark = L(0x1a1e24);
+  const b = (w: number, h: number, d: number, px: number, py: number, pz: number, m: THREE.Material) => { const m2 = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); m2.position.set(px, py, pz); m2.castShadow = true; g.add(m2); };
+  b(4.6, 0.6, 1.9, 0, 0.62, 0, silver); b(2.2, 0.55, 1.6, -0.5, 1.15, 0, L(0x2a3a4a, { transparent: true, opacity: 0.8 })); b(4.7, 0.2, 1.95, 0, 0.38, 0, dark);
+  for (const sx of [-1.5, 1.5]) for (const sz of [-0.9, 0.9]) { const w = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.36, 0.3, 14), dark); w.rotation.x = Math.PI / 2; w.position.set(sx, 0.36, sz); g.add(w); }
+  for (const sz of [-0.6, 0.6]) b(0.06, 0.16, 0.3, 2.32, 0.7, sz, L(0xfff4d0, { emissive: 0xffe0a0 }));
+  g.position.set(x, 0, z); R.room.group.add(g); R.collider(x - 2.4, z - 1, x + 2.4, z + 1);
+}
+/** Стол рулетки: сукно, колесо, фишки. */
+function roulette(R: Builder, x: number, z: number) {
+  R.box(x, z, 3.4, 1.8, 0.95, { tex: 'darkwood' }); R.box(x, z, 3.2, 1.6, 0.04, { color: 0x1f6a45, y: 0.95, solid: false });
+  const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.6, 0.18, 24), L(0x5a3a22)); wheel.position.set(x - 1.0, 1.08, z); R.room.group.add(wheel);
+  const top = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.04, 24), L(0xc41e3a)); top.position.set(x - 1.0, 1.18, z); R.room.group.add(top); R.onUpdate((dt) => { top.rotation.y += dt * 2; wheel.rotation.y -= dt * 0.6; });
+  for (let i = 0; i < 6; i++) R.box(x + 0.2 + (i % 3) * 0.4, z - 0.3 + Math.floor(i / 3) * 0.5, 0.18, 0.18, 0.08 + (i % 2) * 0.08, { color: [0xc41e3a, 0x1a1a1e, 0xe8c36a][i % 3], y: 0.97, solid: false, cast: false });
 }
 
-const hideout: RoomDef = {
-  card: (G) => G.f.intro_rub ? null : [[actOf(G), 'act'], ['THE LAST HEIST', 'big'], ['неон · стекло · металл · план, от которого придётся отступить', 'sm']],
-  name: 'Гараж под эстакадой', chapter: 'Акт II · Рубен', w: 22, d: 11, music: 'heist', amb: 'city', step: 'metal', grade: GRADE,
+// ---------------- 1. терраса над озером ----------------
+const terrace: RoomDef = {
+  card: (G) => G.f.intro_rub ? null : (G.f.intro_rub = 1, [[actOf(G), 'act'], ['ROYAL FLUSH', 'big'], ['шпионский триллер · казино у озера · ставка на себя', 'sm']]),
+  name: 'Терраса казино', chapter: 'Рубен', w: 34, d: 14, music: 'heist', amb: 'wind', step: 'stone', grade: { ...GRADE, tint: [0.96, 0.98, 1.08] }, camDist: 24,
   build(R, G) {
-    const f = G.f; neonBase(R, 'concrete');
-    R.light(-6, 4, -2, 0xff4fa0, 18, 12); R.light(6, 4, -2, 0x40e0d0, 18, 12); R.light(0, 4, 2, 0xffe0c0, 10, 12);
-    R.decal(neonSign('ПЛАН Б', '#ff4fa0'), { x: -4, y: 5, w: 4, h: 0.9, glow: true }); R.decal(neonSign('НЕ ЗВОНИТЬ', '#40e0d0', 80), { x: 6, y: 5.4, w: 5, h: 0.9, glow: true });
-    R.sprite('hoverbike', 6.5, 2.4, { scale: 1.6, solid: 1.2 }); R.sprite('speaker', -9, -4.6, { scale: 1.2 }); R.sprite('holo', 0, -4.6, { scale: 2.2, glow: true });
-    R.table(0, -1, 4, 1.8, { tex: 'metal' });
-    R.inter('plan', 0, 0.3, { label: f.rub_plan ? 'Доска плана (утверждено)' : 'Доска плана', fn: async (G) => {
-      if (f.rub_plan) return G.run(['~: План утверждён. ' + f.rub_route_t + ', ' + f.rub_gadget_t + ', ' + f.rub_time_t + '. Красиво. Как сценарий.']);
-      await G.run(D.planIntro);
-      const r = await pick({ title: 'План ограбления', sub: 'казино «Фортуна»', intro: 'Ты предлагаешь, Рубен утверждает.', rows: [
-        { id: 'route', label: 'Маршрут', options: [{ id: 'vent', text: 'Вентиляция', hint: 'тихо, тесно, мимо главного поста' }, { id: 'service', text: 'Служебный вход', hint: 'через кухню, меньше охраны' }, { id: 'front', text: 'Парадный зал', hint: 'нагло, на виду у хозяйки' }] },
-        { id: 'gadget', label: 'Гаджет', options: [{ id: 'emp', text: 'Глушилка Ноля', hint: 'ослепить визоры охраны' }, { id: 'holo', text: 'Голо-маска', hint: 'на пару секунд стать невидимой' }, { id: 'key', text: 'Магнитный ключ', hint: 'лифт без ключ-карты' }] },
-        { id: 'time', label: 'Время', options: [{ id: 'shift', text: 'Пересменка', hint: 'охрана медленнее' }, { id: 'show', text: 'Во время шоу', hint: 'хозяйка занята на сцене' }] }], confirm: 'Предложить Рубену' });
-      const RT: any = { vent: D.routeVent, service: D.routeService, front: D.routeFront }, GT: any = { emp: 'глушилка', holo: 'голо-маска', key: 'магнитный ключ' }, TT: any = { shift: 'в пересменку', show: 'во время шоу' };
-      G.set({ rub_plan: 1, rub_route: r.route, rub_gadget: r.gadget, rub_time: r.time, rub_route_t: RT[r.route], rub_gadget_t: GT[r.gadget], rub_time_t: TT[r.time], rub_charges: r.gadget === 'emp' ? 3 : r.gadget === 'holo' ? 2 : 0 });
-      await G.run(D.planAfter(RT[r.route], GT[r.gadget], TT[r.time])); G.toast(D.gadgetHint[r.gadget as 'emp'], '⚙'); G.mech('gadget'); } });
-    R.npc('ruben_heist', -2.4, -2.6, { id: 'ruben', talk: (G: any) => G.run(f.rub_plan ? ['ruben: Готова? Лифт до «Фортуны», за дверью. Если что, я в наушнике.'] : ['ruben: Сначала план. Потом лифт. Потом, от чего отступать.']) });
-    R.npc('nol', 2.6, -2.8, { talk: ['nol: Я взломала камеры казино. Все показывают одно и то же: женщину в золотой полумаске. Она смотрит прямо в объектив.', 'nol: Это не запись. Она смотрит на меня сейчас.'] });
-    R.npc('kasseta', 8.4, 0.6, { dir: 'l', talk: ['kasseta: Байк заправлен. Плейлист собран. Если начнётся погоня, я включу что-нибудь, под что приятно уворачиваться.'] });
-    R.door('lift', -8, { label: 'Лифт в «Фортуну»', col: '#1c2438', sign: '↑ 88', glow: '#40e0d0', cond: () => !!f.rub_plan, locked: D.planNo, fn: async (G) => { G.sfx('engine'); await G.goto('rub_casino', f.rub_route, { fade: 'glitch' }); } });
-    R.spawn('start', 4, 3, 'b');
+    const f = G.f; R.room.group.userData.bg = 0x0a1028; fog(R, 0x101830, 40, 110); R.floor('stone', { tint: '#c8c0b0', d: 10.5, z: 1.75 }); R.ambient(0x3a4060, 2.6, 0xc0c8e8); R.sun(0x9ab0e0, 1.6, -8, 14, 10);
+    // горы и озеро на заднем плане
+    const sky = canvasTex(160, 60, (c) => { const g = c.createLinearGradient(0, 0, 0, 60); g.addColorStop(0, '#0a1030'); g.addColorStop(0.6, '#3a3a6a'); g.addColorStop(1, '#a86a6a'); c.fillStyle = g; c.fillRect(0, 0, 160, 60); c.fillStyle = '#fff'; for (let i = 0; i < 40; i++) c.fillRect((i * 53) % 160, (i * 29) % 26, 1, 1); c.fillStyle = '#1a1e30'; c.beginPath(); c.moveTo(0, 48); for (let x = 0; x <= 160; x += 10) c.lineTo(x, 30 + Math.abs(Math.sin(x * 0.07)) * 16 + (x % 20 ? 4 : 0)); c.lineTo(160, 60); c.lineTo(0, 60); c.fill(); c.fillStyle = '#e8e8f0'; for (let x = 20; x < 160; x += 40) { c.beginPath(); c.moveTo(x - 4, 34); c.lineTo(x, 30); c.lineTo(x + 4, 34); c.fill(); } c.fillStyle = '#ffd890'; for (let i = 0; i < 30; i++) c.fillRect((i * 37) % 160, 48 + (i * 7) % 6, 1, 1); }, 'alps');
+    const back = new THREE.Mesh(new THREE.PlaneGeometry(150, 46), new THREE.MeshBasicMaterial({ map: sky })); back.position.set(0, 4, -30); R.room.group.add(back);
+    const lake = new THREE.Mesh(new THREE.PlaneGeometry(200, 30), new THREE.MeshLambertMaterial({ color: 0x1a2a50, emissive: 0x0c1430 })); lake.rotation.x = -Math.PI / 2; lake.position.set(0, -1.2, -18); for (let i = 0; i < 40; i++) { const gl = new THREE.Mesh(new THREE.PlaneGeometry(0.6 + (i % 3) * 0.4, 0.08), new THREE.MeshBasicMaterial({ color: 0xffd890 })); gl.rotation.x = -Math.PI / 2; gl.position.set(-40 + (i * 7.3) % 80, -1.15, -6 - (i * 3.7) % 20); R.room.group.add(gl); } R.room.group.add(lake);
+    // фасад казино справа, балюстрада над озером
+    R.box(13, -2, 8, 10, 9, { tex: 'white', tint: '#e8e0d0' }); for (const y of [2.4, 5.6]) for (const z of [-5, -2, 1]) R.decal(canvasTex(10, 14, (c) => { c.fillStyle = '#c8b898'; c.fillRect(0, 0, 10, 14); c.fillStyle = '#ffd890'; c.fillRect(1, 1, 8, 12); c.fillStyle = '#c8b898'; c.fillRect(4, 1, 2, 12); }, 'cwin'), { x: 8.98, y, at: z, w: 1.2, h: 1.7, noSlot: true, glow: true }).rotation.y = -Math.PI / 2;
+    for (let x = -17; x <= 8; x += 1) R.box(x, -3.3, 0.18, 0.18, 1.1, { tex: 'white', solid: false, cast: false }); R.box(-4.5, -3.3, 26, 0.4, 0.15, { tex: 'white', y: 1.1, solid: false }); R.box(-4.5, -3.3, 26, 0.6, 0.6, { tex: 'stone', tint: '#c8c0b0', y: -0.6, solid: false }); R.collider(-17, -7, 9, -3.1);
+    for (const [x, z] of [[-14, -2.6], [-6, -2.6], [2, -2.6]]) { R.box(x, z, 0.2, 0.2, 3, { color: 0x2a2a2e, solid: false }); R.sprite('lantern', x, z, { y: 3, glow: true, scale: 1.1, thin: true }); R.light(x, 3.2, z + 0.6, 0xffd890, 8, 8); }
+    palm(R, -16, 4.8); palm(R, 4, 5.6); car(R, -5, 3.6); statue(R, -11, 0.4, { pose: 'muse' });
+    R.look('car', -5, 5.2, 'Серебристый автомобиль', D.car); R.look('lake', -9, -2.2, 'Озеро', D.lake);
+    R.door('casino', 13, { z: 3.02, label: 'Вход в казино', col: '#3a1a14', sign: 'CASINO', w: 2.6, h: 3.6, fn: (G) => G.goto('rub_casino', 'start', { fade: 'fade' }) });
+    R.npc('ruben_tux', 6.4, 0.6, { id: 'ruben', dir: 'l', talk: ['ruben/worried: Пойдём? Я буду делать вид, что я агент. А ты делай вид, что не видишь, как у меня трясутся руки.'] });
+    R.npc('nol', -12.6, 3.6, { dir: 'r', talk: ['nol: Наушники проверены, линия чистая. Всё, что скажешь, он услышит. Всё.'] });
+    R.spawn('start', -14, 2.4, 'r');
   },
-  async enter(G) { if (!G.f.intro_rub) { G.f.intro_rub = 1; true } if (G.f.intro_rub === 1 && (G.f.intro_rub = 2)) await G.run(D.arrive); },
+  async enter(G) { dressCode(G); if (!G.f.rub_arr) { G.f.rub_arr = 1; await G.run(D.arrive); } },
 };
+
+// ---------------- 2. большой зал ----------------
 const casino: RoomDef = {
-  name: 'Казино «Фортуна»', w: 40, d: 16, music: 'heist', amb: 'crowd', step: 'carpet', grade: GRADE, camDist: 26,
+  name: 'Большой зал', w: 40, d: 16, music: 'heist', amb: 'crowd', step: 'carpet', grade: GRADE, camDist: 26,
   build(R, G) {
-    const f = G.f; neonBase(R, 'carpet'); R.floor('checker', { x: 0, z: -2, w: 16, d: 6, y: 0.01 });
-    for (let x = -16; x <= 16; x += 8) R.light(x, 5, -3, x % 16 ? 0xff4fa0 : 0x40e0d0, 16, 14);
-    R.light(0, 5, 3, 0xffe0b0, 14, 16);
-    R.decal(neonSign('ФОРТУНА', '#f2c230', 96), { x: 0, y: 6, w: 8, h: 1.2, glow: true });
-    for (const x of [-18, -16, -14, 14, 16, 18]) R.sprite('slot', x, -7, { scale: 1.5, solid: 0.5, emissive: 0x220022 });
-    for (const [x, z] of [[-9, 2], [9, 2], [-9, -3], [9, -3]]) { R.box(x, z, 3, 1.6, 1, { color: 0x1f6a45 }); R.sprite('chair', x - 2, z, { scale: 0.9 }); R.sprite('chair', x + 2, z, { scale: 0.9 }); }
-    R.sprite('holo', -4, -7.3, { scale: 2, glow: true }); R.sprite('holo', 4, -7.3, { scale: 2, glow: true });
-    // хозяйка зала, Алла Ева в роли Леди Фортуны
-    R.box(0, -2.5, 4, 1.8, 1, { color: 0x1f6a45 }); const host = R.npc('hostess', 0, -4.2, { talk: async (G: any) => { await G.run(D.fortuna); if (!f.rub_fort) { f.rub_fort = 1; await G.run(D.fortunaAfter); } } }); R.spot(0, 8, -1, 0, -4.2, 0xffe0a0, 60, { angle: 0.25, cone: 0.06, shadow: false });
-    R.photo('fortuna', 'Леди Фортуна', 0, -4.2);
-    // пост охраны и карта
-    R.box(17, 4, 2.4, 1.6, 1.2, { tex: 'metal' });
-    if (!f.rub_card && f.rub_gadget !== 'key') { R.sprite(canvasTex(8, 5, (c) => { c.fillStyle = '#40e0d0'; c.fillRect(0, 0, 8, 5); c.fillStyle = '#111'; c.fillRect(1, 1, 3, 1); }, 'card'), 17, 4.2, { y: 1.25, glow: true, name: 'cardSpr' });
-      R.inter('desk', 17, 5.5, { label: 'Пост охраны', fn: async (G) => { await G.run(D.desk); f.rub_card = 1; G.room.named.cardSpr.visible = false; await G.run(D.deskGot); G.sfx('pickup'); G.egg('donut'); } }); }
-    R.door('lift', 17, { label: 'Лифт в хранилище', col: '#2a2a3a', sign: 'ВАЛЮТА', glow: '#ff4fa0', cond: () => !!f.rub_card || f.rub_gadget === 'key', locked: D.elevatorLocked, fn: async (G) => { G.sfx('engine'); await G.goto('rub_lasers', 'start', { fade: 'glitch' }); } });
-    // охрана: количество и скорость зависят от плана
-    const slow = f.rub_time === 'shift' ? 0.75 : 1; const catchFn = async (G: any) => { G.sfx('alarm'); G.flash(0.3); await G.run(D.caught); const sp = G.room.spawns[f.rub_route] || G.room.spawns.start; G.player.place(sp.x, sp.z, 'b'); G.camSnap(); };
-    R.guard('guard', [[-12, 6], [-12, -5], [-4, -5], [-4, 6]], { speed: 2.4 * slow, range: 5.5, half: 0.42, onCatch: catchFn, id: 'g1', color: 0xff3050 });
-    R.guard('guard', [[4, 6], [12, 6], [12, -5], [4, -5]], { speed: 2.2 * slow, range: 5.5, half: 0.42, onCatch: catchFn, id: 'g2', color: 0xff3050 });
-    if (f.rub_route !== 'vent') R.guard('guard', [[14, -5], [14, 6]], { speed: 2 * slow, range: 5, half: 0.4, onCatch: catchFn, id: 'g3', color: 0xff3050, pause: 1.4 });
-    if (f.rub_time !== 'show') R.guard('guard', [[-6, -6], [6, -6]], { speed: 2.6 * slow, range: 4.5, half: 0.5, onCatch: catchFn, id: 'g4', color: 0xff3050 });
-    else host.hidden = false;
-    R.spawn('start', -18, 6, 'r'); R.spawn('vent', -17, -5.6, 'r'); R.spawn('service', -18, 6.5, 'r'); R.spawn('front', 0, 7, 'b');
+    const f = G.f; R.room.group.userData.bg = 0x0c0806; R.floor('parquet', { tint: '#8a5a3a' }); R.walls('wallpaper', { h: 9, tint: '#8a2a2a', trim: 'gold' }); R.ambient(0x5a3a2a, 2.6, 0xffd8b0);
+    rug(R, 0, 1, 26, 8, { col: '#3a0a10', border: '#d4ae48' });
+    for (const x of [-12, 0, 12]) chandelier(R, x, 7.6, 0, 1.4, { light: 14 });
+    for (const x of [-16, -8, 8, 16]) sconce(R, x, 4, -7.96, { light: 4 });
+    window3D(R, -2, { wall: 'w', y: 4, w: 2.4, h: 4, night: true, curtains: true }); window3D(R, 3, { wall: 'w', y: 4, w: 2.4, h: 4, night: true, curtains: true });
+    roulette(R, -11, 1); roulette(R, 11, 1); R.look('roul', -11, 2.6, 'Рулетка', D.roulette);
+    for (const [x, z] of [[-6, 4.6], [6, 4.6]]) { R.box(x, z, 3, 1.4, 0.95, { tex: 'darkwood' }); R.box(x, z, 2.8, 1.2, 0.04, { color: 0x1f6a45, y: 0.95, solid: false }); }
+    barCounter(R, -13, -6.4, 8); R.npc('barman', -13, -4.6, { dir: 'f', talk: D.bar });
+    R.npc('croupier', -11, -0.4, { dir: 'f', talk: ['croupier: Ставки сделаны, ставок больше нет. Ой, простите, мадемуазель, это я по привычке.'] }); R.actor('croupier', 11, -0.4, { dir: 'f', id: 'cr2' });
+    R.npc('hostess', 4, -4.6, { talk: async (G: any) => { await G.run(D.fortuna); if (!f.rub_fort) { f.rub_fort = 1; await G.run(D.fortunaAfter); } } }); R.spot(4, 8, -2, 4, -4.6, 0xffe0a0, 50, { angle: 0.25, cone: 0.05, shadow: false });
+    R.photo('fortuna', 'Леди Фортуна', 4, -4.6);
+    // салон за бархатной верёвкой: дверь на дальней стене, не за декором
+    R.door('salon', 12.5, { label: f.rub_rope ? 'Частный салон' : 'Частный салон (бархатная верёвка)', sign: 'SALON PRIVÉ', col: '#5a0c18', w: 2.4, fn: async (G) => { if (!f.rub_rope) { await G.run(D.ropeLocked); await G.run(D.ropePlan); f.rub_rope = 1; if (f.rub_fake) f.rub_ctrl = (f.rub_ctrl || 0) + 1; } G.sfx('door'); await G.goto('rub_salon', 'start', { fade: 'fade' }); } });
+    for (const sx of [-1.6, 1.6]) { R.box(12.5 + sx, -6.6, 0.12, 0.12, 1, { tex: 'gold', solid: false }); } R.box(12.5, -6.6, 3.2, 0.06, 0.06, { color: 0x8e1830, y: 0.85, solid: false, cast: false });
+    R.npc('guard', 15.2, -6.0, { dir: 'l', talk: D.ropeLocked });
+    R.actor('ruben_tux', 9.6, -5.2, { id: 'ruben', dir: 'r' });
+    R.crowd(['courtier', 'collector', 'lydia', 'courtier'], -6, 6.4, 4, 3.6, 1.2, 'b');
+    R.door('out', 0, { wall: 's', to: 'rub_terrace', spot: 'start', label: 'На террасу' });
+    R.spawn('start', 0, 5.4, 'b');
   },
-  async enter(G) { if (!G.f.rub_cas) { G.f.rub_cas = 1; await G.run(D.casinoIn); if (G.f.rub_route === 'front') { await G.run(D.fortuna); G.f.rub_fort = 1; await G.run(D.fortunaAfter); } } },
-  onKey(G, a) {
-    if (a !== 'laneG') return; const f = G.f;
-    if (!(f.rub_charges > 0)) return G.toast(f.rub_gadget === 'key' ? 'Магнитный ключ работает только на лифте' : 'Зарядов нет', '⚙');
-    f.rub_charges--; const p = G.player;
-    if (f.rub_gadget === 'emp') { G.sfx('emp'); G.flash(0.2); for (const g of G.room.guards) if (Math.hypot(g.actor.x - p.x, g.actor.z - p.z) < 9) g.off = 5; G.toast('Глушилка: зарядов ' + f.rub_charges, '⚡'); }
-    else { G.sfx('glitch'); (p as any).stealth = true; p.alpha = 0.35; setTimeout(() => { (p as any).stealth = false; p.alpha = 1; }, 4000); G.toast('Голо-маска: зарядов ' + f.rub_charges, '◐'); }
-  },
+  async enter(G) { dressCode(G); if (!G.f.rub_hall) { G.f.rub_hall = 1; await G.run(D.hallIn); } },
 };
-const lasers: RoomDef = {
-  name: 'Коридор хранилища', w: 30, d: 8, music: 'heist', amb: 'hum', step: 'metal', grade: { ...GRADE, tint: [1.05, 0.9, 1] },
+
+// ---------------- 3. частный салон: три руки покера ----------------
+const salon: RoomDef = {
+  name: 'Частный салон', w: 18, d: 11, music: 'noir', amb: null, step: 'carpet', grade: { ...GRADE, vig: 0.65, contrast: 1.15 }, camDist: 20,
   build(R, G) {
-    neonBase(R); R.light(0, 4, 0, 0xff3050, 14, 20); R.light(-10, 4, 0, 0x40e0d0, 10, 12); R.light(10, 4, 0, 0x40e0d0, 10, 12);
-    const hit = async (G: any) => { G.sfx('alarm'); G.flash(0.4); await G.run(D.laserHit); G.player.place(-13, 0, 'r'); G.camSnap(); };
-    [-8, -4, 0, 4, 8].forEach((x, i) => R.laser(x, -3.6, x, 3.6, { period: 2.4, duty: 0.55, phase: i * 0.48, onHit: hit }));
-    R.laser(11, -3.6, 11, 0.4, { period: 1.6, duty: 0.5, phase: 0.2, onHit: hit }); R.laser(11, -0.4, 11, 3.6, { period: 1.6, duty: 0.5, phase: 1.0, onHit: hit });
-    R.door('vault', 14.2, { label: 'Хранилище', col: '#3a3a4a', sign: '◎', z: -3.96, fn: (G) => G.goto('rub_vault', 'start', { fade: 'fade' }) });
-    R.spawn('start', -13, 0, 'r');
+    const f = G.f; R.room.group.userData.bg = 0x050304; R.floor('carpet'); R.walls('woodwall', { h: 6, tint: '#5a3a2a' }); R.ambient(0x3a2a20, 2.4, 0xd8b090); R.particles('dust', { count: 60, top: 5 });
+    // покерный стол под низкой лампой
+    const t = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.4, 0.2, 32), L(0x5a3a22)); t.scale.z = 0.55; t.position.set(0, 1.0, -1.4); R.room.group.add(t);
+    const cloth = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 0.04, 32), L(0x1f6a45)); cloth.scale.z = 0.55; cloth.position.set(0, 1.11, -1.4); R.room.group.add(cloth); R.collider(-2.4, -2.7, 2.4, -0.1);
+    R.box(0, -1.4, 1.2, 0.5, 0.06, { color: 0xc8b890, emissive: 0x806030, y: 3.6, solid: false, cast: false }); R.box(0, -1.4, 0.04, 0.04, 2.4, { color: 0x2a2a2a, y: 3.6, solid: false, cast: false }); R.light(0, 3.2, -1.4, 0xffd890, 9, 7); R.light(-5, 3.5, 1, 0xd8a070, 6, 9); R.light(5, 3.5, 1, 0xd8a070, 6, 9);
+    for (let i = 0; i < 8; i++) R.box(-0.9 + (i % 4) * 0.6, -1.5 + Math.floor(i / 4) * 0.3, 0.2, 0.2, 0.06 + (i % 3) * 0.05, { color: [0xc41e3a, 0x1a1a1e, 0xe8c36a][i % 3], y: 1.13, solid: false, cast: false });
+    armchair(R, -6.4, -3.6, { col: 0x5a1a22, ry: 0.4 }); armchair(R, 6.4, -3.6, { col: 0x5a1a22, ry: -0.4 });
+    R.decal(canvasTex(24, 18, (c) => { c.fillStyle = '#86641c'; c.fillRect(0, 0, 24, 18); c.fillStyle = '#2a3a5a'; c.fillRect(2, 2, 20, 14); c.fillStyle = '#e8e0d0'; c.fillRect(4, 10, 16, 3); c.fillStyle = '#5a6a8a'; c.beginPath(); c.moveTo(4, 10); c.lineTo(10, 5); c.lineTo(15, 10); c.fill(); }, 'safepaint'), { x: 5.4, y: 3.2, w: 2.4, h: 1.8 });
+    R.npc('zero', 0, -2.9, { dir: 'f', talk: (G: any) => poker(G) }); R.actor('collector', -1.9, -1.6, { dir: 'r', id: 'p1' }); R.actor('courtier', 1.9, -1.6, { dir: 'l', id: 'p2' });
+    R.npc('ruben_tux', 0, 0.2, { id: 'ruben', dir: 'b', talk: (G: any) => poker(G) });
+    if (f.rub_won && !G.has('marionette')) R.inter('safe', 5.4, -4.4, { label: 'Сейф за картиной', fn: vaultScene });
+    R.door('out', -5.5, { label: 'В большой зал', col: '#5a0c18', fn: (G) => G.goto('rub_casino', 'start') });
+    R.spawn('start', -5.5, -3.6, 'r');
   },
-  async enter(G) { if (!G.f.rub_las) { G.f.rub_las = 1; await G.run(D.lasers); } },
+  async enter(G) { dressCode(G); if (!G.f.rub_salonI) { G.f.rub_salonI = 1; await G.run(D.salonIn); G.mech('masks'); } },
 };
-const vault: RoomDef = {
-  name: 'Хранилище', w: 18, d: 12, music: null, amb: 'hum', step: 'metal', grade: { ...GRADE, tint: [1.1, 1, 0.85] },
-  build(R, G) {
-    neonBase(R); R.light(0, 5, 0, 0xffd890, 30, 16);
-    for (let i = 0; i < 6; i++) { const x = -6 + (i % 3) * 6 * (i < 3 ? 1 : 1), z = i < 3 ? -4 : 3; R.box(x, z, 2.4, 1.2, 0.9 + (i % 2) * 0.5, { tex: 'gold' }); R.box(x, z, 1.8, 0.9, 0.4, { tex: 'gold', y: 0.9 + (i % 2) * 0.5, solid: false }); }
-    R.box(0, -0.5, 1.4, 1.4, 1.1, { tex: 'velvet' }); if (!G.has('marionette')) R.sprite('marionette', 0, -0.5, { y: 1.1, scale: 1.4, name: 'puppet' });
-    R.spot(0, 8, 2, 0, -0.5, 0xffffff, 80, { angle: 0.22, cone: 0.1, shadow: false });
-    R.inter('puppet', 0, 0.6, { label: 'Марионетка на подушке', cond: () => !G.flag('rub_vault'), fn: vaultScene });
-    R.actor('ruben_heist', -2.2, 1.6, { id: 'ruben', dir: 'r' });
-    R.spawn('start', 0, 4.6, 'b');
-  },
-};
-async function vaultScene(G: any) {
-  G.set('rub_vault', 1); const rub = G.actor('ruben'); await rub.walkTo(-0.8, 0.4, 3); rub.face(0, -0.5);
-  await G.run(D.vault.slice(0, 4)); G.room.named.puppet.visible = false; G.give('marionette', true);
-  G.sfx('switch'); G.grade({ bright: 0.5, tint: [1.3, 0.5, 0.55], sat: 1.4 }); G.sfx('alarm'); G.shake(0.3); G.audio.music('chase');
-  await G.run(D.vault.slice(4)); await G.run(D.vaultChoice);
-  await G.ui.card([['КРЫША «ФОРТУНЫ»', 'act'], ['план ушёл, люди остались', 'sm']]);
-  await G.run(D.chaseIntro);
-  let ok = false; while (!ok) { const r = await runner({ track: 'chase', title: 'Погоня', sub: '← → или A / D: уворачиваться от дронов', duration: 32 }); ok = r.ok; if (!ok) await G.run(D.chaseLose); }
-  G.audio.music('heist'); await G.run(D.end); G.sfx('applause', { dur: 3 });
-  await finishChapter(G, 'ruben', [['THE LAST HEIST', 'act'], 'Рубен отказался от золота и от чужого плана.', ['Самое ценное в сейфе, то, что выходит из него живым.', 'sm']]);
+/** Одна рука: Варя видит игру с бара; маска Трагедии показывает спрятанный «телл». */
+async function hand(G: any, intro: any[], tr: any[], ask: any[], rightIsCall: boolean) {
+  const f = G.f; await G.run(intro); const sees = G.state.mask === 'tragedy'; if (sees) await G.run(tr); else G.toast('Маска Трагедии (2) показала бы, что Зеро прячет', '☹');
+  await G.run(ask);
+  let r = 0; const opts: any[] = [['Настоять на своей подсказке', [() => { r = 0; }]], ['Промолчать: пусть Рубен читает стол сам', [() => { r = 1; }]]];
+  if (sees) opts.push([rightIsCall ? 'Подсказать: «Отвечай, у него ничего нет»' : 'Подсказать: «Сбрасывай, у него сила»', [() => { r = 2; }]]);
+  await G.run([{ c: opts }]);
+  const call = r === 0 ? !rightIsCall : true === rightIsCall; // Варина первая подсказка всегда неверна; Рубен сам читает верно
+  if (r !== 1) f.rub_ctrl = (f.rub_ctrl || 0) + 1;
+  if (r === 2) await G.run(['ruben/sad: (тихо) Ты опять решила за меня. Правильно решила. Но за меня.']);
+  if (call) await G.run(rightIsCall ? D.callWin : D.callLose); else await G.run(rightIsCall ? D.foldBad : D.foldGood);
 }
-export const rooms: Record<string, RoomDef> = { rub_hideout: hideout, rub_casino: casino, rub_lasers: lasers, rub_vault: vault };
+async function poker(G: any) {
+  const f = G.f; if (f.rub_won) return G.run(['zero: Партия окончена, месье. Сейф ваш. Не люблю проигрывать, но люблю красивые блефы.']);
+  G.focus(0, -1.4, 12);
+  await hand(G, D.hand1, D.hand1Tr, D.hand1Ask, false);
+  await hand(G, D.hand2, D.hand2Tr, D.hand2Ask, true);
+  await G.run(D.hand3); await G.run(D.hand3Choice); G.sfx('heart'); await G.wait(0.6); await G.run(D.hand3Ruben);
+  await G.run(f.rub_silent ? D.hand3Silent : D.hand3Talked); f.rub_won = 1; G.sfx('applause', { dur: 2 }); G.unfocus(); await G.rebuild();
+}
+async function vaultScene(G: any) {
+  await G.run(D.vault.slice(0, 2)); G.give('marionette', true); G.sfx('pickup'); await G.run(D.vault.slice(2));
+  G.sfx('alarm'); G.audio.music('chase'); await G.ui.card([['СЕРПАНТИН НАД ОЗЕРОМ', 'act'], ['план ушёл, люди остались', 'sm']]); await G.run(D.chaseIntro);
+  let ok = false; while (!ok) { const r = await runner({ track: 'chase', title: 'Погоня', sub: '← → или A / D: уворачиваться от машин охраны', duration: 30 }); ok = r.ok; if (!ok) await G.run(D.chaseLose); }
+  G.audio.music('heist'); await G.run(D.end); G.sfx('applause', { dur: 3 });
+  await finishChapter(G, 'ruben', [['ROYAL FLUSH', 'act'], 'Рубен поставил всё на свой прочёт.', ['Лучшая подсказка иногда, это тишина.', 'sm']]);
+}
+export const rooms: Record<string, RoomDef> = { rub_terrace: terrace, rub_casino: casino, rub_salon: salon };

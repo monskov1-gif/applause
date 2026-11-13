@@ -5,7 +5,8 @@
 import * as THREE from 'three';
 import type { RoomDef, Builder } from '../world/room';
 import { canvasTex, ptext, PPU } from '../gfx/tex';
-import { charSheet, FW, FH } from '../gfx/sprites';
+import { charSheet, FW as FW0, FH as FH0, SS } from '../gfx/sprites';
+const FW = FW0 * SS, FH = FH0 * SS;
 import { P } from '../data/dialogue/polina';
 import { lock } from '../ui/minigames';
 import { finishChapter, carriedLight, rainy, fog, actOf } from './common';
@@ -359,8 +360,8 @@ export async function fallApart(G: any, actor: any, extra: THREE.Object3D[] = []
     { n: 'legL', x: l + Math.round(W * 0.2), y: t + Math.round(H * 0.66), w: Math.round(W * 0.3), h: H - Math.round(H * 0.66), vx: -0.8, vy: 0.2, sp: -2 },
     { n: 'legR', x: l + Math.round(W * 0.5), y: t + Math.round(H * 0.66), w: Math.round(W * 0.3), h: H - Math.round(H * 0.66), vx: 0.9, vy: 0.2, sp: 2.2 },
   ];
-  const meshes = parts.map((p, i) => { const pw = p.w / PPU, ph = p.h / PPU; const m = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), new THREE.MeshLambertMaterial({ map: cut(p.x, p.y, p.w, p.h), transparent: true, alphaTest: 0.3, side: THREE.DoubleSide }));
-    m.position.set(actor.x + (p.x + p.w / 2 - FW / 2) / PPU, (FH - (p.y + p.h / 2)) / PPU, actor.z + 0.02 * i); G.room.group.add(m); return { m, vx: p.vx * (0.7 + Math.random() * 0.6), vy: p.vy, vz: (Math.random() - 0.3) * 1.2, sp: p.sp, half: Math.min(pw, ph) / 2, rest: false }; });
+  const meshes = parts.map((p, i) => { const pw = p.w / PPU / SS, ph = p.h / PPU / SS; const m = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), new THREE.MeshLambertMaterial({ map: cut(p.x, p.y, p.w, p.h), transparent: true, alphaTest: 0.3, side: THREE.DoubleSide }));
+    m.position.set(actor.x + (p.x + p.w / 2 - FW / 2) / PPU / SS, (FH - (p.y + p.h / 2)) / PPU / SS, actor.z + 0.02 * i); G.room.group.add(m); return { m, vx: p.vx * (0.7 + Math.random() * 0.6), vy: p.vy, vz: (Math.random() - 0.3) * 1.2, sp: p.sp, half: Math.min(pw, ph) / 2, rest: false }; });
   for (const e of extra) { const wp = new THREE.Vector3(); e.getWorldPosition(wp); e.parent?.remove(e); e.position.copy(wp); G.room.group.add(e); meshes.push({ m: e as any, vx: 1.6, vy: 1, vz: 0.4, sp: 6, half: 0.2, rest: false }); }
   actor.hidden = true; G.sfx('crash'); G.shake(0.4);
   await new Promise<void>((res) => { let t2 = 0; const u = (dt: number) => { t2 += dt; for (const p of meshes) { if (p.rest) continue; p.vy -= 12 * dt; p.m.position.x += p.vx * dt; p.m.position.y += p.vy * dt; p.m.position.z += p.vz * dt; p.m.rotation.z += p.sp * dt; if (p.m.position.y < p.half) { p.m.position.y = p.half; p.vy *= -0.32; p.vx *= 0.55; p.vz *= 0.55; p.sp *= 0.5; if (Math.abs(p.vy) < 0.6) { p.rest = true; p.m.rotation.x = -Math.PI / 2 + 0.2; p.m.position.y = 0.06; G.sfx('clunk'); } } } if (t2 > 2.8) { const i = G.room.updaters.indexOf(u); if (i >= 0) G.room.updaters.splice(i, 1); res(); } }; G.room.updaters.push(u); });

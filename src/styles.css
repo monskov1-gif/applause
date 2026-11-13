@@ -250,3 +250,5 @@ body.contrast .dlg .box, body.contrast .sheet, body.contrast .choice { backgroun
 .maskopt b { font-size: 1.15rem; font-weight: 400; text-align: center; } .maskopt i { font-style: normal; font-size: .7rem; opacity: .55; } .maskopt:hover, .maskopt.on { background: rgba(212,174,72,.22); } .maskopt[data-m=comedy] b { color: #f2c230; } .maskopt[data-m=tragedy] b { color: #8aa8f0; } .maskopt[data-m=drama] b { color: #f08aa8; }
 
 .photo[data-ph] { cursor: zoom-in; } .reveal.zoom .photo-pop.big { width: min(78vw, 60rem); } .reveal.zoom .photo-pop.big .ph { width: 100%; image-rendering: auto; }
+
+body.noir-mode .dlg .port img, body.noir-mode .questbox, body.noir-mode .hud .masks, body.noir-mode .hud-r, body.noir-mode .choices, body.noir-mode .dlg .name { filter: grayscale(1) contrast(1.12); } body.noir-mode .dlg .box { background: #e8e4dc; } body.noir-mode .dlg .name { background: #1a1a1a !important; }
