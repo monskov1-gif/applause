@@ -101,6 +101,14 @@ export const TRACKS: Record<string, Track> = {
     { inst: 'pad', seq: 'a2+e3:24 d3+a3:24 d3+f3:12 c3+e3:12 e3+b3:12 a2+e3:12', vol: 0.9 },
   ] },
   // ---- финальный мюзикл THE QUEEN'S LAST CURTAIN ----
+  // Ссора с примой: низкое струнное остинато, диссонансные удары, сердцебиение в барабанах (в духе триллерных партитур).
+  fin_argue: { bpm: 84, parts: [
+    { inst: 'strings', d: 1, vol: 0.55, seq: 'd3 eb3 d3 eb3 d3 eb3 d3 eb3 d3 eb3 d3 eb3 d3 eb3 d3 eb3 | c#3 d3 c#3 d3 c#3 d3 c#3 d3 c#3 d3 c#3 d3 c#3 d3 c#3 d3' },
+    { inst: 'drums', seq: 'k..k............k..k...........', vol: 0.7 },
+    { inst: 'organ', vol: 0.35, seq: 'd2+ab2+c#3:32 eb2+a2+d3:32' },
+    { inst: 'strings', vol: 0.6, seq: '.:12 f5+b5:2 .:18 g#5+d6:2 .:14 a5+eb6:2 .:14' },
+    { inst: 'drone', vol: 0.6, seq: 'd1:64' },
+  ] },
   fin_overture: { bpm: 108, parts: [
     { inst: 'strings', d: 4, seq: MOTIF, vol: 1.2 },
     { inst: 'organ', d: 4, seq: WALTZ_CH, vol: 0.9 },
@@ -131,6 +139,18 @@ export const TRACKS: Record<string, Track> = {
     { inst: 'box', d: 4, seq: MOTIF_MAJ },
     { inst: 'pad', seq: '.:96 a2+e3:24 d3+a3:24 d3+f#3:12 e3+g#3:12 e3+b3:12 a2+e3:12', vol: 0.9 },
     { inst: 'voice', d: 12, vol: 0.35, seq: '.:96 e4 e4 e4 f#4 f#4 e4 d4 c#4' },
+  ] },
+  fin_minuet: { bpm: 112, parts: [
+    { inst: 'pluck', d: 2, vol: 0.7, seq: 'g4 d4 g4 a4 b4 c5 | d5:4 g4:4 g4:4 | e5 c5 d5 e5 f#5 g5 | g4:4 g4:4 . . | c5 d5 c5 b4 a4 b4 | c5:4 b4 a4 b4 g4 | a4 b4 a4 g4 f#4 g4 | a4:12' },
+    { inst: 'upright', d: 4, vol: 0.6, seq: 'g2 b2 d3 | b2 d3 g3 | c3 e3 g3 | b2 d3 g3 | a2 c3 e3 | g2 b2 d3 | d3 f#3 a3 | d2 f#2 a2' },
+    { inst: 'strings', vol: 0.45, seq: 'g3+b3+d4:12 g3+b3+d4:12 c4+e4+g4:12 g3+b3+d4:12 a3+c4+e4:12 g3+b3+d4:12 d4+f#4+a4:12 d4+f#4+a4:12' },
+  ] },
+  fin_storm: { bpm: 76, parts: [
+    { inst: 'drone', seq: 'd2:64', vol: 0.8 },
+    { inst: 'strings', d: 2, vol: 0.6, seq: 'd4 f4 d4 f4 d4 f4 d4 f4 | c#4 e4 c#4 e4 c#4 e4 c#4 e4 | d4 f4 d4 f4 d4 f4 d4 f4 | a3 c#4 e4 g4 a4 g4 e4 c#4' },
+    { inst: 'bass', d: 4, seq: 'd2 d2 d2 d2 | c#2 c#2 c#2 c#2 | d2 d2 d2 d2 | a1 a1 a1 a1' },
+    { inst: 'drums', seq: 'k.......k..k....', vol: 0.7 },
+    { inst: 'voice', d: 16, vol: 0.4, seq: 'd5 c#5 d5 e5' },
   ] },
   fin_bows: { bpm: 120, parts: [
     { inst: 'drums', seq: 'k.h.s.h.k.k.s.hh', vol: 0.8 },

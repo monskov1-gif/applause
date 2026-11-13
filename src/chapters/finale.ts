@@ -1,10 +1,13 @@
 // Акты V–VII. Гримёрка Аллы Евы → обрушение театра → мюзикл THE QUEEN'S LAST CURTAIN → эпилог.
 import * as THREE from 'three';
 import type { RoomDef, Builder } from '../world/room';
-import { canvasTex, ptext } from '../gfx/tex';
+import { canvasTex, ptext, tex } from '../gfx/tex';
+import { rug, chandelier, dressTex, clutterTex } from '../world/decor';
+import { window3D, sofa } from '../world/decor3d';
 import { F } from '../data/dialogue/finale';
+import { fog } from './common';
 import { rhythm, sequence } from '../ui/minigames';
-import { ROLES } from './hub';
+import { ROLES, hallShell } from './hub';
 import { CHARS } from '../data/chars';
 
 const FRIENDS = ['polina', 'ruben', 'matvey', 'erika', 'liza', 'angelina'];
@@ -16,27 +19,81 @@ const tween = (G: any, dur: number, fn: (k: number) => void) => new Promise<void
 
 // ---------- АКТ V ----------
 const diva: RoomDef = {
-  name: 'Лучшая гримёрка', chapter: 'Акт V · Гримёрка', w: 16, d: 10, music: 'dressing', amb: 'hall', step: 'carpet', grade: { tint: [1.08, 0.94, 0.92], vig: 0.6, sat: 0.95 },
+  name: 'Гримёрка примы', chapter: 'Акт V · Гримёрка', w: 18, d: 11, music: 'dressing', amb: 'hall', step: 'carpet', grade: { tint: [1.08, 0.94, 0.92], vig: 0.6, sat: 0.95 },
   build(R, G) {
-    R.floor('carpet'); R.walls('velvet', { h: 6, trim: 'gold' }); R.ambient(0x4a3030, 1.8, 0xffd8c8); R.particles('dust', { count: 60, top: 5 });
-    R.decal(canvasTex(24, 30, (c) => { c.fillStyle = '#86641c'; c.fillRect(0, 0, 24, 30); c.fillStyle = '#7ab0e8'; c.fillRect(2, 2, 20, 26); c.fillStyle = '#fff'; c.fillRect(4, 18, 16, 6); c.fillStyle = '#2a1c14'; c.fillRect(11, 2, 2, 26); }, 'paintwin'), { x: -5, y: 3, w: 2.4, h: 3 });
-    R.table(1, -3.8, 4.4, 1.2); R.decal(canvasTex(64, 48, (c) => { c.fillStyle = '#86641c'; c.fillRect(0, 0, 64, 48); c.fillStyle = '#b8c8d8'; c.fillRect(3, 3, 58, 42); for (let y = 4; y < 46; y += 7) { c.fillStyle = y % 14 ? '#fff4c8' : '#555'; c.fillRect(0, y, 3, 3); c.fillRect(61, y, 3, 3); } }, 'divamirror'), { x: 1, y: 3.4, w: 4.6, h: 3.4 });
-    for (const dx of [-2, 2]) R.light(1 + dx, 3.4, -3.4, 0xffd9a0, 4, 7, { flicker: 0.1 });
-    { const refl = R.actor('varya', 1.2, -4.85, { id: 'refl', dir: 'f' }); refl.alpha = 0.75; refl.y = 1.6; refl.shadow.visible = false; R.onUpdate(() => { const p = G.player; if (!p) return; refl.x = 1 + (p.x - 1) * 0.35; refl.moving = p.moving; refl.dir = p.dir === 'b' ? 'f' : p.dir === 'f' ? 'b' : p.dir; refl.y = 1.6; refl.shadow.visible = false; }); }
-    R.sprite('bouquet', -1, -3.8, { y: 1.15, scale: 1.2 }); R.sprite('flowerpot', 6.6, -4.4, { scale: 1.6 });
-    for (let i = 0; i < 5; i++) R.poster(['ЧАЙКА', 'ГАМЛЕТ', 'САД', 'ЛЕДИ', 'КОРОЛЕВА'][i], 'АЛЛА ЕВА', { x: -7.97, wall: 'w', at: -3 + i * 1.6, y: 3 + (i % 2) * 0.6, w: 1.2, h: 1.7 });
-    R.actor('alla', 1, -2.8, { id: 'alla', dir: 'b', pose: 'sit' });
-    R.spawn('start', -5, 3, 'b');
+    R.floor('parquet', { tint: '#7a4a3a' }); R.walls('wallpaper', { h: 6.5, tint: '#8a2a34', trim: 'gold' }); R.ambient(0x4a3030, 2.0, 0xffd8c8); R.particles('dust', { count: 60, top: 5 });
+    rug(R, 0, 0.6, 9, 5, { col: '#3a0a14', border: '#d4ae48' }); chandelier(R, -3, 5.9, 2.6, 0.8, { light: 9 });
+    window3D(R, -6, { wall: 'n', y: 3.2, w: 2, h: 3, night: true, curtains: true }); R.box(6.8, -4.6, 2.6, 1.0, 3.2, { tex: 'darkwood', tint: '#8a5a3a' }); R.box(6.8, -4.6, 2.8, 1.1, 0.12, { tex: 'gold', y: 3.2, solid: false });
+    for (let i = 0; i < 6; i++) R.sprite(dressTex(i), 3.6 + i * 0.5, 3.8, { scale: 1.2 }); R.box(4.85, 3.8, 3.4, 0.08, 0.08, { tex: 'gold', y: 2.4, solid: false }); R.collider(3.2, 3.5, 6.6, 4.1);
+    sofa(R, -5.8, 3.2, { w: 2.8, col: 0x8a1a2a, ry: Math.PI });
+    // туалетный столик с зеркалом в лампочках; в зеркале настоящее отражение Вари
+    const MX = 1, MY = 3.3, MW = 4.2, MH = 3.0, MZ = -5.38; R.table(MX, -4.6, 4.6, 1.0, { tex: 'darkwood' });
+    const glass = new THREE.Mesh(new THREE.PlaneGeometry(MW, MH), new THREE.MeshStandardMaterial({ color: 0x8a96a6, metalness: 0.4, roughness: 0.15, emissive: 0x1a2028 })); glass.position.set(MX, MY, MZ); R.room.group.add(glass);
+    const gold = new THREE.MeshLambertMaterial({ map: tex('gold') }); for (const [w, h, x, y] of [[MW + 0.4, 0.2, MX, MY + MH / 2 + 0.1], [MW + 0.4, 0.2, MX, MY - MH / 2 - 0.1], [0.2, MH, MX - MW / 2 - 0.1, MY], [0.2, MH, MX + MW / 2 + 0.1, MY]] as number[][]) { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.12), gold); b.position.set(x, y, MZ + 0.04); R.room.group.add(b); }
+    const bulb = new THREE.MeshBasicMaterial({ color: 0xfff0d0 }); for (let k = 0; k < 7; k++) for (const sx of [-1, 1]) { const b = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), bulb); b.position.set(MX + sx * (MW / 2 + 0.1), MY - MH / 2 + 0.2 + k * (MH - 0.4) / 6, MZ + 0.12); R.room.group.add(b); }
+    for (const dx of [-2, 2]) R.light(MX + dx, 3.4, -4.4, 0xffd9a0, 4, 7, { flicker: 0.1 });
+    const clip = [new THREE.Plane(new THREE.Vector3(1, 0, 0), -(MX - MW / 2)), new THREE.Plane(new THREE.Vector3(-1, 0, 0), MX + MW / 2), new THREE.Plane(new THREE.Vector3(0, 1, 0), -(MY - MH / 2)), new THREE.Plane(new THREE.Vector3(0, -1, 0), MY + MH / 2)];
+    const refl = R.actor(G.player?.charId || 'varya', MX, MZ + 0.03, { id: 'refl', dir: 'f' }); refl.shadow.visible = false; (refl.mesh.material as THREE.Material).clippingPlanes = clip;
+    R.onUpdate(() => { const p = G.player; if (!p) return; if (refl.charId !== p.charId) { refl.setChar(p.charId); (refl.mesh.material as THREE.Material).clippingPlanes = clip; }
+      const dist = Math.max(0.5, p.z - MZ); const sc = Math.max(0.55, 1 - dist * 0.04); refl.group.scale.setScalar(sc); refl.x = MX + (p.x - MX) * 0.85; refl.z = MZ + 0.03; refl.y = MY - MH / 2 - 0.4 + Math.min(1.2, dist * 0.08);
+      refl.dir = p.dir === 'b' ? 'f' : p.dir === 'f' ? 'b' : p.dir === 'l' ? 'l' : 'r'; refl.moving = p.moving; refl.pose = p.pose; refl.hidden = p.hidden; refl.shadow.visible = false; });
+    R.sprite('bouquet', -0.8, -4.6, { y: 1.15, scale: 1.2 }); for (let i = 0; i < 4; i++) R.sprite(clutterTex(['bottle', 'powder', 'brushes', 'perfume'][i]), 1.6 + i * 0.4, -4.7, { y: 1.15, scale: 0.85 });
+    for (let i = 0; i < 5; i++) R.poster(['ЧАЙКА', 'ГАМЛЕТ', 'САД', 'ЛЕДИ', 'КОРОЛЕВА'][i], 'АЛЛА ЕВА', { x: -8.97, wall: 'w', at: -3.6 + i * 1.7, y: 3 + (i % 2) * 0.6, w: 1.2, h: 1.7 });
+    R.actor('alla', 1, -3.3, { id: 'alla', dir: 'b', pose: 'sit' });
+    R.spawn('start', -6, 3, 'b');
   },
   async enter(G) {
-    if (G.f.diva_done) return; G.focus(0, -2, 15); await G.run(F.divaIn); const al = G.actor('alla'); al.pose = null; al.dir = 'f'; await G.run(F.diva1); await G.run(F.diva2);
-    G.audio.music('dressing'); await G.run(F.diva3); await G.run(F.diva4.slice(0, 1)); G.note('n_diva');
-    await G.run(F.diva4.slice(1, -3)); G.sfx('switch'); G.grade({ bright: 0.35 }); await G.run(F.diva4.slice(-3, -1)); G.shake(0.6); G.sfx('crash'); await G.run(F.diva4.slice(-1));
+    if (G.f.diva_done) return; G.focus(0, -2, 15); await G.run(F.divaIn); const al = G.actor('alla'); al.pose = null; al.dir = 'f'; await G.run(F.diva1);
+    // ссора: свет мигает, красные пульсации, сердцебиение, тревожная тема
+    G.audio.music('fin_argue', { restart: true }); let argue = true; let pulse = 0; G.room.updaters.push((dt: number, t: number) => { if (!argue) return; pulse -= dt; for (const fl of G.room.flick) fl.l.intensity = fl.base * (0.4 + Math.abs(Math.sin(t * 9 + fl.base)) * (Math.random() < 0.06 ? 0 : 1)); if (pulse < 0) { pulse = 1.1 + Math.random(); G.sfx('heart'); G.grade({ tint: [1.35, 0.8, 0.82], vig: 0.9, contrast: 1.2, glitch: Math.random() < 0.3 ? 0.4 : 0 }); setTimeout(() => G.grade({ tint: [1.1, 0.9, 0.9], vig: 0.75, glitch: 0 }), 260); } });
+    await G.run(F.diva2); G.shake(0.3); await G.run(F.diva3); argue = false; G.grade({ tint: [1.0, 0.94, 1.02], vig: 0.6, contrast: 1, glitch: 0 }); G.audio.music('dressing');
+    await G.run(F.diva4.slice(0, 1)); G.note('n_diva');
+    // ссора возвращается: Алла срывается и убегает, стена гримёрки отваливается в белую пустоту
+    G.audio.music('fin_argue', { restart: true }); G.grade({ tint: [1.3, 0.82, 0.84], vig: 0.9, contrast: 1.2 }); await G.run(F.quarrel.slice(0, -2)); G.sfx('heart'); G.shake(0.4);
+    await G.run(F.quarrel.slice(-2, -1)); await al.walkTo(-6, 4.4, 5); al.hidden = true; G.sfx('door'); G.shake(0.8); G.sfx('crash'); G.flash(0.9); await G.run(F.quarrel.slice(-1));
     G.f.diva_done = 1; G.unfocus(); if (G.state.mask) G.setMask(G.state.mask);
-    await G.ui.card([['АКТ VI', 'act'], ['THE COLLAPSE', 'big']]); await G.goto('fin_collapse', 'start', { fade: 'glitch' });
+    await G.ui.card([['АКТ VI', 'act'], ['THE COLLAPSE', 'big'], ['без друзей · за ней одной', 'sm']]); await G.goto('fin_void', 'start', { fade: 'flash' });
   },
 };
-// ---------- АКТ VI ----------
+// ---------- АКТ VI: белая пустота за театром ----------
+const PATH: [number, number][] = []; for (let x = -36; x <= 33; x += 1.5) PATH.push([x, Math.sin(x * 0.09) * 2.2 + Math.sin(x * 0.27) * 0.6]);
+const voidRoom: RoomDef = {
+  name: 'За театром', chapter: 'Акт VI · Обрушение', w: 84, d: 14, music: 'fin_argue', amb: 'wind', step: 'wood', grade: { sat: 0.7, tint: [0.95, 1.0, 1.08], vig: 0.35, bright: 1.12, bloom: 0.9, contrast: 0.95 }, noMasks: true, camDist: 22,
+  build(R, G) {
+    const f = G.f; R.room.group.userData.bg = 0xdcebf8; fog(R, 0xe8f2fc, 18, 60); R.ambient(0xc8d8f0, 3.4, 0xffffff); R.sun(0xffffff, 1.4, 6, 18, 10); R.particles('dust', { count: 200, top: 10, color: 0xffffff });
+    const wood = new THREE.MeshLambertMaterial({ map: tex('stage'), color: 0xf0dcc0 }); const planks: { m: THREE.Mesh; x: number; z: number; gone: boolean; vy: number }[] = [];
+    for (const [x, z] of PATH) { const m = new THREE.Mesh(new THREE.BoxGeometry(1.48, 0.18, 2.4), wood); m.position.set(x, -0.09, z); m.rotation.y = (Math.sin(x * 3.7) * 0.05); m.receiveShadow = true; m.castShadow = true; R.room.group.add(m); planks.push({ m, x, z, gone: false, vy: 0 }); }
+    // последний островок
+    const isl = new THREE.Mesh(new THREE.CylinderGeometry(3.6, 3.2, 0.3, 24), wood); isl.position.set(37.5, -0.15, 0); R.room.group.add(isl); R.box(38.6, -1, 0.7, 0.7, 0.5, { tex: 'velvet', solid: false }); R.box(36.4, -1.6, 0.2, 0.2, 2.6, { tex: 'metal', solid: false }); R.spot(36.4, 2.8, -1.6, 38, 0, 0xfff4e0, 30, { angle: 0.35, cone: 0.05, shadow: false });
+    // обломки театра плывут вверх в пустоте
+    const debris: THREE.Object3D[] = []; const kinds = ['chair', 'masks', 'bust', 'lantern', 'bouquet', 'book', 'umbrella', 'marionette'];
+    for (let i = 0; i < 26; i++) { const sp = R.sprite(kinds[i % kinds.length], -38 + i * 3.1, (i % 2 ? -6 : 6) + Math.sin(i) * 1.5, { y: -3 + (i % 5), scale: 1.2, thin: true }); debris.push(sp); }
+    for (let i = 0; i < 12; i++) { const fr = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 2.2), new THREE.MeshLambertMaterial({ color: 0xe8d8b8, side: THREE.DoubleSide, transparent: true, opacity: 0.85 })); fr.position.set(-34 + i * 6, -2 + (i % 3) * 2, i % 2 ? -7 : 7); R.room.group.add(fr); debris.push(fr); }
+    let safe = { x: PATH[0][0], z: PATH[0][1] }; let cue = 0; let still = 0;
+    const al = R.actor('alla', -28, PATH[5][1], { id: 'alla', dir: 'r' });
+    R.onUpdate((dt, t) => {
+      const p = G.player; if (!p) return;
+      debris.forEach((d, i) => { d.position.y += dt * (0.25 + (i % 4) * 0.08); d.rotation.z += dt * 0.1 * (i % 2 ? 1 : -1); if (d.position.y > 9) d.position.y = -5; });
+      // доски за спиной отрываются
+      for (const pl of planks) { if (!pl.gone && pl.x < p.x - 4.5) { pl.gone = true; G.sfx('creak'); } if (pl.gone) { pl.vy -= dt * 6; pl.m.position.y += pl.vy * dt; pl.m.rotation.x += dt * 0.8; pl.m.rotation.z += dt * 0.4; if (pl.m.position.y < -30) pl.m.visible = false; } }
+      // под ногами нет доски: падение, возврат на последнюю безопасную
+      if (G.lock === 0 && !f.void_isl) { const on = planks.find((pl) => !pl.gone && Math.abs(p.x - pl.x) < 0.95 && Math.abs(p.z - pl.z) < 1.4) || (Math.hypot(p.x - 37.5, p.z) < 3.4); if (on) { if (typeof on === 'object') safe = { x: on.x, z: on.z }; } else { G.flash(0.6); G.sfx('whoosh'); p.place(safe.x, safe.z, 'r'); G.camSnap(); if (!f.void_fall) { f.void_fall = 1; G.cut(() => G.run(F.fall)); } } }
+      // Алла бежит впереди, держа дистанцию, и всхлипывает на ходу
+      if (!f.void_isl) { const tx = Math.min(36.8, Math.max(al.x, p.x + 9)); if (al.x < tx - 0.05) { al.x = Math.min(tx, al.x + dt * 4.2); const k = PATH.findIndex(([x]) => x >= al.x); al.z = k >= 0 ? PATH[k][1] : 0; al.moving = true; al.dir = 'r'; } else al.moving = false; al.pose = Math.sin(t * 3) > 0.7 ? 'fear' : null; }
+      const n = Math.floor((p.x + 30) / 16); if (n > cue && n <= F.allaCries.length && G.lock === 0) { cue = n; G.toast(F.allaCries[n - 1].replace(/^alla: /, 'Алла Ева: '), '…'); G.sfx('gasp'); }
+      if (p.x > 33.5 && !f.void_isl && G.lock === 0) { f.void_isl = 1; G.cut(() => islandScene(G)); }
+      still = p.moving ? 0 : still + dt; void still;
+    });
+    R.spawn('start', -35, PATH[0][1], 'r');
+  },
+  async enter(G) { if (!G.f.void_in) { G.f.void_in = 1; await G.run(F.voidIn); G.toast('Бегите за Аллой. Доски за спиной отрываются, назад дороги нет', '→'); } },
+};
+async function islandScene(G: any) {
+  const al = G.actor('alla'); al.place(38, 0.6, 'l'); al.pose = 'sit'; G.player.walkTo(36.6, 0.2, 3); G.focus(37.5, 0, 13); G.audio.music('fin_girl', { restart: true }); G.grade({ sat: 0.95, tint: [1.08, 1.0, 0.98], bright: 1.05, bloom: 1.0 });
+  await G.run(F.island.slice(0, 3)); G.player.pose = 'sit'; await G.run(F.island.slice(3)); al.pose = null; G.player.pose = null; G.sfx('applause', { dur: 2 }); G.flash(1);
+  G.unfocus(); G.f.diva_reconcile = 1; await G.ui.card([['АКТ VII', 'act'], ['THE FINAL SHOW', 'big'], ['премьера', 'sm']]); await G.goto('fin_backstage', 'start', { fade: 'curtain' });
+}
+// ---------- (старый маршрут обрушения оставлен для сохранений) ----------
 const collapse: RoomDef = {
   name: 'Театр складывается', chapter: 'Акт VI · Обрушение', w: 62, d: 10, music: 'collapse', amb: 'wind', step: 'wood', grade: { wave: 0.35, glitch: 0.08, sat: 1.1, tint: [1.05, 0.95, 1.05], vig: 0.6 },
   build(R, G) {
@@ -79,78 +136,201 @@ const backstage: RoomDef = {
   build(R, G) {
     R.floor('stage'); R.walls('brick', { h: 6 }); R.ambient(0x4a3830, 2.2, 0xffe0c8); R.light(0, 4, 0, 0xffd8a0, 14, 12); R.particles('dust', { count: 80, top: 5 });
     for (let x = -8; x <= 8; x += 2) R.box(x, -4.3, 0.06, 0.06, 6, { color: 0x8a7a5a, solid: false });
-    TROUPE.forEach((id, i) => R.npc(id, -6 + i * 2, -1.6 + (i % 2) * 0.8, { talk: [`${id}: Ни пуха!`, 'varya/smile: К чёрту!'] }));
+    TROUPE.forEach((id, i) => R.npc(id, -6 + i * 2, -1.6 + (i % 2) * 0.8, { talk: async (G: any) => { await G.run((F.wishes as any)[id]); (G.f.wishes ||= {})[id] = 1; } })); R.actor('alla', 5, -2.6, { id: 'alla', dir: 'l' });
     R.curtain(8.6, 0, 1.4, 6, { solid: true });
     R.inter('go', 7, 1, { label: 'Выйти на сцену', fn: async (G) => { await G.goto('fin_musical', 'start', { fade: 'curtain' }); } });
     R.spawn('start', -8, 2, 'r');
   },
-  async enter(G) { if (!G.f.pre_show) { G.f.pre_show = 1; await G.run(F.preShow); G.setPlayerChar('varya'); } },
+  async enter(G) { if (!G.f.pre_show) { G.f.pre_show = 1; await G.run(G.f.diva_reconcile ? F.troupeBack : F.preShow); G.setPlayerChar('varya'); G.toast('Девочки из труппы хотят пожелать удачи. Подойдите к каждой', '♡'); } },
 };
+// ---------- Премьера: тот же зал главной сцены, картонный замок ----------
+type Shape = (c: CanvasRenderingContext2D, W: number, H: number) => void;
+/** Плоская декорация, «нарисованная на картоне»: контур картона, мазки, распорка сзади. */
+function cardFlat(R: Builder, parent: THREE.Object3D, key: string, w: number, h: number, shape: Shape, paint: Shape, x: number, z: number, o: { y?: number; holes?: Shape; brace?: boolean; pivot?: boolean } = {}) {
+  const PX = 14, W = Math.round(w * PX), H = Math.round(h * PX);
+  const t = canvasTex(W, H, (c) => {
+    c.save(); shape(c, W, H); c.fillStyle = '#b8905c'; c.fill(); c.lineWidth = 3; c.strokeStyle = '#8a6438'; c.stroke(); c.clip(); paint(c, W, H);
+    for (let i = 0; i < W * H / 60; i++) { c.fillStyle = `rgba(${Math.random() < 0.5 ? '255,250,230' : '40,20,10'},${0.04 + Math.random() * 0.05})`; c.fillRect(Math.random() * W, Math.random() * H, 2 + Math.random() * 6, 1); }
+    c.restore(); c.save(); shape(c, W, H); c.lineWidth = 2; c.strokeStyle = 'rgba(120,84,44,.9)'; c.stroke(); c.restore();
+    if (o.holes) { c.globalCompositeOperation = 'destination-out'; o.holes(c, W, H); c.globalCompositeOperation = 'source-over'; }
+  }, 'card_' + key);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshLambertMaterial({ map: t, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide }));
+  m.castShadow = true; m.receiveShadow = true; m.customDepthMaterial = new THREE.MeshDepthMaterial({ map: t, alphaTest: 0.5, depthPacking: THREE.RGBADepthPacking });
+  const g = new THREE.Group(); g.position.set(x, o.y || 0, z); m.position.y = h / 2; g.add(m); parent.add(g);
+  if (o.brace !== false) { const bm = new THREE.MeshLambertMaterial({ map: tex('wood') }); const b = new THREE.Mesh(new THREE.BoxGeometry(0.12, h * 0.75, 0.12), bm); b.position.set(0, h * 0.33, -h * 0.22); b.rotation.x = -0.6; g.add(b); const bb = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.2, 0.5), new THREE.MeshLambertMaterial({ color: 0x5a5a60 })); bb.position.set(0, 0.1, -h * 0.42); g.add(bb); }
+  return g;
+}
+const crenel = (c: CanvasRenderingContext2D, x0: number, x1: number, y: number, s: number) => { for (let x = x0; x < x1; x += s * 2) { c.lineTo(x, y); c.lineTo(x, y - s); c.lineTo(Math.min(x1, x + s), y - s); c.lineTo(Math.min(x1, x + s), y); } };
+const strokes = (c: CanvasRenderingContext2D, W: number, H: number, cols: string[], n = 40) => { for (let i = 0; i < n; i++) { c.fillStyle = cols[i % cols.length]; c.globalAlpha = 0.25; c.beginPath(); c.ellipse(Math.random() * W, Math.random() * H, 4 + Math.random() * 10, 1.5 + Math.random() * 2, Math.random() * 0.6 - 0.3, 0, 7); c.fill(); } c.globalAlpha = 1; };
+function buildCastle(R: Builder, set: THREE.Group) {
+  const N = R.room.named;
+  // задники: ночь и день, крашеное полотно
+  const sky = (key: string, night: boolean) => R.decal(canvasTex(180, 70, (c) => { const g = c.createLinearGradient(0, 0, 0, 70); if (night) { g.addColorStop(0, '#0a0c2a'); g.addColorStop(1, '#3a3a7a'); } else { g.addColorStop(0, '#6aa8e8'); g.addColorStop(1, '#f4d8a8'); } c.fillStyle = g; c.fillRect(0, 0, 180, 70); strokes(c, 180, 70, night ? ['#2a2a6a', '#50509a'] : ['#ffffff', '#a8d0f8'], 60); if (night) { c.fillStyle = '#fff4c8'; for (let i = 0; i < 70; i++) c.fillRect((i * 53) % 180, (i * 29) % 50, 1 + (i % 3 === 0 ? 1 : 0), 1); } c.fillStyle = night ? '#1a2a3a' : '#7aa86a'; c.beginPath(); c.moveTo(0, 70); for (let x = 0; x <= 180; x += 15) c.lineTo(x, 52 + Math.sin(x * 0.07) * 6); c.lineTo(180, 70); c.fill(); }, key), { x: 0, y: 5.6, z: -21.6, w: 30, h: 11.6, noSlot: true });
+  N.skyN = sky('skyNight', true); N.skyD = sky('skyDay', false); N.skyD.visible = false;
+  // главный замок
+  cardFlat(R, set, 'castle', 15, 8.4, (c, W, H) => { c.beginPath(); c.moveTo(0, H); c.lineTo(0, 30); c.lineTo(10, 8); c.lineTo(20, 30); crenel(c, 20, 76, 50, 6); c.lineTo(76, 26); c.lineTo(105, 2); c.lineTo(134, 26); crenel(c, 134, W - 20, 50, 6); c.lineTo(W - 20, 30); c.lineTo(W - 10, 8); c.lineTo(W, 30); c.lineTo(W, H); c.closePath(); }, (c, W, H) => {
+    c.fillStyle = '#d8c8e8'; c.fillRect(0, 0, W, H); c.strokeStyle = 'rgba(120,100,150,.5)'; c.lineWidth = 1; for (let y = 54; y < H; y += 8) { c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); for (let x = (y / 8) % 2 ? 0 : 7; x < W; x += 14) { c.beginPath(); c.moveTo(x, y); c.lineTo(x, y + 8); c.stroke(); } }
+    c.fillStyle = '#c84a5a'; c.beginPath(); c.moveTo(0, 30); c.lineTo(10, 8); c.lineTo(20, 30); c.fill(); c.beginPath(); c.moveTo(W - 20, 30); c.lineTo(W - 10, 8); c.lineTo(W, 30); c.fill(); c.fillStyle = '#4a6ac8'; c.beginPath(); c.moveTo(76, 26); c.lineTo(105, 2); c.lineTo(134, 26); c.fill();
+    c.fillStyle = '#c8b8d8'; c.fillRect(0, 30, 20, H); c.fillRect(W - 20, 30, 20, H); c.fillRect(80, 26, 50, H);
+    c.fillStyle = '#ffd860'; for (const [x, y] of [[8, 44], [W - 12, 44], [96, 40], [110, 40], [40, 70], [64, 70], [150, 70], [174, 70]]) { c.fillRect(x, y, 5, 8); c.beginPath(); c.arc(x + 2.5, y, 2.5, Math.PI, 0); c.fill(); }
+    c.fillStyle = '#5a3a2a'; c.fillRect(92, H - 40, 26, 40); c.beginPath(); c.arc(105, H - 40, 13, Math.PI, 0); c.fill(); c.strokeStyle = '#2a1a10'; for (let x = 96; x < 118; x += 5) { c.beginPath(); c.moveTo(x, H - 50); c.lineTo(x, H); c.stroke(); }
+    c.fillStyle = '#e84a6f'; c.fillRect(104, -2, 1, 1); c.fillRect(105, 0, 8, 5); strokes(c, W, H, ['#ffffff', '#8a7aa8'], 80);
+  }, 0, -14);
+  // башня Дамы в окне, окно прорезано
+  N.tower = cardFlat(R, set, 'tower', 3.6, 7.6, (c, W, H) => { c.beginPath(); c.moveTo(4, H); c.lineTo(4, 30); crenel(c, 0, W, 30, 5); c.lineTo(W - 4, 30); c.lineTo(W - 4, H); c.closePath(); }, (c, W, H) => { c.fillStyle = '#e8d8c0'; c.fillRect(0, 0, W, H); c.strokeStyle = 'rgba(140,110,80,.45)'; for (let y = 34; y < H; y += 7) { c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); } c.fillStyle = '#7a3a8a'; c.fillRect(14, 36, 22, 2); c.fillStyle = '#4aa860'; for (let i = 0; i < 12; i++) { c.beginPath(); c.arc(6 + (i * 13) % 40, 70 + (i * 17) % 30, 3, 0, 7); c.fill(); } c.fillStyle = '#e84a6f'; for (let i = 0; i < 6; i++) c.fillRect(8 + (i * 11) % 36, 72 + (i * 23) % 26, 2, 2); strokes(c, W, H, ['#fff', '#c8a888'], 20); },
+    -7.5, -9.6, { holes: (c, W) => { c.beginPath(); c.moveTo(W / 2 - 10, 62); c.lineTo(W / 2 - 10, 46); c.arc(W / 2, 46, 10, Math.PI, 0); c.lineTo(W / 2 + 10, 62); c.fill(); } });
+  // трон
+  cardFlat(R, set, 'throne', 2.6, 3.4, (c, W, H) => { c.beginPath(); c.moveTo(4, H); c.lineTo(4, 14); c.lineTo(W / 2, 0); c.lineTo(W - 4, 14); c.lineTo(W - 4, H); c.closePath(); }, (c, W, H) => { c.fillStyle = '#d4ae48'; c.fillRect(0, 0, W, H); c.fillStyle = '#a3122a'; c.fillRect(9, 16, W - 18, H - 22); c.fillStyle = '#ffe890'; for (let i = 0; i < 5; i++) c.fillRect(8 + i * 5, 8, 2, 2); strokes(c, W, H, ['#fff6c0', '#8a6418'], 14); }, 0, -11.6);
+  // деревья по бокам
+  N.treeR = cardFlat(R, set, 'treeR', 3.2, 5.4, (c, W, H) => { c.beginPath(); c.moveTo(W / 2 - 4, H); c.lineTo(W / 2 - 4, H - 22); c.bezierCurveTo(-4, H - 20, 0, 4, W / 2, 2); c.bezierCurveTo(W, 4, W + 4, H - 20, W / 2 + 4, H - 22); c.lineTo(W / 2 + 4, H); c.closePath(); }, (c, W, H) => { c.fillStyle = '#4a9a5a'; c.fillRect(0, 0, W, H); strokes(c, W, H, ['#2a6a3a', '#8ad07a', '#3a8a4a'], 60); c.fillStyle = '#6a4a2a'; c.fillRect(W / 2 - 4, H - 24, 8, 24); }, 10.4, -7.4, { pivot: true });
+  cardFlat(R, set, 'treeL', 3.2, 5.4, (c, W, H) => { c.beginPath(); c.moveTo(W / 2 - 4, H); c.lineTo(W / 2 - 4, H - 22); c.bezierCurveTo(-4, H - 20, 0, 4, W / 2, 2); c.bezierCurveTo(W, 4, W + 4, H - 20, W / 2 + 4, H - 22); c.lineTo(W / 2 + 4, H); c.closePath(); }, (c, W, H) => { c.fillStyle = '#5aa86a'; c.fillRect(0, 0, W, H); strokes(c, W, H, ['#2a6a3a', '#a8e08a', '#3a8a4a'], 60); c.fillStyle = '#6a4a2a'; c.fillRect(W / 2 - 4, H - 24, 8, 24); }, -11, -6.6);
+  // дверь замка, которая падает на Шута (поворот вокруг нижнего края)
+  N.door = cardFlat(R, set, 'door', 2.2, 3.4, (c, W, H) => { c.beginPath(); c.moveTo(0, H); c.lineTo(0, 14); c.arc(W / 2, 15, W / 2, Math.PI, 0); c.lineTo(W, H); c.closePath(); }, (c, W, H) => { c.fillStyle = '#8a5a34'; c.fillRect(0, 0, W, H); c.strokeStyle = '#4a2a14'; for (let x = 4; x < W; x += 6) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, H); c.stroke(); } c.fillStyle = '#d4ae48'; c.fillRect(W - 9, H / 2, 4, 4); }, 2.4, -9.2, { brace: false });
+  // зеркала в картонных рамах (спускаются к сцене зеркала)
+  const mir = new THREE.Group(); mir.position.y = 13; set.add(mir); N.mirrors = mir;
+  for (const sx of [-1, 1]) cardFlat(R, mir, 'mirror' + sx, 2.6, 4.2, (c, W, H) => { c.beginPath(); c.ellipse(W / 2, H / 2, W / 2 - 1, H / 2 - 1, 0, 0, 7); }, (c, W, H) => { c.fillStyle = '#d4ae48'; c.fillRect(0, 0, W, H); c.fillStyle = '#b8d0e8'; c.beginPath(); c.ellipse(W / 2, H / 2, W / 2 - 6, H / 2 - 6, 0, 0, 7); c.fill(); c.fillStyle = 'rgba(255,255,255,.6)'; c.fillRect(W / 2 - 8, 12, 3, H - 30); c.fillRect(W / 2 - 3, 16, 2, H - 40); strokes(c, W, H, ['#fff6c0', '#8a6418'], 16); }, sx * 4.6, -10.8, { brace: false });
+  // луна и солнце на палках, тучи на тросах
+  const onStick = (key: string, col: string, sun: boolean) => { const g = new THREE.Group(); R.room.group.add(g); const fl = cardFlat(R, g, key, 2.2, 2.2, (c, W, H) => { c.beginPath(); if (sun) { for (let a = 0; a < 16; a++) { const r = a % 2 ? W / 2 - 1 : W / 2 - 6; c.lineTo(W / 2 + Math.cos(a / 16 * 6.283) * r, H / 2 + Math.sin(a / 16 * 6.283) * r); } c.closePath(); } else { c.arc(W / 2, H / 2, W / 2 - 1, 0.6, 5.7); c.arc(W / 2 + 9, H / 2, W / 2 - 5, 5.4, 0.9, true); c.closePath(); } }, (c, W, H) => { c.fillStyle = col; c.fillRect(0, 0, W, H); strokes(c, W, H, ['#ffffff', sun ? '#e89a30' : '#c8c0a0'], 16); c.fillStyle = 'rgba(60,40,20,.7)'; c.fillRect(W / 2 - 6, H / 2 - 2, 2, 2); c.fillRect(W / 2 + 2, H / 2 - 2, 2, 2); c.fillRect(W / 2 - 4, H / 2 + 5, 7, 1); }, 0, 0, { y: 3.4, brace: false }); void fl; const st = new THREE.Mesh(new THREE.BoxGeometry(0.1, 4.6, 0.1), new THREE.MeshLambertMaterial({ map: tex('wood') })); st.position.y = 2.3; g.add(st); g.position.set(6.4, -8, -10.4); return g; };
+  N.moon = onStick('moon', '#f4ecc0', false); N.sun = onStick('sun', '#ffd040', true);
+  N.clouds = [-5, 0.5, 6].map((x, i) => { const g = new THREE.Group(); R.room.group.add(g); cardFlat(R, g, 'cloud' + i, 4.2, 1.9, (c, W, H) => { c.beginPath(); c.moveTo(4, H - 2); for (let k = 0; k < 5; k++) c.arc(8 + k * 11, H - 10 - (k % 2) * 4, 9 + (k % 2) * 3, Math.PI, 0); c.lineTo(W - 2, H - 2); c.closePath(); }, (c, W, H) => { c.fillStyle = '#5a6078'; c.fillRect(0, 0, W, H); strokes(c, W, H, ['#8a90a8', '#3a4058'], 30); }, 0, 0, { brace: false }); const wire = new THREE.Mesh(new THREE.BoxGeometry(0.02, 8, 0.02), new THREE.MeshBasicMaterial({ color: 0x222222 })); wire.position.y = 5.8; g.add(wire); g.position.set(x, 13, -12.4 + i * 0.6); return g; });
+}
+const aim = (l: any, tx: number, tz: number) => { l.target.position.set(tx, 0, tz); if (l.cone) { l.cone.lookAt(tx, 0, tz); l.cone.rotateY(Math.PI); } };
+const MARK: Record<string, [number, number]> = { erika: [-9, -5.6], polina: [-5.2, -6.6], angelina: [-2.4, -8.4], matvey: [2.4, -7.6], ruben: [6.4, -9.4], liza: [-7.5, -9.9] };
+const AUD: [string, number, number][] = [['maxim', -8, 3.4], ['nastya', -6.6, 3.4], ['matvey_bro', -5.2, 3.4], ['vasya', -3.8, 3.4], ['sofa', -2.4, 3.4], ['katya', 2.4, 3.4], ['natasha', 3.8, 3.4], ['vanya', 5.2, 3.4], ['sasha', 6.6, 3.4],
+  ['vasilisa', -5.2, 6.3], ['dana', -3.8, 6.3], ['nina', -2.4, 6.3], ['anya', 2.4, 6.3], ['olya', 3.8, 6.3]];
 const musical: RoomDef = {
-  name: "THE QUEEN'S LAST CURTAIN", w: 34, d: 16, music: null, amb: 'crowd', step: 'wood', grade: { vig: 0.55, bloom: 0.8 }, noMasks: true, noCamera: true, camZMax: 1.5, camDist: 23,
+  name: "Премьера. THE QUEEN'S LAST CURTAIN", chapter: 'Акт VII · Премьера', w: 40, d: 46, music: null, amb: 'crowd', step: 'wood', grade: { vig: 0.5, bloom: 0.55 }, noMasks: true, noCamera: true, camDist: 23,
   build(R, G) {
-    R.room.group.userData.bg = 0x020102; R.floor('stage', { d: 10, z: -3 }); R.floor('carpet', { d: 6, z: 5 }); R.walls('black', { h: 10 }); R.ambient(0x2a2028, 1.2, 0x6a5870);
-    // декорации дворца, группа, которая поднимется в финале
-    const set = new THREE.Group(); R.room.group.add(set); R.room.named.set = set;
-    const add = (o: THREE.Object3D) => { R.room.group.remove(o); set.add(o); return o; };
-    add(R.box(0, -7.6, 26, 0.3, 8, { tex: 'gold', tint: '#c8a050', solid: false })); for (const x of [-10, -5, 5, 10]) add(R.box(x, -6.6, 0.8, 0.8, 7, { tex: 'gold', solid: false }));
-    add(R.box(0, -6.2, 3, 1.4, 1.4, { tex: 'velvet', solid: false })); add(R.box(0, -6.8, 2.4, 0.4, 3.6, { tex: 'gold', solid: false }));
-    for (const x of [-8, 8]) add(R.box(x, -5, 0.2, 3, 4.4, { tex: 'mirror', solid: false, name: 'mir' + x }));
-    // занавес
-    const cur = new THREE.Group(); R.room.group.add(cur); R.room.named.curtain = cur; for (let x = -16; x <= 16; x += 2) { const b = R.box(x, 1.6, 2.1, 0.3, 10, { tex: 'velvet', solid: false }); R.room.group.remove(b); cur.add(b); }
-    R.box(0, 1.8, 34, 0.5, 1.4, { tex: 'gold', y: 8.6, solid: false });
-    // свет
-    R.spot(0, 14, 6, 0, -2, 0xffe2b0, 38, { angle: 0.4, cone: 0.06, name: 'key' }); R.spot(-10, 12, 4, -5, -2, 0xff6080, 30, { angle: 0.4, cone: 0.04, shadow: false, name: 'red' }); R.spot(10, 12, 4, 5, -2, 0x60d0d0, 30, { angle: 0.4, cone: 0.04, shadow: false, name: 'teal' });
-    for (let x = -14; x <= 14; x += 2) R.light(x, 0.4, 2.1, 0xffc070, 1.2, 5);
-    // зал: семья, первый ряд, труппа, третий
-    FAMILY.forEach((id, i) => R.actor(id, -6 + i * 2, 4.6, { id: 'aud_' + id, dir: 'b' })); TROUPE.forEach((id, i) => R.actor(id, -4 + i * 2, 7.6, { id: 'aud_' + id, dir: 'b' }));
-    R.actor('queen', -18, -2, { id: 'queen', hidden: true }); R.particles('confetti', { count: 120, top: 9, name: 'conf' }); R.room.named.conf.visible = false;
-    R.spawn('start', 15, -2, 'l');
+    const N = R.room.named; R.floor('stage', { d: 23, z: -11.5 }); R.floor('carpet', { d: 23, z: 11.5, apron: 7 }); R.walls('black', { h: 11 }); N.amb = R.ambient(0x3a3038, 2.1, 0x8a7890); R.particles('dust', { count: 140, top: 9 });
+    hallShell(R);
+    const set = new THREE.Group(); set.position.y = 12; R.room.group.add(set); N.set = set; buildCastle(R, set);
+    // главный занавес за порталом
+    const cur = new THREE.Group(); R.room.group.add(cur); N.curtain = cur; for (let x = -15; x <= 15; x += 2) { const b = R.box(x, -2.3, 2.1, 0.3, 10, { tex: 'velvet', solid: false }); R.room.group.remove(b); cur.add(b); }
+    // свет: ключевой, цветные боковые, пушка из зала, фонарь Полины
+    R.spot(0, 15, -1, 0, -7.5, 0xffe2b0, 90, { angle: 0.42, cone: 0.05, name: 'key' });
+    R.spot(-12, 13, -2, -3, -8, 0xff6080, 36, { angle: 0.3, cone: 0.045, shadow: false, name: 'red' }); R.spot(12, 13, -2, 3, -8, 0x60d0d0, 36, { angle: 0.3, cone: 0.045, shadow: false, name: 'teal' });
+    R.spot(0, 13, 20, 0, -6, 0xfff4e0, 0, { angle: 0.08, shadow: false, name: 'follow', dist: 60 });
+    N.lantern = R.light(-5.2, 1.8, -6.2, 0xffc060, 0, 6);
+    let follow: any = null; N.setFollow = (a: any) => { follow = a; N.follow.intensity = a ? 90 : 0; };
+    N.sweep = 0; R.onUpdate((dt, t) => { if (follow) aim(N.follow, follow.x, follow.z); if (N.sweep) { aim(N.red, Math.sin(t * 1.3) * 7, -7 + Math.cos(t * 0.9) * 2); aim(N.teal, -Math.sin(t * 1.1) * 7, -7 - Math.cos(t * 1.4) * 2); } });
+    N.setFollow(null);
+    // зрители: семья в первом ряду, труппа в третьем
+    for (const [id, x, z] of AUD) { const a = R.actor(id, x, z + 0.2, { id: 'aud_' + id, dir: 'b' }); a.pose = 'sit'; }
+    // актёры за кулисами
+    FRIENDS.forEach((id, i) => { const a = R.actor(FCHAR[id], i % 2 ? 15 : -15, -4.5 - i * 0.8, { id, hidden: true }); void a; });
+    R.actor('queen', 15, -6, { id: 'alla', hidden: true });
+    R.particles('confetti', { count: 160, top: 10, name: 'conf' }); N.conf.visible = false;
+    R.spawn('start', -13, -4, 'r');
   },
-  async enter(G) { await musicalShow(G); },
+  async enter(G) { try { await musicalShow(G); } catch (e: any) { console.error('SHOW', e?.message, e?.stack?.slice(0, 300)); throw e; } },
 };
 async function musicalShow(G: any) {
-  const f = G.f, room = G.room, p = G.player, q = G.actor('queen'), cur = room.named.curtain, set = room.named.set;
-  if (f.show_done) return; p.hidden = true; G.focus(0, 3, 26);
-  await G.ui.card([['АКТ VII', 'act'], ['THE FINAL SHOW', 'big']]); await G.run(F.audience);
-  // 1. Увертюра
-  G.audio.music('fin_overture', { restart: true }); G.focus(0, -1, 22); const lift = tween(G, 6, (k) => { cur.position.y = k * 9; }); G.sfx('curtain');
-  await lyricRun(G, F.lyrics_over, 13); await lift;
-  // 2. Королева
-  q.hidden = false; q.place(-14, -2, 'r'); G.audio.music('fin_queen', { restart: true }); await G.run(F.queenSpeech); await q.walkTo(0, -2.4, 3); q.dir = 'f'; q.pose = 'arms';
+  const f = G.f, room = G.room, N = room.named, p = G.player, q = G.actor('alla'), cur = N.curtain, set = N.set;
+  if (f.show_done) return;
+  const P = F.play as any, A = (id: string) => G.actor(id), own = (id: string) => f['cast_' + id] !== 'assigned';
+  const enterTo = async (id: string, sp = 3) => { const a = A(id), [x, z] = MARK[id]; a.hidden = false; a.place(x < 0 ? -15 : 15, z, x < 0 ? 'r' : 'l'); await a.walkTo(x, z, sp); a.dir = 'f'; };
+  const lights = (k: number) => { N.key.intensity = 90 * k; N.red.intensity = 36 * k; N.teal.intensity = 36 * k; };
+  (globalThis as any).__ms = '0';
+  // 0. За кулисой: обратная сторона сценария
+  p.place(-13, -4, 'r'); G.focus(-10, -4, 13);
+  await G.ui.card([['АКТ VII', 'act'], ['ПРЕМЬЕРА', 'big'], ['Главная сцена. Тот же зал, тот же скрипучий пол.', 'sm']]);
+  await G.ui.paper(P.scriptBack); await G.run(P.backAfter);
+  G.focus(0, 6, 26); await G.run(F.audience);
+  (globalThis as any).__ms = '1';
+  // 1. Пролог перед занавесом
+  G.focus(0, -2, 16); await p.walkTo(0, -1.1, 3); p.dir = 'f'; N.setFollow(p); await G.run(P.prologue); N.setFollow(null); await p.walkTo(-13, -4, 3.4); p.hidden = true;
+  G.cam.pitch = 0.3; G.cam.yOff = 3.4;
+  (globalThis as any).__ms = '2';
+  // 2. Увертюра: занавес вверх, замок прилетает с колосников, луна на палке
+  G.audio.music('fin_overture', { restart: true }); G.focus(0, -8, 25); G.grade({ tint: [0.8, 0.86, 1.15], sat: 0.9 }); lights(0.5); G.sfx('curtain');
+  const lyr = lyricRun(G, F.lyrics_over, 13); await tween(G, 4, (k) => { cur.position.y = k * 10; });
+  await tween(G, 3, (k) => { set.position.y = 12 * (1 - k) * (1 - k); }); G.sfx('clunk');
+  A('ruben').hidden = false; A('ruben').place(own('ruben') ? 6.4 : 4.6, -9.4, 'f'); if (own('ruben')) A('ruben').setChar('ruben_tux');
+  await tween(G, 2.5, (k) => { N.moon.position.y = -8 + k * 7.6; }); await lyr;
+  await G.run(own('ruben') ? P.moonOwn : P.moonAsg);
+  (globalThis as any).__ms = '3';
+  // 3. Двор: летописец, шут, затемнение
+  for (const id of ['erika', 'polina', 'angelina', 'matvey']) enterTo(id, 3.6); await G.wait(3.2);
+  N.setFollow(A('erika')); await G.run(own('erika') ? P.chron1Own : P.chron1Asg);
+  N.setFollow(A('matvey')); A('matvey').place(2.4, -7.9, 'f'); await G.run(own('matvey') ? P.jesterOwn.slice(0, 1) : P.jesterAsg.slice(0, 2));
+  await tween(G, 0.7, (k) => { N.door.rotation.x = k * k * 1.5; }); G.sfx('crash'); A('matvey').hidden = true; G.flash(0.15);
+  await G.run(own('matvey') ? P.jesterOwn.slice(1) : P.jesterAsg.slice(2)); A('matvey').hidden = false; N.door.rotation.x = 0; N.setFollow(null);
+  G.sfx('switch'); G.grade({ bright: 0.18 }); lights(0); await G.run(own('polina') ? P.blackOwn.slice(0, 3) : P.blackAsg.slice(0, 2));
+  if (own('polina')) { N.lantern.intensity = 14; G.grade({ bright: 0.5 }); await G.run(P.blackOwn.slice(3)); } else await G.run(P.blackAsg.slice(2));
+  N.lantern.intensity = 0; G.sfx('lighton'); G.grade({ bright: 1 }); lights(1);
+  (globalThis as any).__ms = '4';
+  // 4. Королева: хлопки в такт
+  q.hidden = false; q.place(15, -6.6, 'l'); G.audio.music('fin_queen', { restart: true }); G.grade({ tint: [1.12, 0.92, 0.9], sat: 1.15 }); N.red.intensity = 70; N.setFollow(q);
+  await G.run(F.queenSpeech); await q.walkTo(0, -7.4, 3); q.dir = 'f'; q.pose = 'arms'; await G.run(P.queenIn);
   G.toast('Королеве нужны аплодисменты: держи ритм', '♪');
-  await rhythm({ track: 'fin_queen', part: 2, loops: 1, title: 'Хлопайте!', sub: 'зал хлопает в такт, D F J K или стрелки', lyrics: F.lyrics_queen as any, onBeat: (b) => { q.pose = b % 2 ? 'arms' : 'point'; if (b % 4 === 0) G.sfx('clap'); } });
-  G.sfx('applause', { dur: 3 }); q.pose = null;
-  // 3. Молодая Девушка, её играет Варя
-  G.setPlayerChar('girl'); p.hidden = false; p.place(15, -2, 'l'); G.audio.music('fin_girl', { restart: true }); await G.run(F.girlEnter); await p.walkTo(4, -2.4, 2.4); p.dir = 'f'; q.face(p.x, p.z);
-  await lyricRun(G, F.lyrics_girl, 19.5);
-  // 4. Королева забирает всё
-  G.audio.music('fin_queen'); await G.run(F.queenTakes.slice(0, 1)); await q.walkTo(3, -2.4, 2); q.pose = 'point'; G.sfx('whoosh'); p.setChar('varya_pj'); await G.wait(0.6); q.pose = null;
-  await p.walkTo(8, -5, 2.4); p.dir = 'f'; await G.run(F.queenTakes.slice(1)); G.sfx('door'); room.named.key.intensity = 10; G.grade({ tint: [0.8, 0.9, 1.2], sat: 0.6 });
-  // 5. Зеркальная хореография
-  G.audio.music('fin_mirror', { restart: true }); room.named.key.intensity = 38; G.grade({ vig: 0.5, bloom: 0.9, sat: 1.2 }); p.setChar('girl'); await G.run(F.mirrorIntro); await p.walkTo(2, -2.4, 3); await q.walkTo(-2, -2.4, 3); p.dir = 'l'; q.dir = 'r';
+  await rhythm({ track: 'fin_queen', part: 2, loops: 1, title: 'Хлопайте!', sub: 'зал хлопает в такт, D F J K или стрелки', lyrics: F.lyrics_queen as any, onBeat: (b) => { q.pose = b % 2 ? 'arms' : 'point'; if (b % 4 === 0) G.sfx('clap'); for (const id of FRIENDS) { const a = A(id); if (a && !a.hidden) { a.pose = 'dance'; a.danceBeat = b; } } } });
+  G.sfx('applause', { dur: 3 }); q.pose = null; for (const id of FRIENDS) A(id).pose = null; N.setFollow(null); N.red.intensity = 36;
+  (globalThis as any).__ms = '5';
+  // 5. Дама в окне
+  const lz = A('liza'); lz.hidden = false; lz.place(-7.5, -9.9, 'f'); lz.y = 3.0; G.focus(-6, -8, 14); await G.run(own('liza') ? P.windowOwn.slice(0, 2) : P.windowAsg);
+  if (own('liza')) { lz.z = -9.2; G.sfx('whoosh'); await tween(G, 2.2, (k) => { lz.y = 3 * (1 - k); N.tower.rotation.z = Math.sin(k * 9) * 0.05 * (1 - k); }); lz.y = 0; await lz.walkTo(-6.6, -7.2, 2); await G.run(P.windowOwn.slice(2)); }
+  (globalThis as any).__ms = '6';
+  // 6. Девушка
+  G.focus(0, -7.5, 22); G.setPlayerChar('girl'); p.hidden = false; p.place(15, -6.4, 'l'); G.audio.music('fin_girl', { restart: true }); G.grade({ tint: [1.02, 1.0, 1.04], sat: 1 }); N.setFollow(p);
+  await G.run(F.girlEnter); await p.walkTo(4, -7.2, 2.4); p.dir = 'f'; q.face(p.x, p.z);
+  await lyricRun(G, F.lyrics_girl, 19.5); N.setFollow(null);
+  const an = A('angelina'); if (own('angelina')) { await an.walkTo(5.4, -7.2, 2.4); an.dir = 'f'; await G.run(P.duetOwn); } else { await an.walkTo(-1, -7, 2.4); an.dir = 'f'; await G.run(P.duetAsg); await an.walkTo(-2.4, -8.4, 2.4); }
+  (globalThis as any).__ms = '7';
+  // 7. Менуэт: солнце встаёт, тёплый свет, весь двор танцует
+  G.audio.music('fin_minuet', { restart: true }); N.skyN.visible = false; N.skyD.visible = true; G.sfx('whoosh'); await tween(G, 2, (k) => { N.moon.position.y = -0.4 - k * 7.6; N.sun.position.y = -8 + k * 8.2; });
+  G.grade({ tint: [1.14, 1.02, 0.86], sat: 1.2, bloom: 1, vig: 0.4, bright: 1.05 }); N.key.color.set(0xffd090); N.sweep = 1; await G.run(P.minuetIn);
+  const pairs: [string, number, number][] = [['alla', -1.2, -8], ['polina', -4.2, -6.4], ['ruben', -2.6, -6.4], ['matvey', 2.2, -6.4], ['erika', 3.8, -6.4], ['liza', -5.6, -8.4], ['angelina', 5.2, -8.4]];
+  await Promise.all(pairs.map(([id, x, z]) => (id === 'alla' ? q : A(id)).walkTo(x, z, 3))); await p.walkTo(1.2, -8, 3);
+  const all = () => [q, p, ...FRIENDS.map(A)].filter((a: any) => a && !a.hidden);
+  await sequence({ title: 'Придворный менуэт', sub: 'Варя ведёт двор. Повтори шаги.', bpm: 112, mirror: [false, false], roundSub: ['Поклон, шаг, поворот…', 'Весь двор за тобой!'], rounds: [['left', 'right', 'up', 'down'], ['up', 'left', 'right', 'right', 'down', 'up']],
+    onShow: () => { for (const a of all()) { if (a !== p) { a.pose = 'dance'; a.danceBeat++; } } G.sfx('hit', { f: 660 }); }, onInput: (d, ok) => { p.pose = 'dance'; p.danceBeat++; if (!ok) G.sfx('miss'); } });
+  for (const a of all()) a.pose = null; N.sweep = 0; aim(N.red, -3, -8); aim(N.teal, 3, -8);
+  await G.run(P.minuetAfter.slice(0, 1)); await tween(G, 0.8, (k) => { N.treeR.rotation.x = k * k * 1.5; }); G.sfx('crash'); await G.run(P.minuetAfter.slice(1)); N.treeR.rotation.x = 0;
+  (globalThis as any).__ms = '8';
+  // 8. Королева забирает всё; гроза из картона
+  G.audio.music('fin_queen'); G.grade({ tint: [1, 1, 1], sat: 1, bloom: 0.8, vig: 0.55, bright: 1 }); N.key.color.set(0xffe2b0);
+  await G.run(F.queenTakes.slice(0, 1)); await q.walkTo(2.4, -7.6, 2); q.pose = 'point'; G.sfx('whoosh'); p.setChar('varya_pj'); await G.wait(0.6); q.pose = null;
+  await p.walkTo(8, -10, 2.4); p.dir = 'f'; await G.run(F.queenTakes.slice(1)); G.sfx('door');
+  G.audio.music('fin_storm', { restart: true }); N.skyD.visible = false; N.skyN.visible = true; N.sun.position.y = -8; G.grade({ tint: [0.74, 0.84, 1.22], sat: 0.55, vig: 0.7 }); lights(0.45);
+  await Promise.all(N.clouds.map((c: any, i: number) => i === 1 ? tween(G, 3, (k) => { c.position.y = 13 - k * 4.4; }) : tween(G, 3, (k) => { c.position.y = 13 - k * 7.6; })));
+  for (let i = 0; i < 3; i++) { G.flash(0.75); G.sfx('thunder'); await G.wait(0.9); }
+  await G.run(P.storm); await G.run(own('erika') ? P.chron2Own : P.chron2Asg); G.flash(0.6); G.sfx('thunder');
+  await G.run(P.cloudGag.slice(0, 3)); await tween(G, 1.6, (k) => { N.clouds[1].position.y = 8.6 + k * 4.4; }); await G.run(P.cloudGag.slice(3)); for (const c of N.clouds) c.position.y = 13;
+  (globalThis as any).__ms = '9';
+  // 9. Зеркальная хореография: зеркала в картонных рамах
+  G.audio.music('fin_mirror', { restart: true }); lights(1); G.grade({ tint: [0.95, 0.95, 1.08], vig: 0.5, bloom: 0.9, sat: 1.2 }); await tween(G, 2, (k) => { N.mirrors.position.y = 13 * (1 - k); });
+  p.setChar('girl'); await G.run(F.mirrorIntro); await p.walkTo(1.6, -7.4, 3); await q.walkTo(-1.6, -7.4, 3); p.dir = 'l'; q.dir = 'r'; N.sweep = 1;
   G.ui.lyric(F.lyrics_mirror[0].text, F.lyrics_mirror[0].who);
   await sequence({ title: 'Зеркальная хореография', sub: 'Королева ведёт. Ты, её отражение.', bpm: 126, mirror: [true, true, false], roundSub: ['Королева: смотри…', 'Быстрее. Смотри…', 'Теперь, не зеркально. Одинаково.'], rounds: [['left', 'up', 'right', 'down'], ['right', 'right', 'up', 'left', 'down', 'up'], ['up', 'left', 'left', 'down', 'right', 'up', 'down', 'up']],
-    onShow: (d) => { q.pose = 'dance'; q.danceBeat++; G.sfx('hit', { f: 520 }); }, onInput: (d, ok) => { p.pose = 'dance'; p.danceBeat++; if (ok) { q.danceBeat = p.danceBeat; } } });
-  G.ui.lyric(F.lyrics_mirror[1].text, F.lyrics_mirror[1].who); q.pose = 'arms'; p.pose = 'arms'; await G.wait(2.5); G.ui.lyric(null);
-  // 6. Раскрытие
-  G.audio.music('fin_reveal', { restart: true }); q.pose = null; p.pose = null; await G.run(F.reveal.slice(0, 1));
-  const up = tween(G, 7, (k) => { set.position.y = k * 14; }); G.sfx('curtain'); await G.run(F.reveal.slice(1, 2)); await up;
-  room.named.red.intensity = 0; room.named.teal.intensity = 0; G.focus(0, -2, 15); await q.walkTo(-0.3, -2.4, 1.2); await p.walkTo(0.3, -2.4, 1.2); q.dir = 'f'; p.dir = 'f';
-  await G.run(F.reveal.slice(2)); const lr = lyricRun(G, F.lyrics_reveal, 13);
-  await G.wait(2); await tween(G, 3.5, (k) => { q.x = -0.3 + k * 0.3; p.x = 0.3 - k * 0.3; q.alpha = 1 - k * 0.5; });
-  G.flash(0.7); G.sfx('bell'); p.setChar('varya_queen'); q.setChar('varya'); await tween(G, 3, (k) => { q.alpha = 0.5 * (1 - k); }); q.hidden = true; await lr;
-  // 7. Поклоны
-  G.audio.music('fin_bows', { restart: true }); await G.run(F.bowsIntro); G.unfocus(); G.focus(0, -1, 22); room.named.conf.visible = true; G.sfx('applause', { dur: 6, dens: 60 });
-  const B = new (await import('../world/room')).Builder(room, G); p.place(0, -1, 'f');
-  for (const [i, id] of FRIENDS.entries()) { const a = B.actor(FCHAR[id], 16, -2.6, { id: 'bow_' + id }); a.walkTo(-10 + i * 3.4 + (i >= 3 ? 3.4 : 0), -2.6, 6); }
-  await G.wait(2.6); for (const id of FRIENDS) { const a = G.actor('bow_' + id); a.pose = 'bow'; }
-  for (const id of FRIENDS) { const own = f['cast_' + id] !== 'assigned'; const role = ROLES[id][own ? 1 : 0]; await G.run([`*: ${CHARS[id].name}, «${role}». ${own ? 'Эту роль ' + CHARS[id].name + ' выбирает сам' + (id === 'ruben' || id === 'matvey' ? '' : 'а') + '. Зал встаёт.' : 'Роль из листа распределения: сидит аккуратно, но не совсем по плечу. Хлопают вежливо.'}`]); if (own) G.sfx('applause', { dur: 2 }); }
-  for (const id of FAMILY.concat(TROUPE)) { const a = G.actor('aud_' + id); if (a) a.pose = 'arms'; }
-  await G.run(F.bowFinal); p.pose = 'bow'; G.sfx('applause', { dur: 6, dens: 90 }); G.flash(0.3); await G.wait(3);
-  const down = tween(G, 3, (k) => { cur.position.y = 9 * (1 - k); }); G.sfx('curtain'); await down; f.show_done = 1;
+    onShow: () => { q.pose = 'dance'; q.danceBeat++; G.sfx('hit', { f: 520 }); }, onInput: (d, ok) => { p.pose = 'dance'; p.danceBeat++; if (ok) q.danceBeat = p.danceBeat; } });
+  G.ui.lyric(F.lyrics_mirror[1].text, F.lyrics_mirror[1].who); q.pose = 'arms'; p.pose = 'arms'; await G.wait(2.5); G.ui.lyric(null); N.sweep = 0;
+  (globalThis as any).__ms = '10';
+  // 10. Раскрытие: декорации уходят вверх, остаётся пустая сцена этого зала
+  G.audio.music('fin_reveal', { restart: true }); q.pose = null; p.pose = null; for (const id of FRIENDS) await A(id).walkTo(MARK[id][0] < 0 ? -14 : 14, A(id).z, 4).then(() => { A(id).hidden = true; });
+  await G.run(F.reveal.slice(0, 1)); const up = tween(G, 7, (k) => { set.position.y = k * 14; N.moon.position.y = -8; N.skyN.visible = k < 0.5; }); G.sfx('curtain'); await G.run(F.reveal.slice(1, 2)); await up;
+  N.red.intensity = 0; N.teal.intensity = 0; N.key.intensity = 70; aim(N.key, 0, -7.4); G.grade({ tint: [1, 0.98, 0.96], sat: 0.8, vig: 0.75 }); G.focus(0, -7, 13);
+  await q.walkTo(-0.4, -7.4, 1.2); await p.walkTo(0.4, -7.4, 1.2); q.dir = 'f'; p.dir = 'f';
+  await G.run(F.reveal.slice(2)); await G.run(P.revealAfter); const lr = lyricRun(G, F.lyrics_reveal, 13);
+  await G.wait(2); await tween(G, 3.5, (k) => { q.x = -0.4 + k * 0.4; p.x = 0.4 - k * 0.4; q.alpha = 1 - k * 0.5; });
+  G.flash(0.7); G.sfx('bell'); p.setChar('varya_queen'); await tween(G, 3, (k) => { q.alpha = 0.5 * (1 - k); }); q.hidden = true; await lr;
+  (globalThis as any).__ms = '11';
+  // 11. Финальный номер: тёплый свет, все шестеро выходят сами
+  G.audio.music('fin_bows', { restart: true }); G.unfocus(); G.focus(0, -7, 22); G.grade({ tint: [1.16, 1.0, 0.84], sat: 1.15, bloom: 1.1, vig: 0.4, bright: 1.06 }); N.key.color.set(0xffc880); lights(1); N.sweep = 1;
+  await G.run(P.ensemble); FRIENDS.forEach((id, i) => { const a = A(id); a.hidden = false; a.place(i < 3 ? -15 : 15, -6.4, i < 3 ? 'r' : 'l'); a.walkTo(-7.5 + i * 3 + (i >= 3 ? 3 : 0), -6.4, 5); });
+  await G.wait(2.6); for (const id of FRIENDS) A(id).dir = 'f';
+  let beat = 0; const dance = setInterval(() => { beat++; for (const a of [p, ...FRIENDS.map(A)]) { a.pose = 'dance'; a.danceBeat = beat + (a === p ? 1 : 0); } }, 500);
+  N.conf.visible = true; G.sfx('firework'); await lyricRun(G, P.lyrics_final, 17); clearInterval(dance); for (const a of [p, ...FRIENDS.map(A)]) a.pose = null; N.sweep = 0;
+  (globalThis as any).__ms = '12';
+  // 12. Поклоны и объятия режиссёрки
+  await G.run(F.bowsIntro); G.sfx('applause', { dur: 6, dens: 60 });
+  for (const id of FRIENDS) { const a = A(id), r = ROLES[id][own(id) ? 1 : 0]; a.pose = 'bow'; await G.run([`*: ${CHARS[id].name}, «${r}». ${own(id) ? 'Эту роль ' + CHARS[id].name + ' выбрал' + (id === 'ruben' || id === 'matvey' ? '' : 'а') + ' сам' + (id === 'ruben' || id === 'matvey' ? '' : 'а') + '. Зал встаёт.' : 'Роль из листа распределения: сидит аккуратно, но не совсем по плечу. Хлопают вежливо.'}`]); if (own(id)) G.sfx('applause', { dur: 2 }); a.pose = null; }
+  await G.run(P.directorIn); G.setPlayerChar('varya');
+  for (const id of FRIENDS) { const a = A(id); G.focus(a.x, a.z, 11); await p.walkTo(a.x + (a.x < 0 ? 1 : -1), a.z + 0.2, 4); p.face(a.x, a.z); a.face(p.x, p.z); p.pose = 'hug'; a.pose = 'hug'; G.sfx('heart'); await G.run(P.hugs[id]); p.pose = null; a.pose = null; a.dir = 'f'; }
+  G.cam.pitch = 0.56; G.cam.yOff = 1.2; G.focus(0, 2, 26); await p.walkTo(0, -5, 4); p.dir = 'f';
+  for (const [id] of AUD) { const a = G.actor('aud_' + id); if (a) { a.pose = 'arms'; } } await G.run(P.standing); p.pose = 'bow'; G.sfx('applause', { dur: 6, dens: 90 }); G.flash(0.3); await G.wait(3); p.pose = null;
+  const down = tween(G, 3, (k) => { cur.position.y = 10 * (1 - k); }); G.sfx('curtain'); await down; f.show_done = 1;
   await G.ui.card([['ЗАНАВЕС', 'act'], 'Аплодисменты не смолкают ещё долго.']);
-  G.setPlayerChar('varya'); await G.goto('fin_party', 'start', { fade: 'fade' });
+  G.cam.pitch = 0.56; G.cam.yOff = 1.2; G.setPlayerChar('varya'); await G.goto('fin_party', 'start', { fade: 'fade' });
 }
 // ---------- ЭПИЛОГ ----------
 const party: RoomDef = {
@@ -199,7 +379,7 @@ const bedroom: RoomDef = {
   },
   async enter(G) { if (!G.f.wake0) { G.f.wake0 = 1; G.sfx('bell'); await G.run(F.wake.slice(0, 3)); const w = G.f.wish; await G.run([w === 'near' ? '*: Телефон вибрирует. Шесть сообщений подряд: «С днём рождения!», от Полины, Рубена, Матвея, Эрики, Лизы и Ангелины. Все, в 07:00 ровно.' : w === 'own' ? '*: Телефон вибрирует. Полина: «Записалась на фото!» Рубен: «Подал документы». Лиза: «Я уже в поезде». И ни одного «как ты хочешь, чтобы мы…».' : '*: Телефон молчит. Ещё рано. Это хорошая тишина, как в зале перед первым звонком.']); } },
 };
-export const rooms: Record<string, RoomDef> = { fin_diva: diva, fin_collapse: collapse, fin_backstage: backstage, fin_musical: musical, fin_party: party, fin_bedroom: bedroom };
+export const rooms: Record<string, RoomDef> = { fin_void: voidRoom, fin_diva: diva, fin_collapse: collapse, fin_backstage: backstage, fin_musical: musical, fin_party: party, fin_bedroom: bedroom };
 /** Все гости собираются в одну группу перед тортом, лицом к камере, чтобы Варя сделала общее фото. */
 async function gather(G: any) {
   const room = G.room; const ppl = room.actors.filter((a: any) => a !== G.player && !a.hidden); const n = ppl.length, per = Math.ceil(n / 3);

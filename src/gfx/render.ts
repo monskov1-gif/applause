@@ -44,7 +44,7 @@ export class Renderer {
   flash = 0; W = 640; H = 360; time = 0;
   constructor(public canvas: HTMLCanvasElement) {
     this.r = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
-    this.r.shadowMap.enabled = true; this.r.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.r.shadowMap.enabled = true; this.r.shadowMap.type = THREE.PCFSoftShadowMap; this.r.localClippingEnabled = true;
     this.r.toneMapping = THREE.ACESFilmicToneMapping; this.r.toneMappingExposure = 1.3;
     this.cam = new THREE.PerspectiveCamera(30, 16 / 9, 1, 200);
     this.setup(); window.addEventListener('resize', () => this.setup());

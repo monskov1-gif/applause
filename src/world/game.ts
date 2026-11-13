@@ -88,7 +88,7 @@ class Game {
       if (fade !== 'none') await ui.transition(fade, 'out');
       let def: RoomDef;
       try { def = await this.loadRoom(id); } catch (e) { if (fade !== 'none') await ui.transition(fade, 'in'); throw e; }
-      this.clearRoom(); this.cam.focus = null; this.cam.roll = 0;
+      this.clearRoom(); this.cam.focus = null; this.cam.roll = 0; this.cam.pitch = 0.56; this.cam.yOff = 1.2;
       const room = this.room = new Room(id, def); const B = new Builder(room, this);
       this.player = new Actor(this.state.f.playerChar || 'varya', 'player');
       def.build(B, this);

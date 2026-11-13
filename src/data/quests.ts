@@ -80,6 +80,7 @@ function angelina(f: F): Objective {
   return { main: 'Шоукейс: встать за пульт', hint: 'Дверь DEBUT в холле, пульт справа' };
 }
 function finale(f: F, G: any, room: string): Objective {
+  if (room === 'fin_void') return { main: 'Догнать Аллу Еву', hint: 'Бегите вправо по доскам. Назад дороги нет' };
   if (room === 'fin_collapse') return { main: 'Пройти к сцене', hint: !f.c_gap ? 'Лиза поможет с провалом' : !f.c_lights ? 'Стена из особняка: маска Трагедии. Дальше ленты по ритму' : 'Сфотографируйте двери: у настоящей есть тень' };
   if (room === 'fin_backstage') return { main: 'Выйти на сцену' };
   if (room === 'fin_party') return !f.cake_out ? { main: 'Задуть свечи на торте' } : !f.group_photo ? { main: 'Общее фото', hint: 'C: фотоаппарат' } : { main: 'Закончить вечер', hint: 'Дверь справа' };

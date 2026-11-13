@@ -119,6 +119,24 @@ const corridor: RoomDef = {
 };
 // Сцена и зрительный зал. Сцена глубокая, с поворотным кругом, кулисами-«ногами», колосниками и рампой;
 // зал на 11 рядов с центральным и боковыми проходами, ложами и люстрами. Двери из фойе ведут в боковые проходы.
+/** Зал главной сцены: кулисы, портал, рампа, яма, партер, ложи, люстры. Общий для hub_stage и премьеры. */
+export function hallShell(R: Builder) {
+    for (const z of [-21, -16, -11, -6]) for (const sx of [-1, 1]) R.curtain(sx * 14.5, z, 2.6, 10, { solid: false });
+    R.box(0, -22.6, 34, 0.3, 9, { tex: 'velvet', solid: false }); for (let i = 0; i < 4; i++) R.box(0, -20 + i * 4, 30, 0.1, 0.1, { tex: 'metal', y: 10.2, solid: false, cast: false });
+    R.box(0, -18.5, 27, 0.16, 0.16, { tex: 'metal', y: 10.2, solid: false, cast: false });
+    for (const sx of [-1, 1]) { R.curtain(sx * 13.6, -2.6, 2.6, 9.4, { solid: false }); R.box(sx * 13.6, -2.6, 2.8, 0.4, 1.2, { tex: 'velvet', y: 8.2, solid: false, cast: false }); }
+    R.box(0, -1.8, 36, 0.8, 2, { tex: 'gold', y: 9.6, solid: false }); for (const sx of [-1, 1]) R.box(sx * 16.5, -1.8, 3, 0.8, 11.6, { tex: 'gold' }); for (let x = -14; x <= 14; x += 2) R.box(x, -1.7, 2, 0.3, 1.4, { tex: 'velvet', y: 8.2, solid: false });
+    for (let x = -13; x <= 13; x += 1.3) R.box(x, -1.3, 0.35, 0.22, 0.2, { color: 0xfff0c0, emissive: 0xffc060, y: 0.06, solid: false, cast: false }); for (let x = -12; x <= 12; x += 4) R.light(x, 0.5, -1.4, 0xffc070, 2.5, 6);
+    R.box(0, -0.9, 30, 0.25, 0.14, { tex: 'gold', solid: false, cast: false });
+    // оркестровая яма с ограждением
+    R.box(0, 0.6, 22, 1.6, 0.05, { color: 0x0a0606, y: 0.02, solid: false }); balustrade(R, -11, 1.5, 11, 1.5, { h: 0.9 }); R.collider(-11, -0.2, 11, 1.4);
+    for (const z of [19]) for (const sx of [-1, 1]) { const ex = R.decal(canvasTex(36, 12, (c) => { c.fillStyle = '#0e3a1e'; c.fillRect(0, 0, 36, 12); c.fillStyle = '#7dffb0'; ptext(c, 'ВЫХОД', 18, 2, { size: 8, col: '#b8ffd0', align: 'center' }); }, 'exitG'), { x: sx * 19.9, y: 4.5, z, w: 1.5, h: 0.5, glow: true, noSlot: true }); ex.rotation.y = -sx * Math.PI / 2; R.light(sx * 19, 4.4, z, 0x60ff90, 1.5, 3); }
+    // зрительный зал: 11 рядов, проходы, ложи, люстры
+    seatRows(R, 3.4, 11, { x0: -13.4, x1: 13.4, aisle: 2.4, dz: 1.45 }); R.light(0, 7, 12, 0xffd8b0, 16, 18); for (let z = 3.6; z < 19.5; z += 1.45) for (const sx of [-1, 1]) R.box(sx * 1.05, z, 0.12, 0.12, 0.05, { color: 0xffe0a0, emissive: 0xc08a40, solid: false, cast: false });
+    for (const z of [4, 9.5, 15]) { theatreBox(R, -18.8, z, 'w', 4); theatreBox(R, 18.8, z, 'e', 4); }
+    chandelier(R, -7, 12.5, 9, 1.1, { light: 8 }); chandelier(R, 7, 12.5, 9, 1.1, { light: 8 }); chandelier(R, 0, 13, 17, 1.3, { light: 10 });
+    for (const z of [6, 12, 18]) for (const sx of [-1, 1]) R.light(sx * 17, 3, z, 0xffc890, 4, 7);
+}
 const STZ = -12; // центр игровой части сцены
 const stage: RoomDef = {
   name: 'Главная сцена', w: 40, d: 46, camDist: 23, music: 'theater', amb: 'hall', step: 'wood', grade: { vig: 0.5, bloom: 0.6 },
@@ -137,23 +155,9 @@ const stage: RoomDef = {
     for (const sx of [-1, 1]) { const st = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.8, 1.6), new THREE.MeshLambertMaterial({ map: tex('gold') })); st.position.set(sx * 3.5, 0.4, -3); turn.add(st); const c2 = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.35, 4, 10), new THREE.MeshLambertMaterial({ map: tex('white') })); c2.position.set(sx * 3.5, 2.8, -3); turn.add(c2); }
     R.onUpdate((dt) => { if (!f.turnStop) turn.rotation.y += dt * 0.05; });
     // кулисы-ноги, колосники с подвешенным задником, портал, рампа
-    for (const z of [-21, -16, -11, -6]) for (const sx of [-1, 1]) R.curtain(sx * 14.5, z, 2.6, 10, { solid: false });
-    R.box(0, -22.6, 34, 0.3, 9, { tex: 'velvet', solid: false }); for (let i = 0; i < 4; i++) R.box(0, -20 + i * 4, 30, 0.1, 0.1, { tex: 'metal', y: 10.2, solid: false, cast: false });
-    R.box(0, -18.5, 27, 0.16, 0.16, { tex: 'metal', y: 10.2, solid: false, cast: false });
-    for (const sx of [-1, 1]) { R.curtain(sx * 13.6, -2.6, 2.6, 9.4, { solid: false }); R.box(sx * 13.6, -2.6, 2.8, 0.4, 1.2, { tex: 'velvet', y: 8.2, solid: false, cast: false }); }
-    R.box(0, -1.8, 36, 0.8, 2, { tex: 'gold', y: 9.6, solid: false }); for (const sx of [-1, 1]) R.box(sx * 16.5, -1.8, 3, 0.8, 11.6, { tex: 'gold' }); for (let x = -14; x <= 14; x += 2) R.box(x, -1.7, 2, 0.3, 1.4, { tex: 'velvet', y: 8.2, solid: false });
-    for (let x = -13; x <= 13; x += 1.3) R.box(x, -1.3, 0.35, 0.22, 0.2, { color: 0xfff0c0, emissive: 0xffc060, y: 0.06, solid: false, cast: false }); for (let x = -12; x <= 12; x += 4) R.light(x, 0.5, -1.4, 0xffc070, 2.5, 6);
-    R.box(0, -0.9, 30, 0.25, 0.14, { tex: 'gold', solid: false, cast: false });
-    // оркестровая яма с ограждением
-    R.box(0, 0.6, 22, 1.6, 0.05, { color: 0x0a0606, y: 0.02, solid: false }); balustrade(R, -11, 1.5, 11, 1.5, { h: 0.9 }); R.collider(-11, -0.2, 11, 1.4);
+    hallShell(R);
     R.spot(0, 15, 2, 0, STZ, 0xffe2b0, 120, { angle: 0.6, cone: 0.05, pen: 0.8 }); R.spot(-10, 13, 0, -6, STZ, 0xffd0a0, 55, { angle: 0.45, shadow: false, cone: 0.035, pen: 0.9, name: 'spotL' }); R.spot(10, 13, 0, 6, STZ, 0xc0d0ff, 55, { angle: 0.45, shadow: false, cone: 0.035, pen: 0.9 });
-    for (const z of [19]) for (const sx of [-1, 1]) { const ex = R.decal(canvasTex(36, 12, (c) => { c.fillStyle = '#0e3a1e'; c.fillRect(0, 0, 36, 12); c.fillStyle = '#7dffb0'; ptext(c, 'ВЫХОД', 18, 2, { size: 8, col: '#b8ffd0', align: 'center' }); }, 'exitG'), { x: sx * 19.9, y: 4.5, z, w: 1.5, h: 0.5, glow: true, noSlot: true }); ex.rotation.y = -sx * Math.PI / 2; R.light(sx * 19, 4.4, z, 0x60ff90, 1.5, 3); }
     R.sprite('lamp', -4.2, -10.2); R.light(-4.2, 2.8, -9.7, 0xffe0a0, 3, 8, { flicker: 0.05 });
-    // зрительный зал: 11 рядов, проходы, ложи, люстры
-    seatRows(R, 3.4, 11, { x0: -13.4, x1: 13.4, aisle: 2.4, dz: 1.45 }); R.light(0, 7, 12, 0xffd8b0, 16, 18); for (let z = 3.6; z < 19.5; z += 1.45) for (const sx of [-1, 1]) R.box(sx * 1.05, z, 0.12, 0.12, 0.05, { color: 0xffe0a0, emissive: 0xc08a40, solid: false, cast: false });
-    for (const z of [4, 9.5, 15]) { theatreBox(R, -18.8, z, 'w', 4); theatreBox(R, 18.8, z, 'e', 4); }
-    chandelier(R, -7, 12.5, 9, 1.1, { light: 8 }); chandelier(R, 7, 12.5, 9, 1.1, { light: 8 }); chandelier(R, 0, 13, 17, 1.3, { light: 10 });
-    for (const z of [6, 12, 18]) for (const sx of [-1, 1]) R.light(sx * 17, 3, z, 0xffc890, 4, 7);
     // двери
     R.door('d_cor', STZ + 4, { wall: 'w', to: 'hub_corridor', spot: 'stage', label: 'В служебный коридор', col: '#2a1c14', fade: 'curtain' });
     R.door('d_foyer', 19, { wall: 'w', to: 'hub_foyer', spot: 'stalls', label: 'Двери в фойе', sign: 'ФОЙЕ', col: '#6a1a22' });
