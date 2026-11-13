@@ -71,6 +71,7 @@ class AudioSys {
   stepDur(tr: Track) { return 60 / tr.bpm / 4; }
   /** Запускает трек; возвращает аудио-время начала (для синхронизации ритм-сцен). */
   music(id: string | null, opts: { fade?: number; restart?: boolean; delay?: number } = {}): number {
+    if (id) { try { const h = new Set(JSON.parse(localStorage.getItem('tom-tracks') || '[]')); if (!h.has(id)) { h.add(id); localStorage.setItem('tom-tracks', JSON.stringify([...h])); } } catch { /* ignore */ } }
     if (!this.ctx) { this.pendingMusic = id; return this.now(); }
     if (this.cur && this.cur.id === id && !opts.restart) return this.cur.t0;
     const t = this.ctx.currentTime, fade = opts.fade ?? 1.2;

@@ -7,7 +7,7 @@ export async function chapterIntro(G: any, key: string, lines: (string | [string
 }
 /** Завершение главы: друг возвращается в театр, хаб меняется. */
 export async function finishChapter(G: any, id: string, card: (string | [string, string])[]) {
-  G.set('done_' + id, 1); G.set('ret', id); G.setPlayerChar('varya'); if (G.state.mask) G.setMask(G.state.mask);
+  G.set('done_' + id, 1); G.set('ret', id); try { const u = new Set(JSON.parse(localStorage.getItem('tom-unlock') || '[]')); u.add(id); localStorage.setItem('tom-unlock', JSON.stringify([...u])); } catch { /* приватный режим */ } G.setPlayerChar('varya'); if (G.state.mask) G.setMask(G.state.mask);
   G.note('c_' + id); G.audio.music(null); await G.ui.card(card);
   await G.goto('hub_backstage', 'ret_' + id, { fade: 'curtain' });
 }

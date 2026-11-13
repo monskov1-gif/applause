@@ -252,3 +252,9 @@ body.contrast .dlg .box, body.contrast .sheet, body.contrast .choice { backgroun
 .photo[data-ph] { cursor: zoom-in; } .reveal.zoom .photo-pop.big { width: min(78vw, 60rem); } .reveal.zoom .photo-pop.big .ph { width: 100%; image-rendering: auto; }
 
 body.noir-mode .dlg .port img, body.noir-mode .questbox, body.noir-mode .hud .masks, body.noir-mode .hud-r, body.noir-mode .choices, body.noir-mode .dlg .name { filter: grayscale(1) contrast(1.12); } body.noir-mode .dlg .box { background: #e8e4dc; } body.noir-mode .dlg .name { background: #1a1a1a !important; }
+
+.xgal { display: grid; grid-template-columns: repeat(auto-fill, minmax(6.4rem, 1fr)); gap: .7rem; margin-bottom: 1rem; }
+.xcard { margin: 0; text-align: center; } .xport { aspect-ratio: 3 / 4; border: 3px solid var(--gold); background: radial-gradient(#5a2030, #1a0a10); overflow: hidden; display: grid; place-items: center; box-shadow: 0 .2rem .6rem #0008; }
+.xport img { width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; } .xport span { font: 2rem 'Playfair Display', serif; color: #d4ae4877; }
+.xcard figcaption { margin-top: .3rem; font-size: .85rem; } .xcard figcaption small { display: block; opacity: .65; font-style: italic; } .xcard.locked .xport { filter: grayscale(1) brightness(.6); }
+.xtracks { display: flex; flex-wrap: wrap; gap: .4rem; } .xtrack { font-size: .85rem; padding: .35rem .7rem; } .xtrack.on { background: #8e1830; color: #fff4e0; }

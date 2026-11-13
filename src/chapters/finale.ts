@@ -211,7 +211,7 @@ const musical: RoomDef = {
     hallShell(R, { chandeliers: false });
     const set = new THREE.Group(); set.position.y = 12; R.room.group.add(set); N.set = set; buildCastle(R, set);
     // главный занавес за порталом
-    const cur = new THREE.Group(); R.room.group.add(cur); N.curtain = cur; for (let x = -15; x <= 15; x += 2) { const b = R.box(x, -2.3, 2.1, 0.3, 10, { tex: 'velvet', solid: false }); R.room.group.remove(b); cur.add(b); }
+    const cur = new THREE.Group(); R.room.group.add(cur); N.curtain = cur; { const back = R.box(0, -2.36, 32, 0.12, 10, { color: 0x2a0608, solid: false, cast: false }); R.room.group.remove(back); cur.add(back); R.drape(0, -2.24, 32, 10, { folds: 18, parent: cur }); }
     // свет: ключевой, цветные боковые, пушка из зала, фонарь Полины
     R.spot(0, 15, -1, 0, -7.5, 0xffe2b0, 90, { angle: 0.42, cone: 0.05, name: 'key' });
     R.spot(-12, 13, -2, -3, -8, 0xff6080, 36, { angle: 0.3, cone: 0.045, shadow: false, name: 'red' }); R.spot(12, 13, -2, 3, -8, 0x60d0d0, 36, { angle: 0.3, cone: 0.045, shadow: false, name: 'teal' });

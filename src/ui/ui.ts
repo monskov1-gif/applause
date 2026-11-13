@@ -12,18 +12,44 @@ import { G, MASK_NAMES } from '../world/game';
 const root = () => document.getElementById('ui')!;
 export function el(tag: string, cls = '', html = '', parent?: HTMLElement): HTMLElement { const e = document.createElement(tag); if (cls) e.className = cls; if (html) e.innerHTML = html; if (parent) parent.appendChild(e); return e; }
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
-const MAP: [string, string, number, number, number, number, string][] = [
-  // [id, название, x, y, w, h, этаж]
-  ['hub_mezz', 'Бельэтаж', 30, 20, 240, 40, '2'], ['hub_rehearsal', 'Репетиционный', 30, 70, 70, 40, '2'], ['hub_archive', 'Архив', 105, 70, 55, 40, '2'], ['hub_box', 'Ложа 3', 165, 70, 45, 40, '2'], ['hub_office', 'Кабинет К.', 215, 70, 55, 40, '2'],
-  ['hub_foyer', 'Фойе', 30, 160, 110, 70, '1'], ['hub_stage', 'Сцена и зал', 150, 160, 120, 70, '1'], ['hub_corridor', 'Служебный коридор', 30, 240, 240, 34, '1'], ['hub_dressing', 'Гримёрка режиссёра', 30, 282, 75, 34, '1'], ['hub_costume', 'Костюмерная', 110, 282, 70, 34, '1'], ['hub_workshop', 'Мастерская', 185, 282, 85, 34, '1'], ['hub_backstage', 'Карман сцены', 280, 160, 70, 114, '1'],
-  ['hub_trap', 'Трюм под сценой', 150, 370, 200, 40, '0'],
+const MAP: [string, string, number, number, number, number, string, string][] = [
+  // [id, название, x, y, w, h, этаж, значок]
+  ['hub_mezz', 'Бельэтаж', 40, 44, 250, 34, '2', '✦'], ['hub_rehearsal', 'Репетиционный', 40, 86, 62, 40, '2', '♪'], ['hub_archive', 'Архив', 108, 86, 56, 40, '2', '❦'], ['hub_box', 'Ложа 3', 170, 86, 50, 40, '2', '◎'], ['hub_office', 'Кабинет К.', 226, 86, 64, 40, '2', '✎'],
+  ['hub_foyer', 'Фойе', 40, 176, 98, 62, '1', '❖'], ['hub_buffet', 'Буфет', 40, 244, 98, 26, '1', '☕'], ['hub_stage', 'Сцена и зал', 146, 176, 144, 94, '1', ''], ['hub_backstage', 'Карман сцены', 298, 176, 62, 132, '1', '⚙'],
+  ['hub_corridor', 'Служебный коридор', 40, 278, 250, 30, '1', ''], ['hub_dressing', 'Гримёрка', 40, 314, 60, 32, '1', '★'], ['hub_costume', 'Костюмерная', 104, 314, 62, 32, '1', '♛'], ['hub_props', 'Реквизит', 170, 314, 56, 32, '1', '⚔'], ['hub_workshop', 'Мастерская', 230, 314, 60, 32, '1', '⚒'],
+  ['hub_trap', 'Трюм под сценой', 146, 400, 214, 34, '0', '⚙'],
 ];
 function theaterMap(cur: string, visited: Record<string, 1>) {
-  const label = (y: number, t: string) => `<text x="8" y="${y}" font-family="Playfair Display" font-size="10" fill="#8e1830" letter-spacing="2">${t}</text>`;
-  const rooms = MAP.map(([id, n, x, y, w, h]) => { const v = visited[id] || id === cur, here = id === cur; return `<g><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${here ? '#8e1830' : v ? '#efe0b8' : '#d8cba8'}" stroke="#5a4029" stroke-width="${here ? 2 : 1}" ${v ? '' : 'stroke-dasharray="3 2"'}/><text x="${x + w / 2}" y="${y + h / 2 + 3}" text-anchor="middle" font-family="Lora" font-size="8.5" fill="${here ? '#fff4e0' : v ? '#2a1a14' : '#9a8a6a'}">${v ? n : '?'}</text></g>`; }).join('');
-  const links = [[150, 60, 150, 160], [262, 60, 262, 240], [250, 274, 250, 370], [210, 230, 210, 370], [85, 230, 85, 240], [270, 200, 280, 200], [55, 274, 55, 282], [145, 274, 145, 282], [228, 274, 228, 282], [65, 60, 65, 70], [132, 60, 132, 70], [187, 60, 187, 70], [242, 60, 242, 70]].map(([a, b, c, d]) => `<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" stroke="#a3122a" stroke-width="1.5" stroke-dasharray="2 2"/>`).join('');
-  const inPrimary = MAP.some((m) => m[0] === cur);
-  return `<svg viewBox="0 0 360 420" style="width:100%;max-height:62vh;display:block" xmlns="http://www.w3.org/2000/svg">${label(14, 'ЭТАЖ 2 · БЕЛЬЭТАЖ')}${label(150, 'ЭТАЖ 1 · ПАРТЕР')}${label(362, 'ПОД СЦЕНОЙ')}${links}${rooms}</svg><p class="warn">Пунктир, переходы и лестницы. «?», там вы ещё не были.${inPrimary ? '' : ' Сейчас вы за пределами театра, в чужой пьесе.'}</p>`;
+  const G = (window as any).__G, f = G?.f || {};
+  const ink = '#3a2414', red = '#8e1830', paper = '#efe2c0';
+  const cart = (y: number, t: string) => `<g><path d="M95 ${y - 9} h146 l8 9 l-8 9 h-146 l-6 -9 z" fill="#e4d0a4" stroke="${ink}" stroke-width=".8"/><text x="168" y="${y + 3.5}" text-anchor="middle" font-family="Playfair Display" font-size="9" fill="${red}" letter-spacing="2.5">${t}</text></g>`;
+  const room = ([id, n, x, y, w, h, , ic]: typeof MAP[number]) => {
+    const v = visited[id] || id === cur, here = id === cur; const fill = here ? '#f6d9a8' : v ? paper : '#dccba4';
+    let deco = '';
+    if (id === 'hub_stage') { // сцена и дуги партера
+      deco = `<rect x="${x + 6}" y="${y + 6}" width="${w - 12}" height="22" fill="#c8a670" stroke="${ink}" stroke-width=".6"/><path d="M${x + 6} ${y + 28} q${(w - 12) / 2} 14 ${w - 12} 0" fill="none" stroke="${red}" stroke-width="1.4"/>` +
+        [0, 1, 2, 3, 4].map((k) => `<path d="M${x + 14 + k * 3} ${y + 44 + k * 9} q${(w - 28 - k * 6) / 2} ${12} ${w - 28 - k * 6} 0" fill="none" stroke="${red}" stroke-width="2.2" stroke-dasharray="2.2 1.2" opacity="${v ? 0.75 : 0.35}"/>`).join('') +
+        `<text x="${x + w / 2}" y="${y + 20}" text-anchor="middle" font-family="Playfair Display" font-size="7.5" fill="${ink}" letter-spacing="1.5">СЦЕНА</text>`;
+    }
+    const lab = v ? n : '?';
+    return `<g>${here ? `<rect x="${x - 3}" y="${y - 3}" width="${w + 6}" height="${h + 6}" fill="none" stroke="${red}" stroke-width="1.2" stroke-dasharray="1 2"><animate attributeName="stroke-dashoffset" from="0" to="6" dur="1s" repeatCount="indefinite"/></rect>` : ''}
+      <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}" stroke="${ink}" stroke-width="${here ? 1.6 : 0.9}" ${v ? '' : 'stroke-dasharray="3 2"'}/>
+      <rect x="${x + 2}" y="${y + 2}" width="${w - 4}" height="${h - 4}" fill="none" stroke="${ink}" stroke-width=".3" opacity=".5"/>${deco}
+      ${ic && v ? `<text x="${x + 7}" y="${y + 11}" font-size="8" fill="${red}">${ic}</text>` : ''}
+      <text x="${x + w / 2}" y="${id === 'hub_stage' || id === 'hub_backstage' ? y + h - 6 : y + h / 2 + 3}" text-anchor="middle" font-family="Lora" font-style="italic" font-size="${w < 66 ? 7 : 8.5}" fill="${v ? ink : '#9a8a6a'}">${lab}</text></g>`;
+  };
+  const stairs = (x: number, y1: number, y2: number) => `<g stroke="${red}" stroke-width="1.1">${Array.from({ length: Math.max(2, Math.round((y2 - y1) / 5)) }, (_, k) => `<line x1="${x - 4}" y1="${y1 + k * 5}" x2="${x + 4}" y2="${y1 + k * 5}"/>`).join('')}</g>`;
+  const links = stairs(70, 126, 176) + stairs(262, 126, 278) + stairs(320, 308, 400) + stairs(214, 270, 278) + `<g stroke="${red}" stroke-width="1.2" stroke-dasharray="2 2">` + [[85, 238, 85, 244], [138, 210, 146, 210], [290, 220, 298, 220], [70, 308, 70, 314], [135, 308, 135, 314], [198, 308, 198, 314], [260, 308, 260, 314], [71, 78, 71, 86], [136, 78, 136, 86], [195, 78, 195, 86], [258, 78, 258, 86], [240, 270, 240, 278]].map(([a, b, c, d]) => `<line x1="${a}" y1="${b}" x2="${c}" y2="${d}"/>`).join('') + '</g>';
+  // двери в миры друзей в кармане сцены
+  const FR: [string, string][] = [['polina', 'П'], ['ruben', 'Р'], ['matvey', 'М'], ['erika', 'Э'], ['liza', 'Л'], ['angelina', 'А']];
+  const doors = FR.map(([id, c], i) => { const dn = !!f['done_' + id]; const y = 196 + i * 18; return `<g><rect x="306" y="${y}" width="12" height="14" rx="5" fill="${dn ? '#e8c060' : '#5a3a28'}" stroke="${ink}" stroke-width=".6"/><text x="312" y="${y + 10}" text-anchor="middle" font-family="Lora" font-size="7" fill="${dn ? ink : '#e8d8b0'}">${c}</text></g>`; }).join('');
+  const here = MAP.find((m) => m[0] === cur); const pin = here ? `<g transform="translate(${here[2] + here[4] - 9} ${here[3] + 4})"><path d="M0 0 c-5 0 -6 6 0 12 c6 -6 5 -12 0 -12z" fill="${red}" stroke="#fff4e0" stroke-width=".8"/><circle cx="0" cy="4" r="1.6" fill="#fff4e0"/><animateTransform attributeName="transform" type="translate" additive="sum" values="0 0;0 -2;0 0" dur="1.2s" repeatCount="indefinite"/></g>` : '';
+  const compass = `<g transform="translate(345 34)" font-family="Playfair Display" font-size="7" fill="${ink}"><circle r="14" fill="none" stroke="${ink}" stroke-width=".6"/><path d="M0 -13 L3 0 L0 13 L-3 0 Z" fill="${red}"/><path d="M-13 0 L0 3 L13 0 L0 -3 Z" fill="${ink}" opacity=".6"/><text y="-16" text-anchor="middle">С</text></g>`;
+  const stains = `<circle cx="300" cy="380" r="26" fill="#c8a870" opacity=".12"/><circle cx="60" cy="140" r="18" fill="#b89860" opacity=".1"/><circle cx="210" cy="30" r="12" fill="#b89860" opacity=".08"/>`;
+  const frame = `<rect x="4" y="4" width="372" height="444" fill="${paper}" stroke="${ink}" stroke-width="1.6"/><rect x="9" y="9" width="362" height="434" fill="none" stroke="${red}" stroke-width=".7"/>` + [[9, 9], [371, 9], [9, 443], [371, 443]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="3.2" fill="${red}"/>`).join('');
+  const title = `<text x="190" y="462" text-anchor="middle" font-family="Playfair Display" font-size="9" fill="${ink}" letter-spacing="3">ТЕАТР ИМ. М. КОВАЛЕВСКОГО · ПЛАН ЗДАНИЯ</text>`;
+  const inPrimary = !!here;
+  return `<svg viewBox="0 0 380 470" style="width:100%;max-height:66vh;display:block" xmlns="http://www.w3.org/2000/svg">${frame}${stains}${compass}${cart(26, 'ЭТАЖ II · БЕЛЬЭТАЖ')}${cart(160, 'ЭТАЖ I · ПАРТЕР')}${cart(388, 'ПОДВАЛ · ТРЮМ')}${links}${MAP.map(room).join('')}${doors}${pin}${title}</svg><p class="warn">Красные ступени, лестницы. «?», там вы ещё не были. В кармане сцены, двери в пьесы друзей: золотые уже пройдены.${inPrimary ? '' : ' Сейчас вы за пределами театра, в чужой пьесе.'}</p>`;
 }
 const fmtTime = (s: number) => `${Math.floor(s / 3600)}:${String(Math.floor(s / 60) % 60).padStart(2, '0')}`;
 import { logoSVG } from './logo';
@@ -240,7 +266,7 @@ class UI {
     const withIntro = !this.introPlayed && (!seen || settings.introAlways) && !G.fast; this.introPlayed = true;
     const { DressingRoom } = await import('../menu/dressing');
     if (G.menuScene) G.menuScene.dispose(); const scene = G.menuScene = new DressingRoom(G.R, withIntro);
-    const scr = el('div', 'menu-screen m3d' + (withIntro ? ' intro' : ' ready'), `<div class="m3d-left"><div class="menu-logo">${LOGO}</div><nav class="menu-list"><button class="btn" data-a="cont" ${latest ? '' : 'disabled'}>Продолжить</button><button class="btn" data-a="new">Новая игра</button><button class="btn" data-a="load">Загрузить</button><button class="btn" data-a="set">Настройки</button><button class="btn" data-a="cred">Создатели</button><button class="btn" data-a="exit">Выход</button></nav></div><div class="m3d-hint">нажмите или кликните, чтобы повернуть ключ</div><div class="m3d-skip">Esc, пропустить вступление</div>`, root());
+    const scr = el('div', 'menu-screen m3d' + (withIntro ? ' intro' : ' ready'), `<div class="m3d-left"><div class="menu-logo">${LOGO}</div><nav class="menu-list"><button class="btn" data-a="cont" ${latest ? '' : 'disabled'}>Продолжить</button><button class="btn" data-a="new">Новая игра</button><button class="btn" data-a="load">Загрузить</button><button class="btn" data-a="set">Настройки</button><button class="btn" data-a="extra" ${(() => { try { return JSON.parse(localStorage.getItem('tom-unlock') || '[]').length ? '' : 'disabled'; } catch { return 'disabled'; } })()}>Закулисье</button><button class="btn" data-a="cred">Создатели</button><button class="btn" data-a="exit">Выход</button></nav></div><div class="m3d-hint">нажмите или кликните, чтобы повернуть ключ</div><div class="m3d-skip">Esc, пропустить вступление</div>`, root());
     scene.onState = (s: string) => { scr.classList.toggle('await', s === 'await'); if (s === 'logo') scr.classList.add('logo-in'); if (s === 'menu') { scr.classList.remove('intro'); scr.classList.add('ready', 'logo-in'); try { localStorage.setItem('tom-intro-seen', '1'); } catch (e) { console.warn(e); } (scr.querySelector(latest ? '[data-a=cont]' : '[data-a=new]') as HTMLElement)?.focus({ preventScroll: true }); } };
     scene.build();
     const introKey = (e: KeyboardEvent | PointerEvent) => { if (scene.state === 'menu' || this.modal) return; audio.init(); const esc = (e as KeyboardEvent).code === 'Escape'; scene.input(esc ? 'skip' : 'act'); if (e.type === 'keydown') e.preventDefault(); };
@@ -250,8 +276,19 @@ class UI {
     scr.addEventListener('click', async (e) => { audio.init(); const a = (e.target as HTMLElement).dataset?.a; if (!a || scene.state !== 'menu') return; audio.sfx('click');
       if (a === 'cont' && latest) { cleanup(); await G.start(latest); }
       if (a === 'new') { if (latest && !(await this.confirm('Начать новую игру? Автосохранение будет перезаписано, ручные слоты останутся.', 'Начать'))) return; cleanup(); await G.start(newState()); }
-      if (a === 'load') this.saveLoad('load'); if (a === 'set') this.settings(); if (a === 'cred') this.credits(false);
+      if (a === 'load') this.saveLoad('load'); if (a === 'set') this.settings(); if (a === 'cred') this.credits(false); if (a === 'extra') this.extras();
       if (a === 'exit') { audio.music(null); audio.sfx('curtain'); const c = el('div', 'card', '<p class="act">ЗАНАВЕС</p><p>Спасибо, что заглянули в гримёрку.</p><p class="sm">Закройте вкладку, или нажмите, чтобы вернуться.</p>', root()); c.onclick = () => { c.remove(); audio.music('musicbox'); }; } });
+  }
+  /** «Закулисье»: галерея открытых героев и музыкальная комната с услышанными темами. */
+  extras() {
+    let un: string[] = [], tr: string[] = []; try { un = JSON.parse(localStorage.getItem('tom-unlock') || '[]'); tr = JSON.parse(localStorage.getItem('tom-tracks') || '[]'); } catch { /* ignore */ }
+    const done = (() => { try { return !!localStorage.getItem('tom-done'); } catch { return false; } })();
+    const CH: [string, string, string][] = [['polina', 'Полина', 'Дом, который смотрит'], ['ruben', 'Рубен', 'Royal Flush'], ['matvey', 'Матвей', '100 шагов к неизбежному'], ['erika', 'Эрика', 'Город, который не спит'], ['liza', 'Лиза', 'Башня не дом'], ['angelina', 'Ангелина', 'Ангел без нимба'], ['alla', 'Алла Ева', 'Прима']];
+    const card = ([id, n, t]: [string, string, string]) => { const open = un.includes(id) || (id === 'alla' && done); return `<figure class="xcard ${open ? '' : 'locked'}"><div class="xport">${open ? `<img src="portraits/${id}.png" alt="">` : '<span>?</span>'}</div><figcaption><b>${open ? n : '???'}</b><small>${open ? t : 'сыграйте главу'}</small></figcaption></figure>`; };
+    const TN: Record<string, string> = { menu_box: 'Музыкальная шкатулка', theater: 'Театр ночью', backstage: 'За кулисами', horror: 'Дом, который смотрит', heist: 'Ограбление', noir: 'Нуар под дождём', school: 'Школьное утро', fairy: 'Сказка', idol_own: 'Свой голос', diva: 'Прима', fin_argue: 'Ссора', fin_overture: 'Увертюра', fin_queen: 'Хлопайте!', fin_girl: 'Песня Девушки', fin_minuet: 'Менуэт', fin_mirror: 'Зеркальный танец', fin_reveal: 'Один человек', fin_bows: 'Поклоны', party: 'Восемнадцать', morning: 'Утро в Сиднее' };
+    const tracks = Object.keys(TN).filter((k) => tr.includes(k)).map((k) => `<button class="btn xtrack" data-t="${k}">♪ ${TN[k]}</button>`).join('');
+    const m = this.open(`<h2>Закулисье <small>то, что остаётся после спектакля</small></h2><div class="body"><h3>Труппа</h3><div class="xgal">${CH.map(card).join('')}</div><h3>Музыкальная комната</h3><div class="xtracks">${tracks || '<p class="warn">Пока здесь тихо.</p>'}</div></div><div class="foot"><button class="btn" data-x="close">Закрыть</button></div>`, { onClose: () => { audio.music(localStorage.getItem('tom-done') ? 'fin_bows' : 'menu_box', { fade: 1 }); } });
+    m.addEventListener('click', (e) => { const t = (e.target as HTMLElement).closest('[data-t]') as HTMLElement | null; if (t) { audio.music(t.dataset.t!, { fade: 0.6, restart: true }); m.querySelectorAll('.xtrack').forEach((b) => b.classList.toggle('on', b === t)); } });
   }
   credits(final: boolean): Promise<void> {
     if (final) { try { localStorage.setItem('tom-done', '1'); } catch { /* приватный режим */ } audio.music('fin_bows', { restart: true }); }

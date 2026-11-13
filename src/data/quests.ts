@@ -27,6 +27,15 @@ function hub(f: F, G: any, room: string): Objective {
     if (G.has('marionette') && !f.office_open) extra.push('Найти замок для марионетки: гобелен на бельэтаже в маске Трагедии');
     if (G.has('braid') && !f.braid_used) extra.push('Лиза ждёт за кулисами: блок со старым тросом');
     if (!f.foyer0) extra.push('Осмотреть фойе');
+    // «Дело Аллы Евы»: подсказки по доске и свидетелям
+    const clues = ['c_photo','c_powder','c_fortuna','c_darling','c_contract','c_poster','c_mirror','c_usher','c_letters','c_loop','c_prompter','c_script','c_light'].filter((c) => G.has(c)).length;
+    const deds = ['ded_1','ded_2','ded_3','ded_4','ded_5','ded_6'].filter((k) => f[k]).length;
+    if (n >= 1 && clues >= 2 && deds < 6) extra.push(`Дело Аллы Евы: улик ${clues}, выводов ${deds} из 6. Доска улик в гримёрке, соединяйте улики по две`);
+    if (n >= 1 && !G.has('c_powder')) extra.push('На сцене, где обычно стоит Алла, что-то блестит на полу');
+    if (!f.w_usher) extra.push('В фойе у кассы дежурит пожилая билетёрша. Она здесь сорок лет');
+    else if (!G.has('c_usher')) extra.push('Билетёрша разговорится, если её рассмешить: попробуйте маску Комедии');
+    if (done(f, 'polina') && f.w_stagehand && !G.has('c_light')) extra.push('Машинист Коля что-то прячет: маска Трагедии показывает спрятанное');
+    if (done(f, 'polina') && f.w_prompter && !G.has('c_prompter')) extra.push('Суфлёр не помнит последний вечер Аллы. Маска Драмы показывает, как было на самом деле');
     return { main: `Вернуть труппу: друзей в театре ${n} из 6`, hint: 'Двери в жанровые миры в кармане сцены, за люком', extra };
   }
   if (!f.act4) return { main: 'Подняться на сцену: друзья ждут', extra };

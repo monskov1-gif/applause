@@ -291,6 +291,19 @@ export class Builder {
   /** Набор зрителей в зале (спины). */
   crowd(ids: string[], x0: number, z0: number, cols: number, dx = 1.5, dz = 1.6, dir = 'b') { ids.forEach((id, i) => this.actor(id, x0 + (i % cols) * dx + (Math.floor(i / cols) % 2) * 0.5, z0 + Math.floor(i / cols) * dz, { dir, id: 'crowd_' + i + '_' + id })); }
   table(x: number, z: number, w = 2.4, d = 1.2, o: any = {}) { const top = this.box(x, z, w, d, 0.15, { tex: o.tex || 'wood', y: 1.0, ...o }); for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) this.box(x + sx * (w / 2 - 0.15), z + sz * (d / 2 - 0.15), 0.15, 0.15, 1, { tex: 'darkwood', solid: false, mask: o.mask }); return top; }
-  curtain(x: number, z: number, w: number, h = 6, o: any = {}) { return this.box(x, z, w, 0.3, h, { tex: 'velvet', solid: o.solid ?? false, ...o }); }
+  /** Занавес: одно цельное полотно с мягкими складками и тёмная подкладка под ним (никаких «жалюзи»). */
+  curtain(x: number, z: number, w: number, h = 6, o: any = {}) {
+    const back = this.box(x, z - 0.06, w, 0.12, h, { color: o.lining ?? 0x2a0608, solid: o.solid ?? false, cast: false, y: o.y });
+    this.drape(x, z + 0.05, w, h, { y: o.y, tint: o.tint, folds: o.folds, parent: o.parent }); return back;
+  }
+  /** Ткань со складками: одна плоскость, волна по ширине, бархатная пиксельная текстура без полос. */
+  drape(x: number, z: number, w: number, h: number, o: { y?: number; tint?: string; folds?: number; parent?: THREE.Object3D; scallop?: boolean } = {}) {
+    const folds = o.folds ?? Math.max(3, Math.round(w * 1.6)); const g = new THREE.PlaneGeometry(w, h, folds * 6, o.scallop ? 6 : 1); const pos = g.attributes.position;
+    for (let i = 0; i < pos.count; i++) { const px = pos.getX(i), py = pos.getY(i); const ph = (px / w + 0.5) * folds * Math.PI * 2; pos.setZ(i, Math.sin(ph) * 0.09); if (o.scallop && py < -h / 2 + 0.01) pos.setY(i, py + (1 - Math.abs(Math.cos(ph / 2))) * 0.35); }
+    g.computeVertexNormals();
+    const t = canvasTex(32, 32, (c) => { const base = new THREE.Color(o.tint || '#8e1424'); for (let yy = 0; yy < 32; yy++) for (let xx = 0; xx < 32; xx++) { const k = 0.82 + 0.18 * Math.sin((xx / 32) * Math.PI * 2) + ((xx * 7 + yy * 13) % 11 === 0 ? 0.06 : 0) - yy / 32 * 0.12; const q = base.clone().multiplyScalar(k); c.fillStyle = '#' + q.getHexString(); c.fillRect(xx, yy, 1, 1); } }, 'drapeTex' + (o.tint || ''));
+    t.wrapS = THREE.RepeatWrapping; t.repeat.set(folds, 1); const tt = t.clone(); tt.needsUpdate = true; tt.wrapS = THREE.RepeatWrapping; tt.repeat.set(folds, 1);
+    const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ map: tt, side: THREE.DoubleSide })); m.position.set(x, (o.y || 0) + h / 2, z); m.receiveShadow = true; (o.parent || this.room.group).add(m); return m;
+  }
 }
 (globalThis as any).__charSheet = charSheet; // отладка: листы спрайтов

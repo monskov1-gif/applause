@@ -159,8 +159,8 @@ export function hallShell(R: Builder, o: { chandeliers?: boolean } = {}) {
     for (const z of [-21, -16, -11, -6]) for (const sx of [-1, 1]) R.curtain(sx * 14.5, z, 2.6, 10, { solid: false });
     R.box(0, -22.6, 34, 0.3, 9, { tex: 'velvet', solid: false }); for (let i = 0; i < 4; i++) R.box(0, -20 + i * 4, 30, 0.1, 0.1, { tex: 'metal', y: 10.2, solid: false, cast: false });
     R.box(0, -18.5, 27, 0.16, 0.16, { tex: 'metal', y: 10.2, solid: false, cast: false });
-    for (const sx of [-1, 1]) { R.curtain(sx * 13.6, -2.6, 2.6, 9.4, { solid: false }); R.box(sx * 13.6, -2.6, 2.8, 0.4, 1.2, { tex: 'velvet', y: 8.2, solid: false, cast: false }); }
-    R.box(0, -1.8, 36, 0.8, 2, { tex: 'gold', y: 9.6, solid: false }); for (const sx of [-1, 1]) R.box(sx * 16.5, -1.8, 3, 0.8, 11.6, { tex: 'gold' }); for (let x = -14; x <= 14; x += 2) R.box(x, -1.7, 2, 0.3, 1.4, { tex: 'velvet', y: 8.2, solid: false });
+    for (const sx of [-1, 1]) { R.curtain(sx * 13.6, -2.6, 2.6, 9.4, { solid: false }); R.drape(sx * 13.6, -2.38, 2.8, 1.2, { y: 8.2, scallop: true, folds: 2 }); }
+    R.box(0, -1.8, 36, 0.8, 2, { tex: 'gold', y: 9.6, solid: false }); for (const sx of [-1, 1]) R.box(sx * 16.5, -1.8, 3, 0.8, 11.6, { tex: 'gold' }); R.box(0, -1.76, 30, 0.1, 1.5, { color: 0x2a0608, y: 8.1, solid: false, cast: false }); R.drape(0, -1.66, 30, 1.5, { y: 8.1, scallop: true, folds: 14 });
     // рампа: тёплые, но не слепящие лампы-«раковины»; настоящий свет только у двух крайних и центральной
     const foot = canvasTex(10, 6, (c) => { c.fillStyle = '#3a2a14'; c.fillRect(0, 2, 10, 4); c.fillStyle = '#86641c'; c.fillRect(0, 2, 10, 1); c.fillStyle = '#ffe2a0'; c.fillRect(2, 0, 6, 3); c.fillStyle = '#fff4d0'; c.fillRect(3, 0, 3, 1); }, 'footlamp');
     for (let x = -13; x <= 13; x += 1.3) { const d = R.decal(foot, { x, y: 0.16, z: -1.18, w: 0.5, h: 0.3, glow: true, color: 0xd8c0a0, noSlot: true }); void d; }

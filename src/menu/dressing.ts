@@ -376,6 +376,17 @@ export class DressingRoom {
     // программка под шкатулкой слева
     const prog = new THREE.Mesh(new THREE.PlaneGeometry(0.28, 0.4), std({ map: pixTex(24, 32, (c) => { rect(c, 0, 0, 24, 32, '#4a0a14'); c.strokeStyle = '#d4ae48'; c.strokeRect(1.5, 1.5, 21, 29); rect(c, 6, 10, 12, 2, '#d4ae48'); rect(c, 8, 14, 8, 1, '#d4ae48'); rect(c, 5, 22, 14, 1, '#d4ae48'); ell(c, 12, 6, 2, 2, '#d4ae48'); }, 'prog') }));
     prog.position.set(-0.05, 0.004, -0.35); prog.rotation.set(-Math.PI / 2, 0, 0.5); put(prog);
+    // сувениры пройденных глав: на столе появляется по одной вещице от каждого друга
+    let un: string[] = []; try { un = JSON.parse(localStorage.getItem('tom-unlock') || '[]'); } catch { un = []; }
+    const KEEP: Record<string, [number, number, number, (c: C2) => void]> = {
+      polina: [-0.62, 0.34, 0.12, (c) => { ell(c, 8, 8, 7, 7, '#c89a10'); ell(c, 8, 8, 6, 6, '#f2c230'); for (const [x, y] of [[6, 6], [10, 6], [6, 10], [10, 10]]) rect(c, x - 1, y - 1, 2, 2, '#7a5a08'); }],
+      ruben: [1.05, 0.62, 0.13, (c) => { ell(c, 8, 8, 7, 7, '#1a1a1e'); ell(c, 8, 8, 6, 6, '#c41e3a'); for (let k = 0; k < 6; k++) { const a = k / 6 * 6.283; rect(c, 8 + Math.cos(a) * 5 - 1, 8 + Math.sin(a) * 5 - 1, 2, 2, '#f4f0e8'); } ell(c, 8, 8, 3, 3, '#f4f0e8'); }],
+      matvey: [-0.34, 0.66, 0.2, (c) => { rect(c, 7, 0, 2, 3, '#3a2a1e'); ell(c, 8, 10, 6, 7, '#e84a4a'); for (let y = 5; y < 16; y += 3) rect(c, 2, y, 12, 1, '#a82a2a'); rect(c, 5, 16, 6, 2, '#3a2a1e'); ell(c, 7, 9, 2, 3, '#ffb0a0'); }],
+      erika: [1.55, 0.32, 0.12, (c) => { rect(c, 1, 3, 14, 10, '#e8e4dc'); rect(c, 1, 3, 14, 3, '#1a1a1e'); rect(c, 3, 8, 10, 1, '#7a7a7a'); rect(c, 3, 10, 7, 1, '#7a7a7a'); rect(c, 11, 9, 2, 3, '#c41e3a'); }],
+      liza: [0.32, 0.74, 0.16, (c) => { for (let k = 0; k < 6; k++) rect(c, 4 + (k % 2) * 3, 1 + k * 2.4, 5, 3, k % 2 ? '#c89a5a' : '#e8c080'); rect(c, 3, 15, 10, 3, '#e84a6f'); }],
+      angelina: [-0.85, 0.02, 0.18, (c) => { ell(c, 8, 5, 5, 5, '#3a3a44'); ell(c, 8, 5, 4, 4, '#8a8a9a'); for (let y = 2; y < 9; y += 2) rect(c, 4, y, 8, 1, '#4a4a54'); rect(c, 7, 10, 2, 8, '#1a1a1e'); ell(c, 8, 18, 4, 1.5, '#1a1a1e'); }],
+    };
+    for (const id of un) { const k = KEEP[id]; if (!k) continue; const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: pixTex(16, 20, k[3], 'keep_' + id), transparent: true, alphaTest: 0.4 })); sp.scale.set(k[2], k[2] * 1.25, 1); sp.position.set(k[0], k[2] * 0.62, k[1]); put(sp); }
   }
   /** Фото, ноты и открытка, заткнутые за раму зеркала. */
   wallDeco(_gold: Mat, ML: number, MRt: number, MY: number, MH: number, WZ: number) {
