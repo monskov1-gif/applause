@@ -135,10 +135,14 @@ const terrace: RoomDef = {
   build(R, G) {
     R.room.group.userData.bg = 0x0c1430; fog(R, 0x101a3a, 40, 120); G.cam.pitch = 0.3;
     // плитка террасы: продлена во все стороны (за краем кадра сад и фасад)
-    const tile = canvasTex(32, 32, (c) => { for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) { const g = x % 16 === 0 || y % 16 === 0, d = ((x >> 4) + (y >> 4)) % 2; px(c, x, y, 1, 1, g ? '#6a6458' : d ? (hsh(x, y, 2) < 0.3 ? '#b0a894' : '#bcb4a0') : (hsh(x, y, 3) < 0.3 ? '#a49c88' : '#aca490')); } px(c, 7, 7, 2, 2, '#8a8270'); px(c, 23, 23, 2, 2, '#8a8270'); }, 'rterr');
-    paintFloor(R, tile, 2.4, { w: 80, d: 20, z: 6.5, apron: 0 }); R.ambient(0x3a4060, 2.8, 0xc0c8e8); R.sun(0x9ab0e0, 1.6, -8, 14, 10);
+    const tile = canvasTex(32, 32, (c) => { for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) { const g = x % 16 === 0 || y % 16 === 0, d = ((x >> 4) + (y >> 4)) % 2; px(c, x, y, 1, 1, g ? '#3e3a34' : d ? (hsh(x, y, 2) < 0.3 ? '#7a7466' : '#857e6e') : (hsh(x, y, 3) < 0.3 ? '#6e685a' : '#767062')); if (hsh(x, y, 9) < 0.03) px(c, x, y, 1, 1, '#5a5446'); } px(c, 7, 7, 2, 2, '#5a5446'); px(c, 23, 23, 2, 2, '#5a5446'); }, 'rterr2');
+    paintFloor(R, tile, 2.4, { w: 80, d: 20, z: 6.5, apron: 0 }); R.ambient(0x2e3456, 2.0, 0x8a96c0); R.sun(0x9ab0e0, 1.0, -8, 14, 10);
     // задник: Альпы + озеро; плоскость озера под террасой с бликами огней
     backdrop(R, alpsTex(), { z: -30, w: 96, h: 23.2, y: -12.9, tilt: 0.04 });
+    // ближний хребет: лесистые склоны с виллами и огоньками — детализация поверх дальних Альп
+    const ridge = canvasTex(512, 64, (c) => { for (let x = 0; x < 512; x++) { const h1 = 26 + Math.sin(x * 0.021) * 9 + Math.sin(x * 0.067 + 1) * 4 + Math.sin(x * 0.19) * 1.5; for (let y = Math.floor(h1); y < 64; y++) { const k = (y - h1) / 40; px(c, x, y, 1, 1, hsh(x, y, 31) < 0.25 ? '#0e1830' : k < 0.08 ? '#2a3a5a' : k < 0.3 ? '#16243e' : '#101a30'); } if (hsh(x, 0, 32) < 0.35) { const th = 3 + Math.floor(hsh(x, 1, 33) * 4); px(c, x, Math.floor(h1) - th, 1, th, '#0c1426'); } }
+      for (let i = 0; i < 70; i++) { const x = Math.floor(hsh(i, 41) * 510), y = 36 + Math.floor(hsh(i, 42) * 24); px(c, x, y, 1, 1, i % 4 ? '#ffd890' : '#fff4d8'); if (i % 7 === 0) { px(c, x - 2, y - 3, 5, 3, '#c8bca8'); px(c, x - 2, y - 4, 5, 1, '#6a3a2a'); px(c, x, y - 2, 1, 1, '#ffd060'); } } }, 'rridge');
+    backdrop(R, ridge, { z: -24, w: 128, h: 16, y: -9.5, tilt: 0.02 });
     const lake = new THREE.Mesh(new THREE.PlaneGeometry(300, 60), new THREE.MeshBasicMaterial({ color: 0x1a2448, fog: false })); lake.rotation.x = -Math.PI / 2; lake.position.set(0, -3, -28); R.room.group.add(lake);
     for (let i = 0; i < 50; i++) { const gl = new THREE.Mesh(new THREE.PlaneGeometry(0.6 + (i % 3) * 0.5, 0.1), new THREE.MeshBasicMaterial({ color: i % 5 ? 0xffd890 : 0xe8e8f8 })); gl.rotation.x = -Math.PI / 2; gl.position.set(-60 + (i * 7.3) % 120, -2.95, -6 - (i * 3.7) % 30); R.room.group.add(gl); }
     // подпорная стена террасы и балюстрада из нарисованных балясин
@@ -148,17 +152,17 @@ const terrace: RoomDef = {
     pbox(R, -17, -3.3, 52, 0.42, 0.16, { front: tex('white', '#e8e0d0') }, { y: 1.22, solid: false }); R.collider(-60, -40, 9, -3.1);
     for (let x = -40; x <= 6; x += 6.5) pbox(R, x, -3.3, 0.5, 0.5, 1.45, { front: tex('white', '#d8d0c0') }, { solid: false });
     // фасад казино в стиле бель-эпок: пилястры, арочные окна, козырёк с лампочками
-    const facade = canvasTex(32, 48, (c) => { px(c, 0, 0, 32, 48, '#d8ccb4'); for (let y = 0; y < 48; y += 6) px(c, 0, y, 32, 1, '#b8ac94'); px(c, 0, 0, 4, 48, '#e8dcc4'); px(c, 3, 0, 1, 48, '#a89c84'); px(c, 0, 22, 32, 3, '#c8bca4'); px(c, 0, 24, 32, 1, '#9a8e76');
-      for (const y0 of [4, 28]) { px(c, 9, y0, 16, 14, '#6a5a40'); px(c, 10, y0 + 1, 14, 13, '#ffd890'); c.fillStyle = '#ffd890'; c.beginPath(); c.arc(17, y0 + 1, 7, Math.PI, 0); c.fill(); px(c, 16, y0 - 5, 2, 19, '#8a7a5a'); px(c, 10, y0 + 6, 14, 1, '#8a7a5a'); px(c, 11, y0 + 2, 3, 4, '#fff4d0'); px(c, 8, y0 + 14, 18, 2, '#e8dcc4'); } }, 'rfacade');
+    const facade = canvasTex(32, 48, (c) => { px(c, 0, 0, 32, 48, '#9a8e7a'); for (let y = 0; y < 48; y += 6) px(c, 0, y, 32, 1, '#7a6e5c'); for (let i = 0; i < 40; i++) px(c, Math.floor(hsh(i, 5) * 32), Math.floor(hsh(i, 6) * 48), 1, 1, '#857a66'); px(c, 0, 0, 4, 48, '#aa9e88'); px(c, 3, 0, 1, 48, '#6a5e4c'); px(c, 0, 22, 32, 3, '#8a7e6a'); px(c, 0, 24, 32, 1, '#5e5242');
+      for (const y0 of [4, 28]) { px(c, 9, y0, 16, 14, '#6a5a40'); px(c, 10, y0 + 1, 14, 13, '#ffd890'); c.fillStyle = '#ffd890'; c.beginPath(); c.arc(17, y0 + 1, 7, Math.PI, 0); c.fill(); px(c, 16, y0 - 5, 2, 19, '#8a7a5a'); px(c, 10, y0 + 6, 14, 1, '#8a7a5a'); px(c, 11, y0 + 2, 3, 4, '#fff4d0'); px(c, 8, y0 + 14, 18, 2, '#e8dcc4'); } }, 'rfacade2');
     pbox(R, 21, -1.8, 24, 10.4, 10, { front: rep(facade, 24 / 4, 10 / 6), side: rep(facade, 10.4 / 4, 10 / 6), top: tex('stone') }, { solid: false }); R.collider(9, -7, 40, 3.4);
     gableRoof(R, 21, 10, -1.8, 26, 11);
     pbox(R, 13, 4.0, 4.2, 1.8, 0.25, { front: canvasTex(32, 4, (c) => { px(c, 0, 0, 32, 4, '#3a1a14'); for (let x = 1; x < 32; x += 3) px(c, x, 1, 1, 2, '#ffe8a0'); }, 'marquee'), emissive: 0xffffff }, { y: 3.9, solid: false });
     for (const sx of [-1.9, 1.9]) pbox(R, 13 + sx, 4.7, 0.18, 0.18, 3.9, { front: tex('gold') }, { solid: false });
     R.light(13, 3.4, 4.6, 0xffd890, 10, 9);
     // фонари вдоль балюстрады, кипарисы в кадках, скамья
-    for (const [x, z] of [[-14, -2.6], [-6, -2.6], [2, -2.6]]) { pbox(R, x, z, 0.18, 0.18, 3, { front: tex('metal') }, { solid: false }); R.sprite('lantern', x, z, { y: 3, glow: true, scale: 1.1, thin: true }); R.light(x, 3.2, z + 0.6, 0xffd890, 8, 8); }
+    for (const [x, z] of [[-14, -2.6], [-6, -2.6], [2, -2.6]]) { pbox(R, x, z, 0.18, 0.18, 3, { front: tex('metal') }, { solid: false }); R.sprite('lantern', x, z, { y: 3, glow: true, scale: 1.1, thin: true }); R.light(x, 3.2, z + 0.6, 0xffd890, 5, 8); }
     const cyp = canvasTex(20, 56, (c) => { px(c, 4, 46, 12, 10, '#5a4a3a'); px(c, 3, 46, 14, 2, '#8a7a6a'); px(c, 5, 48, 2, 8, '#7a6a58'); for (let y = 2; y < 46; y++) { const hw = Math.round(Math.sin((y / 46) * Math.PI) * 6 + 1); for (let x = -hw; x <= hw; x++) px(c, 10 + x, y, 1, 1, Math.abs(x) === hw ? '#0a140c' : x > hw / 3 ? (hsh(x, y, 4) < 0.5 ? '#3a6a44' : '#2e5a38') : (hsh(x, y, 5) < 0.4 ? '#1a3a22' : '#224a2c')); } }, 'cypress');
-    for (const [x, z] of [[-16, 4.8], [-21, 1.2], [4.8, 5.4], [7.6, -2.4], [-27, 4.6]]) R.sprite(cyp, x, z, { scale: 1.2, solid: 0.4 });
+    for (const [x, z] of [[-11.6, -2.4], [-24.5, 0.6], [7.6, -2.4], [-29, 3.2], [-33, -2.2]]) R.sprite(cyp, x, z, { scale: 1.2, solid: 0.4 });
     const bench = canvasTex(32, 14, (c) => { px(c, 0, 0, 32, 3, '#e8e0d0'); px(c, 0, 3, 32, 1, '#9a9284'); px(c, 1, 6, 30, 3, '#d8d0c0'); px(c, 2, 9, 4, 5, '#c8c0b0'); px(c, 26, 9, 4, 5, '#c8c0b0'); }, 'rbench');
     R.sprite(bench, -2, -2.5, { scale: 1.2 }); statue(R, -10, 0.2, { pose: 'muse' });
     car(R, -21, 4.0); R.look('car', -21, 5.4, 'Серебристый автомобиль', D.car); R.look('lake', -6, -2.2, 'Озеро', D.lake);

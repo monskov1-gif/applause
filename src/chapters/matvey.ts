@@ -213,7 +213,7 @@ const hall: RoomDef = {
   name: 'Коридор второго этажа', w: 40, d: 11, music: 'school_soft', amb: null, step: 'wood', grade: fakeGrade(0), camDist: 22,
   build(R, G) {
     const f = G.f; R.room.group.userData.bg = 0xd8dce4; fog(R, 0xd8dce4, 28, 80);
-    ground(R, T.hallFloor(), 0, 6, 160, 34, 1.8); R.ambient(0x8a8aa8, 1.8, 0xfff4e8); R.sun(0xfff0d0, 1.6, -6, 12, 8);
+    ground(R, T.hallFloor(), 0, 6, 160, 34, 1.8, 0, 0xc8c0b4); R.ambient(0x6a6a88, 1.15, 0xe8dcc8); R.sun(0xfff0d0, 1.05, -6, 12, 8);
     // стена: кремовая штукатурка, серо-голубая панель снизу, деревянный поручень, высокий карниз
     R.box(0, -5.85, 160, 0.4, 9, { tex: 'schoolwall', tint: '#eee2cc', solid: false }); R.box(0, -5.6, 160, 0.12, 1.2, { tex: 'schoolwall', tint: '#9aaabc', solid: false, cast: false });
     R.box(0, -5.5, 160, 0.14, 0.12, { tex: 'darkwood', y: 1.2, solid: false, cast: false }); R.box(0, -5.6, 160, 0.3, 0.3, { tex: 'schoolwall', tint: '#d8ccb8', y: 7.4, solid: false, cast: false });
@@ -232,13 +232,22 @@ const hall: RoomDef = {
     plane(R, flags, 0, 6.4, -5.5, 40, 1.2, { rep: [5, 1] });
     sticker(R, 'm_sparkle', -8.6, 4.6, -5.6, 0.7); sticker(R, 'm_stars', 7.5, 5.6, -5.6, 1.6, 0.55);
     R.collider(-20, -5.6, 20, -4.6);
+    // мебель коридора: скамейки, витрина с кубками, доска объявлений на ножках, табличка «мокрый пол», стопка афиш
+    const benchT = canvasTex(32, 12, (c) => { px(c, 0, 0, 32, 12, 'rgba(0,0,0,0)'); px(c, 0, 2, 32, 3, '#5a3a24'); px(c, 0, 2, 32, 1, '#a07048'); px(c, 1, 5, 30, 1, '#2a1a10'); px(c, 2, 6, 2, 6, '#3a3e48'); px(c, 28, 6, 2, 6, '#3a3e48'); px(c, 3, 9, 26, 1, '#3a3e48'); }, 'mbench');
+    for (const [x, z] of [[-7.6, -3.9], [15.2, -3.9], [-26, -3.9]]) R.sprite(benchT, x, z, { scale: 1.3, solid: 0.9 });
+    const troph = canvasTex(28, 40, (c) => { px(c, 0, 0, 28, 40, '#2a1a10'); px(c, 1, 1, 26, 38, '#6a4428'); px(c, 3, 3, 22, 26, '#1a2430'); for (const y of [11, 20, 29]) px(c, 3, y, 22, 1, '#8a6040'); for (let i = 0; i < 9; i++) { const x = 5 + (i % 3) * 7, y = 4 + Math.floor(i / 3) * 9; const col = ['#e8c23a', '#c8ccd4', '#c87a3a'][i % 3]; px(c, x + 1, y + 1, 3, 3, col); px(c, x, y + 1, 1, 2, col); px(c, x + 4, y + 1, 1, 2, col); px(c, x + 2, y + 4, 1, 2, col); px(c, x + 1, y + 6, 3, 1, '#3a2a1a'); px(c, x + 2, y + 1, 1, 1, '#fff6c8'); } px(c, 4, 4, 1, 24, 'rgba(255,255,255,.35)'); px(c, 3, 31, 22, 6, '#6a4428'); px(c, 3, 31, 22, 1, '#8a6040'); px(c, 3, 36, 22, 1, '#3a2414'); }, 'mtrophy');
+    R.sprite(troph, -19.6, -4.0, { scale: 1.4, solid: 0.8 }); R.sprite(troph, 21.6, -4.0, { scale: 1.4, solid: 0.8 });
+    const nb = canvasTex(30, 34, (c) => { px(c, 0, 0, 30, 24, '#5a3a24'); px(c, 1, 1, 28, 22, '#b88a58'); for (let i = 0; i < 7; i++) { const x = 2 + Math.floor(hsh(i, 51) * 20), y = 2 + Math.floor(hsh(i, 52) * 13); px(c, x, y, 7, 7, ['#f4f0e4', '#ffe48a', '#a8d8ff', '#ffb4c8'][i % 4]); px(c, x + 1, y + 2, 5, 1, '#6a6a7a'); px(c, x + 1, y + 4, 4, 1, '#6a6a7a'); px(c, x + 3, y, 1, 1, '#c41e3a'); } px(c, 4, 24, 2, 10, '#3a3e48'); px(c, 24, 24, 2, 10, '#3a3e48'); px(c, 2, 32, 6, 2, '#3a3e48'); px(c, 22, 32, 6, 2, '#3a3e48'); }, 'mnotice');
+    R.sprite(nb, 9.4, -3.6, { scale: 1.3, solid: 0.9 }); R.look('notice', 9.4, -2.6, 'Доска объявлений', ['~: «Фестиваль: каждый класс готовит номер». «Потерян кот, зовут Тофу». И чья-то записка: «Не сдавайся, 2-Б!»'], { quiet: true });
+    R.sprite(canvasTex(12, 16, (c) => { px(c, 2, 0, 8, 2, '#c89a10'); px(c, 1, 2, 10, 12, '#f2c230'); px(c, 1, 2, 1, 12, '#ffe070'); px(c, 5, 4, 2, 5, '#1a1a1a'); px(c, 4, 10, 4, 2, '#1a1a1a'); px(c, 0, 14, 12, 2, '#a07a10'); }, 'mwet'), -2.6, 1.6, { scale: 1, thin: true });
+    for (const [x, z, k] of [[-15, 2.4, 0], [16.4, 2.2, 1]]) { R.box(x, z, 1.1, 0.8, 0.5, { tex: 'paper', tint: k ? '#c8a070' : '#b89060' }); R.sprite(canvasTex(10, 6, (c) => { px(c, 0, 0, 10, 6, '#f4f0e4'); px(c, 1, 1, 8, 3, k ? '#e84a6f' : '#40a0e0'); px(c, 2, 4, 6, 1, '#2a2a3a'); }, 'mposters' + k), x, z, { y: 0.5, scale: 1.1, thin: true }); }
     R.particles('petals', { count: 50, top: 5 });
     R.door('d_class', -12, { label: 'Класс 2-Б', z: -5.36, col: '#c8aa78', sign: '2-Б', cond: () => !!f.mat_s1, locked: ['~: Сначала шаг 12, «Один зонт». Он у ворот, во дворе.'], fn: (G) => G.goto('mat_class') });
     R.door('d_club', 12, { label: 'Кабинет драмкружка', z: -5.36, col: '#8a3a4a', sign: 'ДРАМКРУЖОК', cond: () => !!f.mat_roof, locked: ['~: Кабинет драмкружка. Заперт, пока идёт подготовка к спектаклю.'], fn: (G) => G.goto('mat_club') });
     R.door('out', 0, { wall: 's', to: 'mat_yard', spot: 'back', label: 'Во двор' });
     if (!f.mat_c1) { R.npc('artemiy', 6, -3.6, { dir: 'f', talk: async (G: any) => collide(G) }); R.npc('matvey_school', -6, -2, { id: 'matvey', talk: (G: any) => collide(G) }); R.trigger(-2.5, -3.6, 2.5, 0.6, (G: any) => collide(G)); }
     if (f.mat_c1 && !f.mat_book) { R.sprite(canvasTex(10, 7, (c) => { c.fillStyle = '#ff9ac0'; c.fillRect(0, 0, 10, 7); c.fillStyle = '#fff'; c.fillRect(2, 2, 6, 1); c.fillRect(2, 4, 4, 1); }, 'pinkbook'), 0.6, -1.4, { y: 0.03, glow: true, thin: true }); R.inter('book', 0.6, -0.8, { label: 'Розовая тетрадь', fn: bookScene }); R.npc('matvey_school', -3, -2.6, { id: 'matvey', talk: ['matvey/scared: Я… я собираю учебники. Не смотри.'] }); }
-    R.spawn('start', 0, 3.6, 'b'); R.spawn('yard', 0, 3.6, 'b'); R.spawn('class', -12, -4.0); R.spawn('club', 12, -4.0); mangaFinish(R, G);
+    R.spawn('start', 0, 2.0, 'b'); R.spawn('yard', 0, 2.0, 'b'); R.spawn('class', -12, -4.0); R.spawn('club', 12, -4.0); mangaFinish(R, G);
   },
   async enter(G) { if (!G.f.mat_hallI) { G.f.mat_hallI = 1; await G.run(M.hallIntro); } },
 };
@@ -377,7 +386,16 @@ const roof: RoomDef = {
     R.box(0, -5.0, 24, 0.25, 0.25, { tex: 'metal', tint: '#8a6a5a', y: 0.2, solid: false }); R.box(-4, -5.0, 0.25, 0.25, 1.6, { tex: 'metal', tint: '#8a6a5a', solid: false });
     R.box(-3.4, 3.6, 2.4, 0.6, 0.12, { tex: 'wood', tint: '#a07050', y: 0.5 }); for (const sx of [-1, 1]) R.box(-3.4 + sx, 3.6, 0.12, 0.5, 0.5, { tex: 'metal', solid: false });
     // лестничная будка с дверью вниз (на восточной стороне)
-    R.box(14.2, -1, 4, 8, 4.2, { tex: 'schoolwall', tint: '#c8c4d0', solid: false }); R.box(14.2, -1, 4.4, 8.4, 0.3, { tex: 'concrete', tint: '#8a8e9c', y: 4.2, solid: false });
+    const shT = canvasTex(32, 32, (c) => { px(c, 0, 0, 32, 32, '#8a8c9a'); for (let i = 0; i < 160; i++) px(c, Math.floor(hsh(i, 61) * 32), Math.floor(hsh(i, 62) * 32), 1, 1, hsh(i, 63) > 0.5 ? '#7a7c8a' : '#9a9caa'); for (let x = 0; x < 32; x += 3) if (hsh(x, 64) > 0.4) px(c, x, 0, 1, 6 + Math.floor(hsh(x, 65) * 14), 'rgba(40,40,56,.35)'); px(c, 0, 0, 32, 1, '#b8bac6'); px(c, 0, 31, 32, 1, '#4a4c5a'); }, 'mstairh');
+    const shM = pbox(R, 14.2, -1, 4, 8, 4.2, shT, { side: 0x7a7c8a, top: 0x6a6c78, solid: false }); const shSide = new THREE.MeshLambertMaterial({ map: shT }); shM.material = [shSide, shSide, L(0x6a6c78), shSide, shSide, shSide]; R.box(14.2, -1, 4.4, 8.4, 0.3, { tex: 'concrete', tint: '#6a6e7c', y: 4.2, solid: false });
+    R.box(12.15, -1.4, 0.12, 0.5, 0.3, { color: 0xfff0b0, emissive: 0xffd890, y: 3.4, solid: false, cast: false }); R.light(11.6, 3.2, -1.4, 0xffd8a0, 5, 7);
+    // бельевая верёвка с полотенцами, ведро, конусы, лужи, мишень для мяча
+    R.box(-2, -4.6, 0.08, 0.08, 2.6, { tex: 'metal', solid: false }); R.box(4.4, -4.6, 0.08, 0.08, 2.6, { tex: 'metal', solid: false }); R.box(1.2, -4.6, 6.4, 0.03, 0.03, { color: 0xd8d8d8, y: 2.5, solid: false, cast: false });
+    for (let i = 0; i < 5; i++) plane(R, canvasTex(8, 12, (c) => { px(c, 0, 0, 8, 12, ['#f4f0e4', '#a8d8ff', '#ffb4c8', '#f2c230', '#5fd0c8'][i]); px(c, 0, 9, 8, 1, '#ffffff'); px(c, 0, 0, 8, 1, '#6a6a7a'); px(c, 7, 0, 1, 12, 'rgba(0,0,0,.2)'); }, 'mtowel' + i), -1.2 + i * 1.2, 2.05, -4.6, 0.8, 0.9, {});
+    R.box(-3.4, -1.8, 0.5, 0.5, 0.55, { tex: 'metal', tint: '#4a7aa8' }); for (const [x, z] of [[8.4, 3.2], [9.0, 3.5]]) R.box(x, z, 0.4, 0.4, 0.6, { color: 0xe8662a, solid: false });
+    for (const [x, z, w] of [[-1.6, 1.2, 2.4], [5, 0.6, 1.6], [-10, 2.4, 2]]) plane(R, canvasTex(16, 8, (c) => { c.fillStyle = 'rgba(140,160,220,.5)'; c.beginPath(); c.ellipse(8, 4, 7, 3, 0, 0, 7); c.fill(); px(c, 5, 3, 4, 1, 'rgba(255,240,200,.7)'); }, 'mpuddle'), x, 0.02, z, w, w / 2, { rx: -Math.PI / 2, basic: true });
+    for (const [x, z] of [[-11, -1.2], [10.4, 3.6]]) pbox(R, x, z, 1.4, 0.9, 0.8, fan, { side: 0x9a9eaa, top: 0xb8bcc6 });
+    R.box(-11, 4.6, 6, 0.2, 0.2, { tex: 'metal', tint: '#8a6a5a', y: 0.15, solid: false }); R.box(-14, 1, 0.2, 7.2, 0.2, { tex: 'metal', tint: '#8a6a5a', y: 0.15, solid: false });
     sticker(R, 'm_sparkle', 2.6, 4.4, -5.5, 0.6, 0.6, { basic: true }); R.door('down', -2, { wall: 'e', label: 'Лестница вниз', col: '#5a5a66', cond: () => !!f.mat_roof, locked: ['~: Сначала шаг 100. Матвей ждёт.'], fn: (G) => G.goto('mat_hall', 'club') });
     R.npc('matvey_school', 1.4, -3.6, { id: 'matvey', dir: 'b', talk: (G: any) => roofScene(G) });
     R.spawn('start', 9.6, -2, 'l'); mangaFinish(R, G);
@@ -392,19 +410,22 @@ async function roofScene(G: any) {
 
 // ---------------- 6. кабинет драмкружка: настоящий шаг ----------------
 const club: RoomDef = {
-  name: 'Кабинет драмкружка', w: 18, d: 11, music: null, amb: null, step: 'wood', grade: { sat: 0.95, tint: [1.08, 0.98, 0.9], vig: 0.45, bright: 1.0, bloom: 0.4 }, noTilt: false,
+  name: 'Кабинет драмкружка', w: 18, d: 11, music: null, amb: null, step: 'wood', grade: { sat: 1.0, tint: [1.08, 0.98, 0.9], vig: 0.5, bright: 0.94, contrast: 1.08, bloom: 0.22 }, noTilt: false,
   build(R, G) {
-    R.room.group.userData.bg = 0x1a1410; ground(R, T.hallFloor(), 0, 6, 60, 36, 1.8, 0.0, 0xd8c8b0); R.walls('schoolwall', { h: 7.5, tint: '#c8b498' }); R.ambient(0x6a5a50, 2.4, 0xffe0c0);
+    R.room.group.userData.bg = 0x1a1410; ground(R, T.hallFloor(), 0, 6, 60, 36, 1.8, 0.0, 0xd8c8b0); R.walls('schoolwall', { h: 7.5, tint: '#a8947c' }); R.ambient(0x4a3e38, 1.7, 0xd8bca0); R.light(-3, 3.4, 3, 0xffc890, 6, 10);
     R.box(0, -5.42, 18, 0.12, 1.1, { tex: 'wood', tint: '#a07050', solid: false, cast: false }); R.box(-8.94, 0, 0.12, 11, 1.1, { tex: 'wood', tint: '#a07050', solid: false, cast: false }); R.box(8.94, 0, 0.12, 11, 1.1, { tex: 'wood', tint: '#a07050', solid: false, cast: false });
     R.poster('РОМЕО И ДЖУЛЬЕТТА', 'весенний спектакль', { x: -1.2, y: 3.2, w: 1.5, h: 2.1, motif: 'rose' }); R.poster('100 ШАГОВ', 'премьера!', { x: 7.4, y: 3.4, w: 1.4, h: 1.9, motif: 'moon' }); corkBoard(R, 0, 3.2, 2.4, 1.6, 5, { wall: 'w', at: -1.5 });
     R.decal(canvasTex(36, 20, (c) => { px(c, 0, 0, 36, 20, '#2a1810'); px(c, 1, 1, 34, 18, '#f4ecd8'); ptext(c, 'ДРАМКРУЖОК', 18, 2, { size: 7, col: '#8e1830', align: 'center' }); for (let i = 0; i < 5; i++) disc(c, 6 + i * 6, 14, 2, ['#e84a6f', '#f2c230', '#40a0e0', '#5fd0c8', '#e84a6f'][i]); }, 'mclubsign'), { wall: 'e', at: -2, y: 3.6, w: 2.2, h: 1.2 }); sticker(R, 'm_stars', 8.9, 4.6, 1.6, 1.8, 0.6, { ry: -Math.PI / 2 }); sticker(R, 'm_haha', -8.9, 3.6, 1.4, 0.7, 1.4, { ry: Math.PI / 2 });
     window3D(R, -5, { wall: 'n', y: 3, w: 2.4, h: 2.4, night: true }); R.light(-5, 3, -3, 0xffc890, 8, 10);
-    for (let i = 0; i < 9; i++) { const a = i / 9 * Math.PI * 2; const x = Math.cos(a) * 3.2, z = 0.4 + Math.sin(a) * 2.2; R.box(x, z, 0.6, 0.6, 0.08, { tex: 'wood', tint: '#e0b080', y: 0.5 }); for (const [lx, lz] of [[-0.25, -0.25], [0.25, -0.25], [-0.25, 0.25], [0.25, 0.25]]) R.box(x + lx, z + lz, 0.06, 0.06, 0.5, { tex: 'metal', tint: '#8a8a96', solid: false }); R.box(x - Math.cos(a) * 0.27, z - Math.sin(a) * 0.27, Math.abs(Math.sin(a)) * 0.5 + 0.1, Math.abs(Math.cos(a)) * 0.5 + 0.1, 0.55, { tex: 'wood', tint: '#e0b080', y: 0.6, solid: false }); }
+    // школьные стулья кругом (пиксельные, с разными сумками/сценариями на сиденьях)
+    const chairT = (v: number) => canvasTex(14, 22, (c) => { const W = ['#b07a48', '#a06a3a', '#c08a58'][v % 3]; px(c, 2, 0, 10, 8, '#2a1a10'); px(c, 3, 1, 8, 6, W); px(c, 3, 1, 8, 1, '#e0b080'); px(c, 3, 8, 1, 4, '#5a5e6a'); px(c, 10, 8, 1, 4, '#5a5e6a'); px(c, 1, 11, 12, 3, '#2a1a10'); px(c, 2, 11, 10, 2, W); px(c, 2, 14, 1, 8, '#5a5e6a'); px(c, 11, 14, 1, 8, '#5a5e6a'); px(c, 4, 14, 1, 6, '#3a3e48'); px(c, 9, 14, 1, 6, '#3a3e48');
+      if (v % 3 === 1) { px(c, 4, 9, 6, 3, '#f4f0e4'); px(c, 5, 10, 4, 1, '#8e1830'); } if (v % 4 === 2) { px(c, 3, 8, 7, 4, '#2a3a5a'); px(c, 4, 7, 4, 1, '#2a3a5a'); } }, 'mchair' + v);
+    for (let i = 0; i < 9; i++) { const a = i / 9 * Math.PI * 2; const x = Math.cos(a) * 3.2, z = 0.4 + Math.sin(a) * 2.2; R.sprite(chairT(i), x, z, { scale: 1.1, solid: 0.3, flipX: Math.cos(a) > 0 }); }
     R.box(6.4, -4.6, 4.4, 1.6, 0.35, { tex: 'stage', tint: '#8a5a3a' }); R.box(6.4, -3.78, 4.4, 0.06, 0.35, { tex: 'velvet', solid: false, cast: false });
     for (let i = 0; i < 4; i++) R.box(5.2 + (i % 2) * 1.1 + (i > 1 ? 1.4 : 0), -4.7, 1, 0.8, 0.8 + (i % 2) * 0.3, { tex: 'paper', tint: '#d8b888', y: 0.35, solid: false });
     R.sprite('masks', 6.8, -4.5, { y: 1.5, scale: 1.2 }); costumeRack(R, -7.3, -4.5, 2.6, 3); R.sprite('plant', 8.3, 4.6, { scale: 1.2 }); R.sprite('chair', -8.2, 2.6, { scale: 1.2 }); R.light(3, 4, 1, 0xffd8a8, 5, 12);
     // зеркало: на миг в нём две девушки в школьной форме
-    const mir = R.decal(canvasTex(24, 36, (c) => { c.fillStyle = '#86641c'; c.fillRect(0, 0, 24, 36); c.fillStyle = '#9aa8b8'; c.fillRect(2, 2, 20, 32); c.fillStyle = 'rgba(255,255,255,.35)'; c.fillRect(4, 3, 2, 30); }, 'clubmirror'), { x: 3, y: 2.6, w: 2, h: 3 });
+    const mir = R.decal(canvasTex(24, 36, (c) => { px(c, 0, 0, 24, 36, '#4a3010'); px(c, 1, 1, 22, 34, '#c89a3a'); px(c, 1, 1, 22, 1, '#f0d478'); px(c, 2, 2, 20, 32, '#3a2a14'); for (let y = 3; y < 33; y++) { const k = y / 33; px(c, 3, y, 18, 1, k < 0.45 ? '#8a7a68' : k < 0.5 ? '#5a4a40' : '#6a5440'); } px(c, 3, 15, 18, 1, '#a07048'); for (let x = 5; x < 19; x += 4) { px(c, x, 17, 2, 6, '#8a5a3a'); px(c, x, 16, 2, 1, '#c08a58'); } px(c, 9, 5, 6, 8, '#b8a890'); px(c, 10, 6, 4, 3, '#2a3a5a'); for (let i = 0; i < 9; i++) px(c, 4 + i, 3 + i * 3, 1, 3, 'rgba(255,255,255,.28)'); px(c, 17, 4, 1, 26, 'rgba(255,255,255,.15)'); px(c, 2, 34, 20, 1, '#2a1a08'); }, 'clubmirror2'), { x: 3, y: 2.6, w: 2, h: 3 });
     const ghost = R.decal(canvasTex(24, 36, (c) => { c.fillStyle = '#86641c'; c.fillRect(0, 0, 24, 36); c.fillStyle = '#7a8898'; c.fillRect(2, 2, 20, 32); const girl = (x: number, hair: string, long: boolean) => { c.fillStyle = hair; c.fillRect(x, 10, 6, long ? 12 : 6); c.fillStyle = '#e8c8a8'; c.fillRect(x + 1, 11, 4, 4); c.fillStyle = '#2a3050'; c.fillRect(x, 16, 6, 10); c.fillStyle = '#c41e3a'; c.fillRect(x + 2, 16, 2, 2); c.fillStyle = '#2a2a3a'; c.fillRect(x, 26, 6, 6); }; girl(5, '#5a341f', false); girl(13, '#8a3a1e', true); }, 'clubghost'), { x: 3, y: 2.6, w: 2, h: 3, noSlot: true }); ghost.visible = false; R.room.named.ghost = ghost; void mir;
     R.look('mirror', 3, -4.4, 'Зеркало', ['~: Обычное зеркало для репетиций. В углу наклейка: «Улыбайся глазами».']);
     R.npc('artemiy', -4.6, -4.0, { dir: 'f', talk: (G: any) => clubScene(G) });
