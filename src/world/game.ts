@@ -321,6 +321,7 @@ class Game {
     this.R.cam.position.set(c.x + sx, c.yOff + Math.sin(c.pitch) * c.dist * aspectFix + sy, c.z + Math.cos(c.pitch) * c.dist * aspectFix);
     this.R.cam.up.set(Math.sin(c.roll), Math.cos(c.roll), 0); this.R.cam.lookAt(c.x + sx, c.yOff, c.z);
     this.faceMask();
+    if (this.R.tilt) { const v = new THREE.Vector3(p.x, 1.2, p.z).project(this.R.cam); const fy = (v.y + 1) / 2; const u = this.R.tilt.uniforms; u.uFocus.value += (Math.max(0.15, Math.min(0.85, fy)) - u.uFocus.value) * Math.min(1, dt * 6); u.uAmt.value = this.room?.def.noTilt ? 0 : (this.cam.focus ? 1.25 : 1); }
     this.fadeBlockers(dt);
     this.R.render(dt);
     ui.letterbox(!!this.cam.focus && this.lock > 0);

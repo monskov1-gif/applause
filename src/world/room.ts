@@ -11,7 +11,7 @@ export interface Inter { id: string; x: number; z: number; r: number; label: str
 export interface Trigger { x0: number; z0: number; x1: number; z1: number; fn: (G: any) => any; once: boolean; done: boolean; inside: boolean; }
 export interface RoomDef {
   name: string; chapter?: string; floor?: string; w: number; d: number; music?: string | null; amb?: string | null; grade?: Grade; step?: string;
-  camDist?: number; camZMax?: number; noMasks?: boolean; noCamera?: boolean; dark?: boolean; maskGrade?: Record<string, Grade>;
+  camDist?: number; camZMax?: number; noMasks?: boolean; noCamera?: boolean; dark?: boolean; maskGrade?: Record<string, Grade>; noTilt?: boolean;
   card?: (G: any) => any[] | null;
   build: (R: Builder, G: any) => void; enter?: (G: any, from: string) => any; update?: (G: any, dt: number, t: number) => void; onKey?: (G: any, action: string) => any; photo?: (G: any, subjects: string[]) => any;
 }

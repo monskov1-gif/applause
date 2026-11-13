@@ -28,6 +28,16 @@ const GradeShader = {
       vec2 fp=floor(mod(gl_FragCoord.xy,4.0)); float b=mod(fp.x*8.0+fp.y*2.0+mod(fp.y,2.0)*4.0,16.0)/16.0;
       c=floor(c*40.0+b*uDither)/40.0; gl_FragColor=vec4(c,1.0); }`,
 };
+// Тилт-шифт как в HD-2D: резкая полоса вокруг героини, передний и дальний планы мягко размыты.
+const TiltShader = {
+  uniforms: { tDiffuse: { value: null }, uFocus: { value: 0.5 }, uBand: { value: 0.16 }, uAmt: { value: 1 }, uRes: { value: new THREE.Vector2(640, 360) } },
+  vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float uFocus,uBand,uAmt; uniform vec2 uRes; varying vec2 vUv;
+    void main(){ float d=abs(vUv.y-uFocus); float near=step(vUv.y,uFocus); float r=smoothstep(uBand, uBand+0.38, d)*uAmt*(near>0.5?4.2:3.0);
+      if(r<0.05){ gl_FragColor=texture2D(tDiffuse,vUv); return; }
+      vec3 acc=vec3(0.0); float w=0.0; for(int i=0;i<12;i++){ float a=float(i)*2.39996; float rr=sqrt(float(i)+0.5)/3.5; vec2 o=vec2(cos(a),sin(a))*rr*r/uRes; float k=1.0-rr*0.35; acc+=texture2D(tDiffuse,vUv+o).rgb*k; w+=k; }
+      gl_FragColor=vec4(acc/w,1.0); }`,
+};
 export class Renderer {
   r: THREE.WebGLRenderer; scene = new THREE.Scene(); cam: THREE.PerspectiveCamera; composer!: EffectComposer; bloom!: UnrealBloomPass; grade!: ShaderPass;
   target: Required<Grade> = { ...DEF, tint: [...DEF.tint] }; cur: Required<Grade> = { ...DEF, tint: [...DEF.tint] };
@@ -39,7 +49,7 @@ export class Renderer {
     this.cam = new THREE.PerspectiveCamera(30, 16 / 9, 1, 200);
     this.setup(); window.addEventListener('resize', () => this.setup());
   }
-  bokeh: BokehPass | null = null; dofFocus = 0; pixelH = 0; baseFov = 30;
+  bokeh: BokehPass | null = null; dofFocus = 0; pixelH = 0; baseFov = 30; tilt: ShaderPass | null = null; tiltOn = true;
   /** pixelH > 0 — своё внутреннее разрешение (меню), dof — глубина резкости. */
   setup(o: { pixelH?: number; dof?: boolean } = {}) {
     if (o.pixelH != null) this.pixelH = o.pixelH; const useDof = o.dof ?? !!this.bokeh;
@@ -56,6 +66,7 @@ export class Renderer {
     this.bloom = new UnrealBloomPass(new THREE.Vector2(this.W, this.H), 0.45, 0.5, 0.9);
     this.bloom.enabled = settings.quality !== 'low'; this.composer.addPass(this.bloom);
     this.bokeh = null; if (useDof && settings.quality !== 'low') { this.bokeh = new BokehPass(this.scene, this.cam, { focus: this.dofFocus || 5, aperture: 0.004, maxblur: 0.006 }); this.composer.addPass(this.bokeh); }
+    this.tilt = new ShaderPass(TiltShader); this.tilt.uniforms.uRes.value.set(this.W, this.H); this.tilt.enabled = settings.quality !== 'low' && this.tiltOn; this.composer.addPass(this.tilt);
     this.composer.addPass(new OutputPass());
     this.grade = new ShaderPass(GradeShader); this.composer.addPass(this.grade);
   }
