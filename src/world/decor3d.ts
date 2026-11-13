@@ -49,8 +49,19 @@ export function window3D(R: Builder, x: number, o: { wall?: 'n' | 'w' | 'e'; y?:
   for (const sx of [-1, 1]) box(g, 0.16, H + 0.2, 0.4, sx * (W / 2 + 0.06), 0, 0, fr);
   box(g, 0.08, H, 0.08, 0, 0, -0.12, fr); for (const yy of [-H / 6, H / 6 + 0.2]) box(g, W, 0.07, 0.08, 0, yy, -0.12, fr);
   if (o.arch !== false) { const a = new THREE.Mesh(new THREE.TorusGeometry(W / 2 + 0.06, 0.1, 6, 16, Math.PI), fr); a.position.set(0, H / 2 + 0.05, 0); g.add(a); const fan = new THREE.Mesh(new THREE.CircleGeometry(W / 2, 16, 0, Math.PI), new THREE.MeshBasicMaterial({ map: viewTex })); fan.position.set(0, H / 2 + 0.05, -0.18); g.add(fan); }
-  if (o.curtains !== false) for (const sx of [-1, 1]) { const cg = new THREE.PlaneGeometry(0.9, H + 1.2, 8, 1); const pos = cg.attributes.position; for (let i = 0; i < pos.count; i++) pos.setZ(i, Math.sin(pos.getX(i) * 14) * 0.06); cg.computeVertexNormals(); const cm = new THREE.Mesh(cg, lam({ map: tex('velvet'), side: THREE.DoubleSide })); cm.position.set(sx * (W / 2 + 0.35), 0.1, 0.32); g.add(cm); const tie = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.03, 4, 10), gold); tie.position.set(sx * (W / 2 + 0.35), -0.3, 0.4); g.add(tie); }
-  box(g, W + 2.2, 0.1, 0.12, 0, H / 2 + 0.6, 0.38, gold);
+  if (o.curtains !== false) {
+    // карниз над аркой, полотна от карниза до подоконника с заходом на раму, ламбрекен сверху, подхваты на самих шторах
+    const topY = H / 2 + (o.arch !== false ? W / 2 + 0.3 : 0.45), botY = -H / 2 - 0.55, ch = topY - botY, cw = 0.95, vel = lam({ map: tex('velvet'), side: THREE.DoubleSide });
+    for (const sx of [-1, 1]) {
+      const cg = new THREE.PlaneGeometry(cw, ch, 10, 6); const pos = cg.attributes.position;
+      for (let i = 0; i < pos.count; i++) { const px = pos.getX(i), py = pos.getY(i); const k = (py - (-ch / 2)) / ch; const pinch = 1 - 0.35 * Math.exp(-((py + ch / 2 - (H * 0.45)) ** 2) / 0.3); pos.setX(i, px * (k > 0.4 ? 1 : pinch)); pos.setZ(i, Math.sin((px + 0.5) * 13) * 0.07); }
+      cg.computeVertexNormals(); const cm = new THREE.Mesh(cg, vel); cm.position.set(sx * (W / 2 + 0.12), (topY + botY) / 2, 0.36); g.add(cm);
+      const tie = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.035, 4, 10), gold); tie.scale.set(1.6, 0.6, 1); tie.position.set(sx * (W / 2 + 0.12), botY + H * 0.45, 0.44); g.add(tie);
+    }
+    box(g, W + 1.9, 0.08, 0.1, 0, topY + 0.06, 0.4, gold);
+    const val = new THREE.Mesh(new THREE.BoxGeometry(W + 1.7, 0.42, 0.12), vel); val.position.set(0, topY - 0.14, 0.46); g.add(val);
+    box(g, W + 1.75, 0.06, 0.14, 0, topY - 0.36, 0.47, gold);
+  } else box(g, W + 2.2, 0.1, 0.12, 0, H / 2 + 0.6, 0.38, gold);
   const wall = o.wall || 'n'; const s = wall === 'w' ? -1 : 1;
   if (wall === 'n') { const at = R.wallSlot('n', x, W + 2, y, H + 1.4, { fixed: true, obj: g }); g.position.set(at, y, -R.d / 2 + 0.2); }
   else { const at = R.wallSlot(wall, x, W + 2, y, H + 1.4, { fixed: true, obj: g }); g.position.set(s * (R.w / 2 - 0.2), y, at); g.rotation.y = -s * Math.PI / 2; }
