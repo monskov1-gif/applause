@@ -175,7 +175,7 @@ class Game {
   grade(g: Grade, instant = false) { this.gradeBase = { ...this.gradeBase, ...g }; this.applyGrade(instant); }
 
   // ---------- камера и эффекты ----------
-  camBounds() { const d = this.room!.def; const mx = Math.max(0, d.w / 2 - 9); const z0 = Math.min(0, -d.d / 2 + 4.5), z1 = d.camZMax ?? Math.max(z0, d.d / 2 - 7); return { mx, z0, z1 }; }
+  camBounds() { const d = this.room!.def; const dist = d.camDist || 24; const halfW = Math.tan((this.R.cam.fov * Math.PI / 180) / 2) * dist * this.R.cam.aspect * 0.9; const mx = Math.max(0, d.w / 2 - Math.min(halfW - 2, Math.max(9, halfW * 0.5))); const z0 = Math.min(0, -d.d / 2 + 4.5), z1 = d.camZMax ?? Math.max(z0, d.d / 2 - 7); return { mx, z0, z1 }; }
   // ---------- манга-эффекты и «целебные глазки» ----------
   private fxTex: Record<string, THREE.Texture> = {};
   private fxT(name: string) { if (!this.fxTex[name]) { const t = new THREE.TextureLoader().load('fx/' + name + '.png'); t.colorSpace = THREE.SRGBColorSpace; this.fxTex[name] = t; } return this.fxTex[name]; }
@@ -208,7 +208,7 @@ class Game {
     const h = (CHARS[p.charId]?.h || 31) / PPU; mesh.position.set(p.dir === "l" ? -0.08 : p.dir === "r" ? 0.08 : 0, h - 0.42, 0.06); mesh.scale.x = p.dir === 'l' ? -0.85 : p.dir === 'r' ? 0.85 : 1;
   }
   // ---------- прозрачность того, что заслоняет героиню или висит прямо у камеры ----------
-  private fadeCacheRoom: any = null; private fadeCache: { m: THREE.Mesh; p: THREE.Vector3 }[] = []; private fpsT = 0; private fpsN = 0; private fpsLow = 0;
+  private fadeCacheRoom: any = null; private fadeCache: { m: THREE.Mesh; p: THREE.Vector3; bb: THREE.Box3 }[] = []; private fpsT = 0; private fpsN = 0; private fpsLow = 0;
   private fadeT = 0; private faded = new Map<THREE.Mesh, { orig: any; clone: any; a: number; tgt: number }>(); private ray = new THREE.Raycaster();
   private fadeBlockers(dt: number) {
     const room = this.room; if (!room) return; const cam = this.R.cam, p = this.player;
@@ -217,9 +217,11 @@ class Game {
       const ok = (o: THREE.Object3D): o is THREE.Mesh => { if (!(o as any).isMesh || (o as any).isInstancedMesh && false) return false; let q: THREE.Object3D | null = o; while (q) { if (skip.has(q)) return false; q = q.parent; } const m: any = (o as THREE.Mesh).material; if (!m || Array.isArray(m) || m.isShaderMaterial || m.blending === THREE.AdditiveBlending) return false; const g = (o as THREE.Mesh).geometry; if (!g.boundingBox) g.computeBoundingBox(); const bb = g.boundingBox!; const sy = (bb.max.y - bb.min.y) * o.scale.y; const wy = o.getWorldPosition(new THREE.Vector3()).y; if (sy < 0.5 && wy < 0.6) return false; return true; };
       this.ray.camera = cam; const from = cam.position.clone();
       for (const hy of [0.5, 1.3, 2.1]) { const to = new THREE.Vector3(p.x, hy, p.z); const dir = to.clone().sub(from); const dist = dir.length(); this.ray.set(from, dir.normalize()); this.ray.far = dist - 0.6; for (const h of this.ray.intersectObjects(room.group.children, true)) if (ok(h.object)) want.add(h.object as THREE.Mesh); }
-      if (this.fadeCacheRoom !== room) { this.fadeCacheRoom = room; this.fadeCache = []; room.group.updateMatrixWorld(); room.group.traverse((o) => { if ((o as any).isMesh && ok(o)) { const v = new THREE.Vector3(); o.getWorldPosition(v); this.fadeCache.push({ m: o as THREE.Mesh, p: v }); } }); }
-      for (const e of this.fadeCache) if (e.m.visible && e.p.distanceToSquared(from) < 56.25) want.add(e.m);
-      for (const m of want) { let e = this.faded.get(m); if (!e) { const orig = m.material; const clone = (orig as THREE.Material).clone(); clone.transparent = true; e = { orig, clone, a: 1, tgt: 0.22 }; m.material = clone; this.faded.set(m, e); } e.tgt = 0.22; }
+      if (this.fadeCacheRoom !== room) { this.fadeCacheRoom = room; this.fadeCache = []; room.group.updateMatrixWorld(); room.group.traverse((o) => { if ((o as any).isMesh && ok(o)) { const v = new THREE.Vector3(); o.getWorldPosition(v); this.fadeCache.push({ m: o as THREE.Mesh, p: v, bb: new THREE.Box3().setFromObject(o) }); } }); }
+      for (const e of this.fadeCache) { if (!e.m.visible) continue; if (e.p.distanceToSquared(from) < 56.25) { want.add(e.m); continue; }
+        // высокие предметы между камерой и героиней (люстры, портал, козырьки) прячутся
+        const b = e.bb; if (b.min.y > 3.8 && b.max.z > p.z + 0.5 && b.max.z - b.min.z < 12 && Math.max(b.min.x - p.x, p.x - b.max.x, 0) < 7) want.add(e.m); }
+      for (const m of want) { let e = this.faded.get(m); if (!e) { const orig = m.material; const clone = (orig as THREE.Material).clone(); clone.transparent = true; e = { orig, clone, a: 1, tgt: 0.1 }; m.material = clone; this.faded.set(m, e); } e.tgt = 0.1; }
       for (const [m, e] of this.faded) if (!want.has(m)) e.tgt = 1;
     }
     for (const [m, e] of this.faded) { e.a += (e.tgt - e.a) * Math.min(1, dt * 8); e.clone.opacity = e.a * ((e.orig as any).opacity ?? 1); e.clone.depthWrite = e.a > 0.9; if (e.tgt === 1 && e.a > 0.98) { m.material = e.orig; e.clone.dispose(); this.faded.delete(m); } }

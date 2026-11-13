@@ -94,6 +94,21 @@ export function canvasTex(w: number, h: number, draw: (c: CanvasRenderingContext
   if (usedText && !usedPixels && w * h <= 512 * 512) { const k = 3; const cv2 = document.createElement('canvas'); cv2.width = w * k; cv2.height = h * k; const c2 = cv2.getContext('2d')!; c2.imageSmoothingEnabled = false; c2.scale(k, k); draw(c2, w, h); cv = cv2; }
   const t = finish(cv, false); t.userData.lw = w; t.userData.lh = h; if (key) cache.set(key, t); return t;
 }
+/** Однотонный цвет как пиксельный материал: 4 ступени, шум, дизеринг и светлая кромка (HD-2D вместо гладкой заливки). */
+const pixCache = new Map<number, THREE.CanvasTexture>();
+export function pixColor(col: number): THREE.CanvasTexture {
+  let t = pixCache.get(col); if (t) return t;
+  const cv = document.createElement('canvas'); cv.width = cv.height = 16; const c = cv.getContext('2d')!;
+  const base = new THREE.Color(col); const tone = (k: number) => { const q = base.clone(); if (k > 0) q.lerp(new THREE.Color(1, 1, 1), k); else q.multiplyScalar(1 + k); return '#' + q.getHexString(); };
+  let seed = col % 997 + 1; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  c.fillStyle = tone(0); c.fillRect(0, 0, 16, 16);
+  for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) { const r = rnd(); const bay = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]][y % 4][x % 4] / 16; if (r < 0.1) { c.fillStyle = tone(-0.12); c.fillRect(x, y, 1, 1); } else if (r > 0.93) { c.fillStyle = tone(0.08); c.fillRect(x, y, 1, 1); } else if (y > 11 && bay < (y - 11) / 6) { c.fillStyle = tone(-0.18); c.fillRect(x, y, 1, 1); } }
+  c.fillStyle = tone(0.14); c.fillRect(0, 0, 16, 1); c.fillStyle = tone(-0.28); c.fillRect(0, 15, 16, 1);
+  t = finish(cv, true); (t as any).unit = 1; pixCache.set(col, t); return t;
+}
+/** Мягкое световое пятно (вместо настоящего источника света). */
+let poolTex: THREE.CanvasTexture | null = null;
+export function lightPool(): THREE.CanvasTexture { if (poolTex) return poolTex; const cv = document.createElement('canvas'); cv.width = cv.height = 32; const c = cv.getContext('2d')!; for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) { const d = Math.hypot(x - 15.5, y - 15.5) / 16; const a = Math.max(0, 1 - d); const q = Math.round(a * a * 6) / 6; c.fillStyle = `rgba(255,255,255,${q * 0.9})`; c.fillRect(x, y, 1, 1); } poolTex = finish(cv, false); return poolTex; }
 export const PIX = '"Pixelify Sans", monospace';
 /** Пиксельный текст с переносом строк. */
 export function ptext(c: CanvasRenderingContext2D, s: string, x: number, y: number, o: { size?: number; col?: string; w?: number; align?: CanvasTextAlign; font?: string; lh?: number } = {}) {

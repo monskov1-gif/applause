@@ -10,8 +10,15 @@ function box(g: THREE.Object3D, w: number, h: number, d: number, x: number, y: n
 const hexToNum = (h: string) => parseInt(h.replace('#', ''), 16);
 
 /** Резная дверь: наличник с карнизом, полотно с филёнками, латунная ручка, табличка. Лицом к +Z. */
+/** Расписное полотно двери: филёнки, блик, ручка (пиксельная текстура вместо тёмного дерева). */
+function doorLeaf(col: string, double: boolean) {
+  return canvasTex(16, 32, (c) => { const base = new THREE.Color(col); const lift = (k: number) => { const q = base.clone(); q.lerp(new THREE.Color(1, 0.85, 0.65), k); return '#' + q.getHexString(); }; const dk = (k: number) => '#' + base.clone().multiplyScalar(k).getHexString();
+    c.fillStyle = lift(0.22); c.fillRect(0, 0, 16, 32); for (let y = 0; y < 32; y += 2) { c.fillStyle = dk(0.92); c.fillRect((y * 7) % 13, y, 3, 1); }
+    for (const [x, y, w, h] of [[2, 2, 12, 12], [2, 17, 12, 13]]) { c.fillStyle = dk(0.7); c.fillRect(x, y, w, h); c.fillStyle = lift(0.34); c.fillRect(x + 1, y + 1, w - 2, h - 2); c.fillStyle = lift(0.48); c.fillRect(x + 1, y + 1, w - 2, 1); c.fillRect(x + 1, y + 1, 1, h - 2); c.fillStyle = dk(0.8); c.fillRect(x + 1, y + h - 2, w - 2, 1); }
+    c.fillStyle = '#e8c860'; c.fillRect(double ? 1 : 13, 15, 2, 2); c.fillStyle = '#fff4b0'; c.fillRect(double ? 1 : 13, 15, 1, 1); c.fillStyle = dk(0.5); c.fillRect(0, 31, 16, 1); }, 'leaf' + col + (double ? 'd' : ''));
+}
 export function door3D(W: number, H: number, col: string, sign?: string, double = false, glow?: string) {
-  const g = new THREE.Group(); const frame = M.wood(); const leafM = lam({ map: tex('wood'), color: hexToNum(col) | 0x202020 }); const gold = M.gold();
+  const g = new THREE.Group(); const frame = M.wood(); const leafM = lam({ map: doorLeaf(col, double) }); const gold = M.gold();
   box(g, W + 0.5, 0.3, 0.3, 0, H + 0.15, 0.12, frame); box(g, W + 0.8, 0.12, 0.38, 0, H + 0.36, 0.14, gold); box(g, W * 0.5, 0.35, 0.2, 0, H + 0.55, 0.1, frame);
   for (const sx of [-1, 1]) { box(g, 0.25, H, 0.3, sx * (W / 2 + 0.12), H / 2, 0.12, frame); box(g, 0.32, 0.3, 0.36, sx * (W / 2 + 0.12), 0.15, 0.14, frame); }
   const leaves = double ? [-1, 1] : [0]; const lw = double ? W / 2 - 0.02 : W - 0.04;

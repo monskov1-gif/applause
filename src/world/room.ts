@@ -1,6 +1,6 @@
 // Мир: комнаты-диорамы, акторы-билборды, построитель локаций, коллизии, интерактивные объекты, стражи.
 import * as THREE from 'three';
-import { tex, canvasTex, propTex, poster, PPU, ptext } from '../gfx/tex';
+import { tex, canvasTex, propTex, poster, PPU, ptext, pixColor, lightPool } from '../gfx/tex';
 import { door3D, swingDoor } from './decor3d';
 import { charSheet, FW, FH, FRAMES } from '../gfx/sprites';
 import { CHARS } from '../data/chars';
@@ -112,7 +112,7 @@ export class Builder {
   }
   get w() { return this.room.def.w; } get d() { return this.room.def.d; }
   private mat(o: any, fallback = 'plaster'): THREE.MeshLambertMaterial {
-    if (o.color && !o.tex) return new THREE.MeshLambertMaterial({ color: o.color, emissive: o.emissive || 0, emissiveIntensity: o.ei ?? 1, transparent: o.opacity != null, opacity: o.opacity ?? 1 });
+    if (o.color && !o.tex) return new THREE.MeshLambertMaterial({ map: pixColor(typeof o.color === 'number' ? o.color : new THREE.Color(o.color).getHex()), emissive: o.emissive || 0, emissiveIntensity: o.ei ?? 1, transparent: o.opacity != null, opacity: o.opacity ?? 1 });
     return new THREE.MeshLambertMaterial({ map: tex(o.tex || fallback, o.tint), emissive: o.emissive || 0, emissiveIntensity: o.ei ?? 1, transparent: o.opacity != null, opacity: o.opacity ?? 1 });
   }
   private texBox(w: number, h: number, d: number, o: any, fallback?: string) {
@@ -132,6 +132,16 @@ export class Builder {
     if (o.n !== false) mk(w + th * 2, th, 0, -d / 2 - th / 2);
     if (o.w !== false) mk(th, d, -w / 2 - th / 2, 0);
     if (o.e !== false) mk(th, d, w / 2 + th / 2, 0);
+    // «мир не обрывается»: боковые стены продолжаются к зрителю, над стенами уходят в темноту, под комнатой тёмная земля
+    if (o.skirt !== false) {
+      const ext = 9; const dk = (x: number, z: number) => { const m = this.texBox(th, h, ext, { tex: t, ...o }); (m.material as THREE.MeshLambertMaterial).color.setHex(0x4a4240); m.position.set(x, h / 2, z); this.room.group.add(m); };
+      const sk = (ww: number, hh: number, dd: number, x: number, y: number, z: number, m: THREE.Material) => { const g = new THREE.Mesh(new THREE.BoxGeometry(ww, hh, dd), m); g.position.set(x, y, z); this.room.group.add(g); return g; };
+      if (o.w !== false) dk(-w / 2 - th / 2, d / 2 + ext / 2); if (o.e !== false) dk(w / 2 + th / 2, d / 2 + ext / 2);
+      const up = new THREE.MeshBasicMaterial({ color: 0x050304 });
+      if (o.w !== false) sk(th, 14, d + ext, -w / 2 - th / 2, h + 7, ext / 2, up); if (o.e !== false) sk(th, 14, d + ext, w / 2 + th / 2, h + 7, ext / 2, up);
+      const corn = this.texBox(w + th * 2, 0.22, 0.5, { tex: 'darkwood' }); corn.position.set(0, h - 0.11, -d / 2 + 0.05); this.room.group.add(corn);
+      const ground = new THREE.Mesh(new THREE.PlaneGeometry(w + 80, d + 80), new THREE.MeshBasicMaterial({ color: 0x050304 })); ground.rotation.x = -Math.PI / 2; ground.position.set(0, -0.42, 0); this.room.group.add(ground);
+    }
     if (o.trim) { const tr = this.texBox(w, 0.5, 0.1, { tex: o.trim }); tr.position.set(0, 0.25, -d / 2 + 0.05); this.room.group.add(tr); const t2 = this.texBox(w, 0.3, 0.15, { tex: o.trim }); t2.position.set(0, h - 0.15, -d / 2 + 0.07); this.room.group.add(t2); }
   }
   collider(x0: number, z0: number, x1: number, z1: number): Box { const b = { x0: Math.min(x0, x1), z0: Math.min(z0, z1), x1: Math.max(x0, x1), z1: Math.max(z0, z1), on: true }; this.room.boxes.push(b); return b; }
@@ -234,13 +244,17 @@ export class Builder {
   spawn(name: string, x: number, z: number, dir = 'f') { this.room.spawns[name] = { x, z, dir }; }
   ambient(color: number, int: number, sky?: number) { const l = sky != null ? new THREE.HemisphereLight(sky, color, int) : new THREE.AmbientLight(color, int); this.room.group.add(l); return l; }
   sun(color: number, int: number, x = 6, y = 14, z = 8) { const l = new THREE.DirectionalLight(color, int); l.position.set(x, y, z); l.castShadow = true; l.shadow.mapSize.set(1024, 1024); const s = Math.max(this.w, this.d) / 2 + 4; Object.assign(l.shadow.camera, { left: -s, right: s, top: s, bottom: -s, near: 1, far: 60 }); l.shadow.bias = -0.002; this.room.group.add(l, l.target); return l; }
-  light(x: number, y: number, z: number, color: number, int: number, dist = 12, o: any = {}) { const l = new THREE.PointLight(color, int, dist, 1.4); l.position.set(x, y, z); this.room.group.add(l); if (o.flicker) this.room.flick.push({ l, base: int, s: o.flicker }); if (o.mask) this.room.masked.push({ obj: l, mask: o.mask }); if (o.name) this.room.named[o.name] = l; return l; }
+  private nLights = 0;
+  /** Бюджет: не больше 10 настоящих точечных источников на комнату, остальные становятся световыми пятнами на полу. */
+  light(x: number, y: number, z: number, color: number, int: number, dist = 12, o: any = {}) { const l = new THREE.PointLight(color, int, dist, 1.4); l.position.set(x, y, z);
+    if (o.pool || (++this.nLights > 10 && !o.force && !o.name && !o.mask)) { const r = Math.min(4, dist * 0.32); const pm = new THREE.Mesh(new THREE.PlaneGeometry(r * 2, r * 2), new THREE.MeshBasicMaterial({ map: lightPool(), color, transparent: true, opacity: Math.min(0.55, 0.06 * int), blending: THREE.AdditiveBlending, depthWrite: false })); pm.rotation.x = -Math.PI / 2; pm.position.set(x, 0.03, z); pm.renderOrder = 2; this.room.group.add(pm); return l; }
+    this.room.group.add(l); if (o.flicker) this.room.flick.push({ l, base: int, s: o.flicker }); if (o.mask) this.room.masked.push({ obj: l, mask: o.mask }); if (o.name) this.room.named[o.name] = l; return l; }
   spot(x: number, y: number, z: number, tx: number, tz: number, color: number, int: number, o: any = {}) {
     const l = new THREE.SpotLight(color, int, o.dist || 40, o.angle || 0.45, o.pen ?? 0.5, 1.1); l.position.set(x, y, z); l.target.position.set(tx, 0, tz);
     if (o.shadow !== false) { l.castShadow = true; l.shadow.mapSize.set(1024, 1024); l.shadow.bias = -0.003; l.shadow.camera.near = 1; l.shadow.camera.far = 50; }
     this.room.group.add(l, l.target);
     if (o.cone) { // видимый «объёмный» луч
-      const len = Math.hypot(tx - x, y, tz - z), rad = Math.tan(o.angle || 0.45) * len; const g = new THREE.ConeGeometry(rad, len, 32, 8, true); g.translate(0, -len / 2, 0); g.rotateX(-Math.PI / 2);
+      const len = Math.hypot(tx - x, y, tz - z), rad = Math.tan(o.angle || 0.45) * len; const g = new THREE.ConeGeometry(rad, len, 24, 1, true); g.translate(0, -len / 2, 0); g.rotateX(-Math.PI / 2);
       const cm = new THREE.Mesh(g, volumeMat(color, (o.cone === true ? 0.07 : o.cone) * 2.2));
       cm.position.set(x, y, z); cm.lookAt(tx, 0, tz); cm.rotateY(Math.PI); this.room.group.add(cm); (l as any).cone = cm;
     }

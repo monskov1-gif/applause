@@ -38,7 +38,7 @@ export function sconce(R: Builder, x: number, y: number, z: number, o: { wall?: 
   const t = canvasTex(10, 14, (c) => { r(c, 4, 6, 2, 8, '#86641c'); r(c, 1, 9, 8, 2, '#b08a2c'); r(c, 1, 3, 2, 4, '#fff4c8'); r(c, 7, 3, 2, 4, '#fff4c8'); r(c, 1, 1, 2, 2, '#ffd060'); r(c, 7, 1, 2, 2, '#ffd060'); }, 'sconce2');
   const m = R.decal(t, { x, y, z, wall: o.wall === 'w' || o.wall === 'e' ? o.wall : undefined, at: z, glow: true, w: 0.7, h: 1 });
   const lx = o.wall === 'w' ? x + 0.6 : o.wall === 'e' ? x - 0.6 : x, lz = o.wall === 'w' || o.wall === 'e' ? z : z + 0.6;
-  R.light(lx, y, lz, 0xffc880, o.light ?? 5, 7, { flicker: 0.06 }); return m;
+  R.light(lx, y, lz, 0xffc880, o.light ?? 5, 7, { flicker: 0.06, pool: o.light == null }); return m;
 }
 export function balustrade(R: Builder, x0: number, z0: number, x1: number, z1: number, o: { y?: number; h?: number; solid?: boolean } = {}) {
   const y = o.y || 0, h = o.h || 1.1, len = Math.hypot(x1 - x0, z1 - z0), ang = Math.atan2(z1 - z0, x1 - x0); const g = new THREE.Group();
