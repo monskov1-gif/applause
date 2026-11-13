@@ -2,13 +2,13 @@
 import * as THREE from 'three';
 import type { RoomDef, Builder } from '../world/room';
 import { canvasTex, ptext, tex } from '../gfx/tex';
-import { rug, chandelier, dressTex, clutterTex } from '../world/decor';
+import { rug, chandelier, dressTex, clutterTex, costumeRack, PROPTEX } from '../world/decor';
 import { window3D, sofa } from '../world/decor3d';
 import { F } from '../data/dialogue/finale';
 import { fog } from './common';
 import { rhythm, sequence } from '../ui/minigames';
 import { ROLES, hallShell } from './hub';
-import { pWardrobe, pxTex, rr, hsh, layer, settleTex } from './hubplus';
+import { pWardrobe, pxTex, rr, hsh, layer, settleTex, balloonTex, bistroTex, giftTex } from './hubplus';
 import { CHARS } from '../data/chars';
 
 const FRIENDS = ['polina', 'ruben', 'matvey', 'erika', 'liza', 'angelina'];
@@ -22,11 +22,14 @@ const tween = (G: any, dur: number, fn: (k: number) => void) => new Promise<void
 const diva: RoomDef = {
   name: 'Гримёрка примы', chapter: 'Акт V · Гримёрка', w: 18, d: 11, music: 'dressing', amb: 'hall', step: 'carpet', grade: { tint: [1.08, 0.94, 0.92], vig: 0.45, sat: 0.95 },
   build(R, G) {
-    R.floor('parquet', { tint: '#7a4a3a' }); R.walls('wallpaper', { h: 6.5, tint: '#8a2a34', trim: 'gold' }); R.ambient(0x4a3030, 2.0, 0xffd8c8); R.particles('dust', { count: 60, top: 5 });
+    R.floor('parquet', { tint: '#7a4a3a' }); R.walls('wallpaper', { h: 6.5, tint: '#b04a50', trim: 'gold' }); R.ambient(0x6a4a40, 3.0, 0xffe0c8); R.particles('dust', { count: 60, top: 5 });
     rug(R, 0, 0.6, 9, 5, { col: '#3a0a14', border: '#d4ae48' }); chandelier(R, -3, 5.9, 2.6, 0.8, { light: 9 });
     window3D(R, -6, { wall: 'n', y: 3.2, w: 2, h: 3, night: true, curtains: true }); pWardrobe(R, 6.8, -4.6, { w: 2.6, h: 3.2, d: 1.0, wood: '#a86a48', mirror: true });
     for (let i = 0; i < 6; i++) R.sprite(dressTex(i), 3.6 + i * 0.5, 3.8, { scale: 1.2 }); R.box(4.85, 3.8, 3.4, 0.08, 0.08, { tex: 'gold', y: 2.4, solid: false }); R.collider(3.2, 3.5, 6.6, 4.1);
-    sofa(R, -5.8, 3.2, { w: 2.8, col: 0x8a1a2a, ry: Math.PI });
+    sofa(R, -7.6, 1.4, { w: 2.8, col: 0x8a1a2a, ry: Math.PI / 2 });
+    // тёплые практические источники: торшеры, бра; манекен с платьем, корзины цветов от поклонников, пуф
+    for (const [x, z] of [[-7.8, 3.8], [8.0, 1.0]]) { R.sprite('lamp', x, z, { scale: 1.1 }); R.light(x, 2.4, z + 0.4, 0xffc890, 7, 9, { force: true }); }
+    R.sprite(PROPTEX.mannequin(), 7.4, -1.6, { scale: 1.3 }); for (const [x, z, sc] of [[-3.6, -4.6, 1.1], [7.6, 3.6, 1.2], [-1.2, 4.6, 0.9]]) R.sprite('bouquet', x, z, { scale: sc }); R.sprite(PROPTEX.stool(), 2.6, -3.0, { scale: 1.0 }); R.sprite(PROPTEX.hatbox(), 5.6, -3.6, { scale: 1.1 });
     // туалетный столик с зеркалом в лампочках; в зеркале настоящее отражение Вари
     const MX = 1, MY = 3.3, MW = 4.2, MH = 3.0, MZ = -5.38; R.table(MX, -4.6, 4.6, 1.0, { tex: 'darkwood' });
     const glass = new THREE.Mesh(new THREE.PlaneGeometry(MW, MH), new THREE.MeshLambertMaterial({ map: pxTex(32, 24, (c) => { rr(c, 0, 0, 32, 24, '#7a8898'); for (let i = 0; i < 32; i += 6) rr(c, i, 0, 2, 24, '#8a98a8'); rr(c, 3, 0, 1, 24, '#c8d4e0'); rr(c, 22, 0, 3, 24, '#98a6b6'); rr(c, 0, 20, 32, 4, '#6a5a58'); }, 'divaGlass'), emissive: 0x3a3438 })); glass.position.set(MX, MY, MZ); R.room.group.add(glass);
@@ -41,7 +44,7 @@ const diva: RoomDef = {
     R.sprite('bouquet', -0.8, -4.6, { y: 1.15, scale: 1.2 }); for (let i = 0; i < 4; i++) R.sprite(clutterTex(['bottle', 'powder', 'brushes', 'perfume'][i]), 1.6 + i * 0.4, -4.7, { y: 1.15, scale: 0.85 });
     for (let i = 0; i < 5; i++) R.poster(['ЧАЙКА', 'ГАМЛЕТ', 'САД', 'ЛЕДИ', 'КОРОЛЕВА'][i], 'АЛЛА ЕВА', { x: -8.97, wall: 'w', at: -3.6 + i * 1.7, y: 3 + (i % 2) * 0.6, w: 1.2, h: 1.7 });
     R.actor('alla', 1, -3.3, { id: 'alla', dir: 'b', pose: 'sit' });
-    R.spawn('start', -6, 3, 'b');
+    R.spawn('start', -3.2, 3.6, 'b');
   },
   async enter(G) {
     if (G.f.diva_done) return; G.focus(0, -2, 15); await G.run(F.divaIn); const al = G.actor('alla'); al.pose = null; al.dir = 'f'; await G.run(F.diva1);
@@ -63,12 +66,19 @@ const voidRoom: RoomDef = {
   build(R, G) {
     const f = G.f; R.room.group.userData.bg = 0xdcebf8; fog(R, 0xe8f2fc, 18, 60); R.ambient(0xc8d8f0, 3.4, 0xffffff); R.sun(0xffffff, 1.4, 6, 18, 10); R.particles('dust', { count: 200, top: 10, color: 0xffffff });
     const wood = new THREE.MeshLambertMaterial({ map: tex('wood', '#c8a078') }); const planks: { m: THREE.Mesh; x: number; z: number; gone: boolean; vy: number }[] = [];
-    for (const [x, z] of PATH) { const m = new THREE.Mesh(new THREE.BoxGeometry(1.48, 0.18, 2.4), wood); m.position.set(x, -0.09, z); m.rotation.y = (Math.sin(x * 3.7) * 0.05); m.receiveShadow = true; m.castShadow = true; R.room.group.add(m); planks.push({ m, x, z, gone: false, vy: 0 }); }
+    // небо пустоты: мягкий градиент к горизонту и туманная «бездна» внизу, чтобы белый фон не был плоским
+    { const sky = pxTex(8, 64, (c) => { const g = c.createLinearGradient(0, 0, 0, 64); g.addColorStop(0, '#a8bcd8'); g.addColorStop(0.3, '#dce8f4'); g.addColorStop(0.42, '#f6eee2'); g.addColorStop(0.6, '#d8d0dc'); g.addColorStop(1, '#9898b8'); c.fillStyle = g; c.fillRect(0, 0, 8, 64); }, 'voidSky'); layer(R, sky, 0, -30, -46, 300, 160, { fog: false });
+      const abyss = pxTex(64, 64, (c) => { const g = c.createRadialGradient(32, 32, 4, 32, 32, 32); g.addColorStop(0, 'rgba(120,120,160,.75)'); g.addColorStop(0.6, 'rgba(170,170,200,.35)'); g.addColorStop(1, 'rgba(220,230,245,0)'); c.fillStyle = g; c.fillRect(0, 0, 64, 64); }, 'voidAbyss'); for (const x of [-40, -8, 24, 52]) layer(R, abyss, x, -18, -4 + (x % 3), 70, 46, { flat: true, fog: false, opacity: 0.55 });
+      const cloud = pxTex(64, 20, (c) => { for (let i = 0; i < 14; i++) { c.fillStyle = `rgba(255,255,255,${0.35 + hsh(i) * 0.4})`; c.beginPath(); c.ellipse(6 + hsh(i + 2) * 52, 12 - hsh(i + 5) * 5, 6 + hsh(i + 9) * 6, 3 + hsh(i + 4) * 3, 0, 0, 7); c.fill(); } }, 'voidCloud'); for (let i = 0; i < 9; i++) layer(R, cloud, -44 + i * 11, -4 - (i % 3) * 2.5, -16 - (i % 2) * 8, 22, 7, { fog: true, opacity: 0.45, color: 0xc8d0e0 }); }
+    for (const [x, z] of PATH) { const m = new THREE.Mesh(new THREE.BoxGeometry(1.48, 0.34, 2.6), wood); m.position.set(x, -0.17, z); const bat = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.2, 2.9), new THREE.MeshLambertMaterial({ map: tex('darkwood') })); bat.position.set(0.5, -0.24, 0); m.add(bat); m.rotation.y = (Math.sin(x * 3.7) * 0.05); m.receiveShadow = true; m.castShadow = true; R.room.group.add(m); planks.push({ m, x, z, gone: false, vy: 0 }); }
     // последний островок
     const isl = new THREE.Mesh(new THREE.CylinderGeometry(3.6, 3.2, 0.3, 10), wood); isl.position.set(37.5, -0.15, 0); R.room.group.add(isl); R.box(38.6, -1, 0.7, 0.7, 0.5, { tex: 'velvet', solid: false }); R.box(36.4, -1.6, 0.2, 0.2, 2.6, { tex: 'metal', solid: false }); R.spot(36.4, 2.8, -1.6, 38, 0, 0xfff4e0, 30, { angle: 0.35, cone: 0.05, shadow: false });
     // обломки театра плывут вверх в пустоте
     const debris: THREE.Object3D[] = []; const kinds = ['chair', 'masks', 'bust', 'lantern', 'bouquet', 'book', 'umbrella', 'marionette'];
     for (let i = 0; i < 26; i++) { const sp = R.sprite(kinds[i % kinds.length], -38 + i * 3.1, (i % 2 ? -6 : 6) + Math.sin(i) * 1.5, { y: -3 + (i % 5), scale: 1.2, thin: true }); debris.push(sp); }
+    // дальние слои обломков: мельче, бледнее в тумане; и ближний слой внизу, под досками
+    const kinds2 = [...kinds, 'stagelight', 'candle', 'flowerpot', 'ladder', 'mic', 'cake']; for (let i = 0; i < 40; i++) { const far = i % 2 === 0; const sp = R.sprite(kinds2[i % kinds2.length], -42 + hsh(i) * 84, far ? -12 - hsh(i + 3) * 10 : 3 + hsh(i + 3) * 5, { y: far ? -6 + hsh(i + 7) * 14 : -9 + hsh(i + 7) * 4, scale: far ? 0.8 + hsh(i + 1) * 0.6 : 1.3, thin: true }); debris.push(sp); }
+    for (let i = 0; i < 18; i++) { const b = new THREE.Mesh(new THREE.BoxGeometry(1.3 + hsh(i) * 1.2, 0.22, 0.5 + hsh(i + 1) * 1.8), wood); b.position.set(-40 + i * 4.8 + hsh(i + 2) * 2, -3 - hsh(i + 4) * 8, (i % 3 - 1) * 9 + hsh(i + 6) * 3); b.rotation.set(hsh(i + 8) * 1.2, hsh(i + 9) * 3, hsh(i + 10) * 0.8); R.room.group.add(b); debris.push(b); }
     for (let i = 0; i < 12; i++) { const fr = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 2.2), new THREE.MeshLambertMaterial({ map: pxTex(16, 22, (c) => { rr(c, 0, 0, 16, 22, '#b08a2c'); rr(c, 0, 0, 16, 1, '#f0d478'); rr(c, 0, 0, 1, 22, '#f0d478'); rr(c, 15, 0, 1, 22, '#6a4a14'); rr(c, 2, 2, 12, 18, ['#c8d8e8', '#3a2a3a', '#d8c8a0'][i % 3]); if (i % 3 === 1) { rr(c, 6, 5, 4, 4, '#d8a888'); rr(c, 5, 9, 6, 9, '#8e1830'); } if (i % 3 === 0) rr(c, 4, 3, 2, 15, '#ffffff'); if (i % 3 === 2) { rr(c, 2, 13, 12, 7, '#7aa86a'); rr(c, 9, 4, 3, 3, '#f4ecc0'); } }, 'voidFrame' + (i % 3)), side: THREE.DoubleSide, transparent: true, opacity: 0.9 })); fr.position.set(-34 + i * 6, -2 + (i % 3) * 2, i % 2 ? -7 : 7); R.room.group.add(fr); debris.push(fr); }
     let safe = { x: PATH[0][0], z: PATH[0][1] }; let cue = 0; let still = 0;
     const al = R.actor('alla', -28, PATH[5][1], { id: 'alla', dir: 'r' });
@@ -142,9 +152,15 @@ const backstage: RoomDef = {
     R.table(3, -3.6, 2.4, 0.9); R.sprite('masks', 2.5, -3.6, { y: 1.15, scale: 0.8 }); R.sprite('bouquet', 3.6, -3.6, { y: 1.15, scale: 0.9 });
     R.box(-2.2, -4.25, 2.0, 0.15, 2.4, { tex: 'gold', y: 0.9, solid: false }); R.decal(pxTex(16, 20, (c) => { rr(c, 0, 0, 16, 20, '#7a8898'); rr(c, 3, 0, 1, 20, '#c8d4e0'); }, 'fbmir'), { x: -2.2, y: 2.1, z: -4.15, w: 1.7, h: 2.1, noSlot: true }); for (let k = 0; k < 5; k++) for (const sx of [-1, 1]) R.decal(pxTex(4, 4, (c) => { rr(c, 0, 0, 4, 4, '#ffe0a0'); rr(c, 1, 1, 2, 2, '#ffffff'); }, 'fbbulb'), { x: -2.2 + sx * 0.92, y: 1.2 + k * 0.45, z: -4.14, w: 0.16, h: 0.16, glow: true, noSlot: true }); R.light(-2.2, 2, -3.2, 0xffd8a0, 4, 5);
     R.box(7.6, -2.6, 0.9, 0.6, 1.1, { tex: 'darkwood' }); R.sprite(pxTex(8, 10, (c) => { rr(c, 3, 4, 2, 6, '#3a3a3a'); rr(c, 1, 0, 6, 5, '#c8203c'); rr(c, 2, 1, 3, 2, '#ff8080'); }, 'cue'), 7.6, -2.6, { y: 1.1, glow: true, scale: 1.1 }); R.light(7.6, 1.8, -2.2, 0xff4040, 2, 3, { flicker: 0.4 }); R.sprite('ladder', -9.3, -3.9, { scale: 1.2 });
-    TROUPE.forEach((id, i) => R.npc(id, -6 + i * 2, -1.6 + (i % 2) * 0.8, { talk: async (G: any) => { await G.run((F.wishes as any)[id]); (G.f.wishes ||= {})[id] = 1; } })); R.actor('alla', 5, -2.6, { id: 'alla', dir: 'l' });
+    // труппа стоит вразнобой: кто у зеркала, кто у стола, кто разминается в центре
+    const TPOS: [number, number, string][] = [[-6.4, -2.6, 'r'], [-3.6, 1.0, 'l'], [-0.9, -2.2, 'f'], [1.9, 1.6, 'l'], [4.1, -0.4, 'f']];
+    TROUPE.forEach((id, i) => R.npc(id, TPOS[i][0], TPOS[i][1], { dir: TPOS[i][2], talk: async (G: any) => { await G.run((F.wishes as any)[id]); (G.f.wishes ||= {})[id] = 1; } })); R.actor('alla', 5, -2.6, { id: 'alla', dir: 'l' });
     R.curtain(8.6, 0, 1.4, 6, { solid: true });
     R.inter('go', 7, 1, { label: 'Выйти на сцену', fn: async (G) => { await G.goto('fin_musical', 'start', { fade: 'curtain' }); } });
+    // пол кулис: вешалка с костюмами, кофр, мешки с песком, бухта кабеля, табурет с гримом, метки скотчем; соседние помещения за стенами
+    costumeRack(R, 0.2, -3.7, 2.6, 3); R.sprite(PROPTEX.sandbag(), -9.2, 3.4, { scale: 1.1 }); R.sprite(PROPTEX.sandbag(), -8.7, 3.7, { scale: 1.0 }); R.sprite(PROPTEX.coil(), 6.2, 3.4, { scale: 1.1 }); R.sprite(PROPTEX.stool(), -4.8, -3.4, { scale: 1.0 }); R.sprite(PROPTEX.hatbox(), -1.6, 3.6, { scale: 1.0 }); R.sprite(PROPTEX.trunk(), 2.8, 3.7, { scale: 1.2 });
+    const tapeM = pxTex(8, 8, (c) => { rr(c, 0, 3, 8, 2, '#e8d040'); rr(c, 3, 0, 2, 8, '#e8d040'); }, 'tapeMark'); for (const [x, z] of [[-5, 0.4], [-2.4, -0.6], [0.6, 0.2], [3.2, -1.8], [-7, 1.4]]) R.decal(tapeM, { flat: true, x, z, y: 0.03, w: 0.5, h: 0.5 });
+    for (const sx of [-1, 1]) { R.floor('stage', { x: sx * 15, w: 9.6, d: 22, z: 2, tint: '#9a7a68' }); R.box(sx * 19.6, 2, 0.4, 22, 6, { tex: 'brick', tint: '#6a4a40', solid: false, cast: false }); R.light(sx * 13, 3, 2, 0xffc080, 5, 9); } R.light(-5, 2.6, 2.4, 0xffc890, 5, 7); R.light(3, 2.6, 2.6, 0xffc890, 5, 7);
     R.spawn('start', -8, 2, 'r');
   },
   async enter(G) { if (!G.f.pre_show) { G.f.pre_show = 1; await G.run(G.f.diva_reconcile ? F.troupeBack : F.preShow); G.setPlayerChar('varya'); G.toast('Девочки из труппы хотят пожелать удачи. Подойдите к каждой', '♡'); } },
@@ -330,12 +346,17 @@ const party: RoomDef = {
   name: 'Буфет театра. После премьеры', chapter: 'Эпилог', w: 26, d: 12, music: 'party', amb: 'crowd', step: 'wood', grade: { tint: [1.08, 1.0, 0.92], vig: 0.35, bloom: 0.6, sat: 1.1 },
   build(R, G) {
     const f = G.f; R.floor('parquet'); R.walls('wallpaper', { h: 6, trim: 'gold' }); R.ambient(0x5a4838, 2.4, 0xffe8d0); R.particles('confetti', { count: 40, top: 6 });
-    for (let x = -11; x <= 11; x += 2.2) { R.sprite(canvasTex(8, 14, (c) => { const col = ['#e84a6f', '#f2c230', '#5fd0c8', '#c9a7ff'][Math.abs(Math.round(x)) % 4]; c.fillStyle = col; c.fillRect(1, 0, 6, 8); c.fillRect(2, 8, 4, 1); c.fillStyle = '#fff'; c.fillRect(2, 1, 2, 2); c.fillStyle = '#888'; c.fillRect(4, 9, 1, 5); }, 'balloon' + Math.round(x)), x, -4.6, { y: 3.6 + Math.sin(x) * 0.3, scale: 1.4, glow: true }); }
+    // связки шаров на ленточках, привязанные к грузикам: у стен, у стола, у дверей (разной высоты)
+    for (const [x, z, sd, sc] of [[-11.8, -5.2, 0, 1.5], [-6.2, -5.4, 1, 1.3], [5.6, -5.3, 2, 1.4], [9.4, -5.2, 3, 1.3], [-12, 4.6, 1, 1.2], [12.2, 1.4, 0, 1.3], [-4.9, -2.6, 2, 1.1], [4.9, -2.6, 3, 1.1]]) { R.sprite(balloonTex(sd), x, z, { scale: sc, thin: true }); R.decal(pxTex(6, 4, (c) => { rr(c, 0, 1, 6, 3, '#b08a2c'); rr(c, 1, 0, 4, 1, '#f0d478'); }, 'bweight'), { x, y: 0.12, z: z + 0.05, w: 0.3, h: 0.2, noSlot: true }); }
+    const bunting = pxTex(64, 10, (c) => { rr(c, 0, 0, 64, 1, '#d8d0c8'); for (let i = 0; i < 8; i++) { c.fillStyle = ['#e84a6f', '#f2c230', '#5fd0c8', '#c9a7ff'][i % 4]; c.beginPath(); c.moveTo(i * 8 + 1, 1); c.lineTo(i * 8 + 7, 1); c.lineTo(i * 8 + 4, 9); c.fill(); } }, 'bunting'); for (const x of [-8.7, 0, 8.7]) R.decal(bunting, { x, y: 4.9, z: -5.95, w: 8.6, h: 1.3, noSlot: true });
+    for (const [x, z, t, sd] of [[-11, -3.2, '#e8e0d4', '#8e1830'], [8.2, -3.8, '#e8e0d4', '#2f7f82'], [11.2, 5.0, '#f0e4d4', '#8e1830']] as [number, number, string, string][]) R.sprite(bistroTex(t, sd), x, z, { scale: 1.3, solid: 0.6 });
+    rug(R, 0, 2.8, 9, 4.2, { col: '#6a1a2a', border: '#e8c36a' }); for (let i = 0; i < 14; i++) R.decal(pxTex(6, 4, (c) => { rr(c, 0, 0, 6, 4, ['#e84a6f', '#f2c230', '#5fd0c8', '#c9a7ff'][i % 4]); }, 'confFloor' + (i % 4)), { flat: true, x: -9 + hsh(i) * 18, z: -1 + hsh(i + 5) * 6, y: 0.04, w: 0.18, h: 0.12 });
+    for (const [x, z, a, b] of [[5.6, -3.7, '#2f7f82', '#e8c36a'], [6.3, -3.4, '#c41e3a', '#f0d0e0'], [5.9, -3.0, '#e8c36a', '#c41e3a']] as [number, number, string, string][]) R.sprite(giftTex(a, b), x, z, { scale: 1.0 });
     for (let x = -10; x <= 10; x += 5) R.light(x, 4, -1, 0xffd8a0, 9, 10);
     R.table(0, -2.4, 9, 1.6, { tex: 'white', tint: '#f0e4d4' }); R.decal(pxTex(72, 10, (c) => { rr(c, 0, 0, 72, 10, '#f4ece0'); for (let x = 0; x < 72; x += 6) { rr(c, x, 0, 2, 10, '#ffffff'); rr(c, x + 4, 0, 1, 10, '#d8ccbc'); } for (let x = 0; x < 72; x += 12) { rr(c, x, 7, 12, 1, '#e84a6f'); rr(c, x + 5, 8, 2, 2, '#e84a6f'); } c.clearRect(0, 9, 72, 1); for (let x = 0; x < 72; x += 6) rr(c, x + 1, 9, 4, 1, '#f4ece0'); }, 'tablecloth'), { x: 0, y: 0.6, z: -1.58, w: 9.1, h: 1.0, noSlot: true }); R.sprite(f.cake_out ? 'cakeout' : 'cake', 0, -2.4, { y: 1.15, scale: 1.4 }); R.sprite('bouquet', 3, -2.4, { y: 1.15, scale: 1.5 });
     if (!f.cake_out) R.light(0, 2.4, -1.6, 0xffc060, 1.5, 3, { flicker: 0.15 });
     R.inter('cake', 0, -1, { label: f.cake_out ? 'Торт (желание загадано)' : 'Торт с 18 свечами', fn: async (G) => { if (f.cake_out) return G.run(['~: Свечи погасли. Желание, моё. Даже себе не скажу.']); await G.run(F.cake); await G.run(F.cakeWish); G.sfx('candle'); f.cake_out = 1; await G.rebuild(); await G.run(F.cakeAfter); G.sfx('applause', { dur: 3 }); } });
-    const fam: [string, number, number, any[]][] = [['matvey_bro', -8.4, 2.4, ['matvey_bro: …', '~: Матвейка молчит и держит меня за палец. Светлые кудряшки, серьёзные глаза. Самый красивый ребёнок на свете, и это не обсуждается.', 'nastya: Он весь вечер ждал, когда ты подойдёшь.']], ['vanya', -4.6, 2.8, ['vanya: Варя! А Рубен меня поднимет? А Матвей покажет фокус? А Полина ещё раз засмеётся?', '~: Ваня, маленькая копия Саши. Любит всех моих друзей сразу и Матвейку больше всех.', 'vanya: Матвейка, иди сюда! Тут торт!']], ['maxim', -9, 1, ['maxim: А знаешь, почему у королевы был такой длинный шлейф? Чтобы никто не наступил ей на пятки! …Нет? Настя, скажи, что смешно.', 'nastya: (улыбаясь) Смешно.']], ['nastya', -7.8, 1.6, ['nastya: Ты очень выросла. Не ростом. Голосом.']], ['natasha', -5.4, 1.2, ['natasha: Я никогда не видела, чтобы ты так спокойно отпускала людей на сцене. Как будто доверяешь им больше, чем плану.']], ['sasha', -4, 2, ['sasha: Я так и не понял, чем кончилось. Но я хлопал. Громко. Это считается?']], ['vasya', 6, 1.4, ['vasya: Можно я тоже буду режиссёром? Я уже командую Катей.', 'katya: (тихо) Не командует.']], ['sofa', 8, 0.8, ['sofa: Можно я накрашу тебя на следующую премьеру? Я уже придумала. Это будет шедевр.', 'varya/smile: Если я буду похожа на себя.', 'sofa: Ты будешь похожа на себя, только громче.']], ['katya', 9.4, 1.6, ['katya: Можно… с тобой сфотографироваться? Если нельзя, ничего. Если можно, то я тут постою.']]];
+    const fam: [string, number, number, any[]][] = [['matvey_bro', -8.0, 2.2, ['matvey_bro: …', '~: Матвейка молчит и держит меня за палец. Светлые кудряшки, серьёзные глаза. Самый красивый ребёнок на свете, и это не обсуждается.', 'nastya: Он весь вечер ждал, когда ты подойдёшь.']], ['vanya', -0.8, 4.6, ['vanya: Варя! А Рубен меня поднимет? А Матвей покажет фокус? А Полина ещё раз засмеётся?', '~: Ваня, маленькая копия Саши. Любит всех моих друзей сразу и Матвейку больше всех.', 'vanya: Матвейка, иди сюда! Тут торт!']], ['maxim', -9.6, 0.2, ['maxim: А знаешь, почему у королевы был такой длинный шлейф? Чтобы никто не наступил ей на пятки! …Нет? Настя, скажи, что смешно.', 'nastya: (улыбаясь) Смешно.']], ['nastya', -8.6, 0.9, ['nastya: Ты очень выросла. Не ростом. Голосом.']], ['natasha', -3.6, -0.6, ['natasha: Я никогда не видела, чтобы ты так спокойно отпускала людей на сцене. Как будто доверяешь им больше, чем плану.']], ['sasha', -5.6, 3.8, ['sasha: Я так и не понял, чем кончилось. Но я хлопал. Громко. Это считается?']], ['vasya', 6.4, 1.8, ['vasya: Можно я тоже буду режиссёром? Я уже командую Катей.', 'katya: (тихо) Не командует.']], ['sofa', 9.6, 0.2, ['sofa: Можно я накрашу тебя на следующую премьеру? Я уже придумала. Это будет шедевр.', 'varya/smile: Если я буду похожа на себя.', 'sofa: Ты будешь похожа на себя, только громче.']], ['katya', 10.8, 2.6, ['katya: Можно… с тобой сфотографироваться? Если нельзя, ничего. Если можно, то я тут постою.']]];
     for (const [id, x, z, talk] of fam) R.npc(id, x, z, { talk });
     const echo: Record<string, () => string> = {
       polina: () => f.pol_cmd ? 'polina: И, Варь… спасибо, что потом перестала командовать. Я заметила.' : 'polina: Ты тогда спросила, что я вижу. Я до сих пор об этом думаю.',
@@ -345,22 +366,24 @@ const party: RoomDef = {
       liza: () => f.liz_wait ? 'liza: Принц, кстати, написал. Спрашивал, можно ли ему дочитать монолог. Я сказала, башне.' : 'liza: Ножницы Феи я оставила себе. На память.',
       angelina: () => f.ang_cut === 'varya' ? 'angelina/smirk: В следующий раз, только по кивку. Я серьёзно. Почти.' : 'angelina/smile: Ты дождалась кивка. Я этого не забуду.',
     };
-    FRIENDS.forEach((id, i) => R.npc(FCHAR[id], -10 + i * 1.6, -0.2 + (i % 2) * 0.4 + 3.6, { id, talk: (G: any) => G.run([...F.paths[id as keyof typeof F.paths], echo[id]()]) }));
-    TROUPE.forEach((id, i) => R.npc(id, 5 + i * 1.4, 4.4, { talk: [`${id}: С днём рождения, Варя!`] }));
+    const FP = [[-11.4, -1.4], [-7.0, 4.8], [-2.6, 1.8], [2.6, 4.9], [3.8, 0.4], [8.6, 3.4]];
+    FRIENDS.forEach((id, i) => R.npc(FCHAR[id], FP[i][0], FP[i][1], { id, talk: (G: any) => G.run([...F.paths[id as keyof typeof F.paths], echo[id]()]) }));
+    const TP = [[6.2, 4.4], [10.6, -1.0], [12.0, 3.8], [1.2, -0.8], [-10.4, 3.2]];
+    TROUPE.forEach((id, i) => R.npc(id, TP[i][0], TP[i][1], { talk: [`${id}: С днём рождения, Варя!`] }));
     R.photo('group', 'Общее фото', 0, 2.4, { any: true });
     R.inter('end', 11.2, -4, { label: 'Закончить вечер', cond: () => !!f.cake_out && !!f.group_photo, fn: ending });
     R.door('d', 11.2, { label: 'Выход', col: '#5a4029', fn: async (G) => { if (!f.cake_out || !f.group_photo) return G.run(['~: Рано уходить. Ещё торт. И общее фото, Василиса не простит.']); await ending(G); } });
     R.spawn('start', 0, 3.6, 'b');
   },
   async enter(G) { if (!G.f.party0) { G.f.party0 = 1; await G.ui.card([['ЭПИЛОГ', 'act'], ['Восемнадцать', 'big']]); await G.run(F.party0); await G.run(F.groupPhoto); await gather(G); G.toast('Общее фото: C поднимает камеру, E снимает', '◉'); } },
-  async photo(G, subs) { if (subs.includes('group') && !G.f.group_photo) { G.f.group_photo = 1; G.sfx('shutter'); await G.run(F.groupPhotoAfter); } },
+  async photo(G, subs) { if (subs.includes('group') && !G.f.group_photo) { G.f.group_photo = 1; G.sfx('shutter'); await G.run(F.groupPhotoAfter); await G.rebuild(); } },
 };
 async function ending(G: any) {
   G.audio.music('morning'); await G.ui.card([['', 'act'], '…']);
   await G.goto('fin_bedroom', 'start', { fade: 'fade' });
 }
 const bedroom: RoomDef = {
-  name: 'Сидней. 07:00', chapter: 'Эпилог', w: 12, d: 9, music: 'morning', amb: null, step: 'carpet', grade: { tint: [1.08, 1.02, 0.96], bright: 1.05, vig: 0.6 }, noMasks: true, camDist: 16,
+  name: 'Сидней. 07:00', chapter: 'Эпилог', w: 12, d: 9, music: 'morning', amb: null, step: 'carpet', grade: { tint: [1.08, 1.02, 0.96], bright: 1.05, vig: 0.38 }, noMasks: true, camDist: 16,
   build(R, G) {
     const bed = (x: number, z: number, w: number, d: number, col: string, hi: string) => { R.box(x, z, w, d, 0.42, { tex: 'wood', tint: '#e0b888' });
       const quilt = pxTex(32, 24, (c) => { rr(c, 0, 0, 32, 24, col); for (let y = 0; y < 24; y += 6) for (let xx = 0; xx < 32; xx += 8) { rr(c, xx + ((y / 6) % 2) * 4, y, 4, 6, hi); rr(c, xx, y, 32, 1, 'rgba(0,0,0,.12)'); } rr(c, 0, 0, 32, 3, '#ffffff'); rr(c, 0, 3, 32, 1, 'rgba(0,0,0,.15)'); for (let xx = 0; xx < 32; xx += 3) rr(c, xx, 23, 2, 1, 'rgba(0,0,0,.25)'); }, 'quilt' + col);
@@ -375,7 +398,12 @@ const bedroom: RoomDef = {
     R.sprite('lamp', 5.4, -3.6, { scale: 0.9 }); R.light(5.4, 2.2, -3.2, 0xffd8a0, 3, 5);
     for (let i = 0; i < 6; i++) R.decal(pxTex(8, 7, (c) => { rr(c, 0, 0, 8, 7, '#f4f0e8'); rr(c, 1, 1, 6, 4, ['#e8a0b8', '#9cc2ee', '#f2c230'][i % 3]); }, 'bph' + (i % 3)), { x: -0.6 + i * 0.5, y: 4.0 - Math.sin(i / 5 * Math.PI) * 0.25, w: 0.4, h: 0.35, noSlot: true });
     const beam = R.decal(pxTex(16, 32, (c) => { const g = c.createLinearGradient(0, 0, 0, 32); g.addColorStop(0, 'rgba(255,230,170,.0)'); g.addColorStop(1, 'rgba(255,230,170,.45)'); c.fillStyle = g; c.fillRect(0, 0, 16, 32); }, 'sunbeam'), { flat: true, x: -2.6, z: -1.6, y: 0.03, w: 2.4, h: 4.6, glow: true }); (beam.material as THREE.MeshBasicMaterial).blending = THREE.AdditiveBlending;
-    for (const sx of [-1, 1]) R.box(sx * 6.6, 5.4, 1.4, 1.6, 6, { tex: 'black', solid: false, cast: false }); R.box(1.2, -3.6, 0.8, 0.8, 0.8, { tex: 'wood' }); R.sprite(canvasTex(12, 6, (c) => { c.fillStyle = '#d8ccb2'; c.fillRect(0, 0, 12, 6); c.fillStyle = '#a3122a'; c.fillRect(1, 1, 3, 4); }, 'ticketsm'), 1.2, -3.6, { y: 0.8, glow: true });
+    // за стенами: коридор квартиры (ковровая дорожка, плинтус), чтобы по углам кадра не было черноты
+    for (const sx of [-1, 1]) { R.floor('carpet', { x: sx * 10.4, w: 8.4, d: 24, z: 3, tint: '#8a6a5a' }); R.box(sx * 14.4, 3, 0.3, 24, 2.4, { tex: 'plaster', tint: '#b8a890', solid: false, cast: false }); }
+    // обжитая комната: шкаф, стул с одеждой, рюкзак, тапочки, цветок, гирлянда над кроватью
+    pWardrobe(R, 5.4, 1.6, { w: 1.8, h: 3, ry: -Math.PI / 2, wood: '#c89a6a' }); R.sprite('chair', -4.6, 3.0, { scale: 1.1, solid: 0.35 }); R.sprite(pxTex(14, 10, (c) => { rr(c, 0, 2, 14, 5, '#c41e3a'); rr(c, 0, 2, 14, 1, '#e8506a'); rr(c, 9, 6, 3, 4, '#c41e3a'); rr(c, 2, 6, 4, 3, '#2f2a3a'); }, 'clothes'), -4.6, 3.05, { y: 0.75, scale: 1.0, thin: true });
+    R.sprite('suitcase', 3.4, 3.6, { scale: 1.2 }); R.sprite('plant', -5.3, -3.6, { scale: 1.1 }); R.decal(pxTex(12, 8, (c) => { for (const x of [0, 7]) { rr(c, x, 1, 5, 7, '#f0b8c8'); rr(c, x + 1, 2, 3, 3, '#ffffff'); rr(c, x, 0, 5, 1, '#d890a8'); } }, 'slippers'), { flat: true, x: 0.6, z: 2.8, y: 0.035, w: 0.7, h: 0.45 });
+    for (let i = 0; i < 9; i++) R.sprite(pxTex(4, 5, (c) => { rr(c, 1, 0, 2, 1, '#5a5a5a'); rr(c, 0, 1, 4, 4, '#ffe8a0'); rr(c, 1, 2, 2, 2, '#ffffff'); }, 'fairy'), -4.6 + i * 0.6, -4.3, { y: 3.6 - Math.sin(i / 8 * Math.PI) * 0.35, glow: true, scale: 0.8 }); R.box(1.2, -3.6, 0.8, 0.8, 0.8, { tex: 'wood' }); R.sprite(canvasTex(12, 6, (c) => { c.fillStyle = '#d8ccb2'; c.fillRect(0, 0, 12, 6); c.fillStyle = '#a3122a'; c.fillRect(1, 1, 3, 4); }, 'ticketsm'), 1.2, -3.6, { y: 0.8, glow: true });
     R.inter('ticket', 1.2, -2.6, { label: 'Билет на тумбочке', fn: (G) => G.run(F.wake.slice(3, 4)) }); bed(-2.2, -2.8, 2.6, 1.8, '#c88aa0', '#f4d8e4'); R.box(-2.2, -3.75, 2.7, 0.2, 1.4, { tex: 'wood', tint: '#e8c8a0', solid: false }); const sis = R.actor('vasya', -2.2, -2.8, { id: 'vasya' }); sis.pose = 'lie'; sis.y = 0.65; R.look('sis', -2.2, -1.4, 'Вася спит', ['~: Вася спит, натянув одеяло до носа. Мы делим комнату с тех пор, как я себя помню, и я ни разу не видела, чтобы она просыпалась раньше будильника.', '~: Сегодня можно не будить. Я сама.']);
     R.decal(canvasTex(16, 28, (c) => { c.fillStyle = '#86641c'; c.fillRect(0, 0, 16, 28); c.fillStyle = '#c8d8e8'; c.fillRect(2, 2, 12, 24); }, 'bedmirror'), { x: -5.96, wall: 'w', at: 0, y: 2.4, w: 1.4, h: 2.4 });
     R.inter('mirror', -5, 0, { label: 'Зеркало', fn: async (G) => { await G.run(F.wake.slice(4)); G.sfx('note'); await G.wait(1); G.ui.black(true); await G.ui.card([['THE OTHER ME: APPLAUSE, PLEASE!', 'act'], ['Конец.', 'big'], ['Или начало. Тут уж как поставить.', 'sm']]); G.set('game_done', 1); await G.save('auto'); G.ui.black(true); await G.ui.credits(true); G.stopToMenu(); G.ui.mainMenu(); G.ui.black(false); } });
@@ -387,7 +415,7 @@ export const rooms: Record<string, RoomDef> = { fin_void: voidRoom, fin_diva: di
 /** Все гости собираются в одну группу перед тортом, лицом к камере, чтобы Варя сделала общее фото. */
 async function gather(G: any) {
   const room = G.room; const ppl = room.actors.filter((a: any) => a !== G.player && !a.hidden); const n = ppl.length, per = Math.ceil(n / 3);
-  const walks = ppl.map((a: any, i: number) => { const row = Math.floor(i / per), col = i % per, cols = Math.min(per, n - row * per); const x = (col - (cols - 1) / 2) * 1.25 + (row % 2) * 0.3, z = -0.4 + row * 1.1; a.box && (a.box.on = false); return a.walkTo(x, z, 3.2).then(() => { a.face(0, 9); if (a.box) { a.box.x0 = x - 0.4; a.box.x1 = x + 0.4; a.box.z0 = z - 0.25; a.box.z1 = z + 0.25; a.box.on = true; } const it = room.inters.find((q: any) => q.id === a.id); if (it) { it.x = x; it.z = z + 0.2; } }); });
+  const walks = ppl.map((a: any, i: number) => { const row = Math.floor(i / per), col = i % per, cols = Math.min(per, n - row * per); const u = col - (cols - 1) / 2, x = u * 1.6 + (row % 2) * 0.5, z = -0.6 + row * 1.35 + u * u * 0.05 + (col % 2) * 0.25; a.box && (a.box.on = false); return a.walkTo(x, z, 3.2).then(() => { a.face(0, 9); if (a.box) { a.box.x0 = x - 0.4; a.box.x1 = x + 0.4; a.box.z0 = z - 0.25; a.box.z1 = z + 0.25; a.box.on = true; } const it = room.inters.find((q: any) => q.id === a.id); if (it) { it.x = x; it.z = z + 0.2; } }); });
   G.player.walkTo(0, 5.4, 3); await Promise.all(walks); G.player.face(0, 0);
 }
 
