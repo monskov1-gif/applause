@@ -123,6 +123,8 @@ class Game {
     // мысли принадлежат тому, кем мы сейчас играем; портрет следует за костюмом персонажа в сцене
     let id = thought ? pc : who; if (thought) text = text.replace(/^\[[^\]]+\]\s*/, '');
     if (!thought && !narr && this.room) { const a = this.room.actors.find((x: any) => x.id === who && !x.hidden) || (this.player?.id === who ? this.player : null); if (a && a.charId && a.charId !== who && CHARS[a.charId]) id = a.charId; }
+    // кинематографичная камера диалога: мягкий наезд на говорящего и героиню
+    if (!narr && !thought && this.room && !this.fast) { const sp = this.room.actors.find((x: any) => x.id === who && !x.hidden); const p = this.player; if (sp && p && Math.hypot(sp.x - p.x, sp.z - p.z) < 9) { const dd = (this.room.def.camDist || 24); this.dlgCam = { x: (sp.x + p.x) / 2, z: (sp.z + p.z) / 2 + 0.6, dist: Math.max(11, dd * 0.72) }; } }
     const d = CHARS[id]; const base = CHARS[(id.split('_')[0])] || d;
     if (!narr && !d) console.warn('[dialogue] неизвестный говорящий', who);
     const key = who + ':' + text; const seen = !!this.state.seen[hash(key)];
@@ -155,7 +157,7 @@ class Game {
           if (n.shake) this.shake(n.shake); if (n.flash) this.flash(); if (n.fx) this.fx(n.fx[0], n.fx[1]); if (n.eyes) this.eyes(n.eyes);
         }
       }
-    } finally { this.lock--; this.runDepth--; if (this.runDepth === 0) { audio.duck(false); ui.sayHide(); } }
+    } finally { this.lock--; this.runDepth--; if (this.runDepth === 0) { this.dlgCam = null; audio.duck(false); ui.sayHide(); } }
   }
   actor(id: string): Actor | undefined { return id === 'player' ? this.player : this.room?.actor(id); }
 
@@ -208,6 +210,7 @@ class Game {
     const h = (CHARS[p.charId]?.h || 31) / PPU; mesh.position.set(p.dir === "l" ? -0.08 : p.dir === "r" ? 0.08 : 0, h - 0.42, 0.06); mesh.scale.x = p.dir === 'l' ? -0.85 : p.dir === 'r' ? 0.85 : 1;
   }
   // ---------- прозрачность того, что заслоняет героиню или висит прямо у камеры ----------
+  dlgCam: null | { x: number; z: number; dist: number } = null;
   private fadeCacheRoom: any = null; private fadeCache: { m: THREE.Mesh; p: THREE.Vector3; bb: THREE.Box3 }[] = []; private fpsT = 0; private fpsN = 0; private fpsLow = 0;
   private fadeT = 0; private faded = new Map<THREE.Mesh, { orig: any; clone: any; a: number; tgt: number }>(); private ray = new THREE.Raycaster();
   private fadeBlockers(dt: number) {
@@ -337,10 +340,10 @@ class Game {
     if (this.lock === 0 && !ui.modal) for (const it of room.inters) { if (!it.enabled || (it.cond && !it.cond())) { if (it.marker) it.marker.visible = false; continue; } const d = Math.hypot(it.x - p.x, it.z - p.z); if (it.marker) { it.marker.visible = d < 5; it.marker.position.y = it.y + 0.5 + Math.sin(this.t * 3 + it.x) * 0.08; it.marker.rotation.y = this.t * 2; } if (d < it.r && d < bd) { bd = d; best = it; } }
     this.near = best;
     // камера
-    const c = this.cam, f = c.focus; const cb = this.camBounds();
-    const tx = f ? f.x : clamp(p.x, -cb.mx, cb.mx), tz = f ? f.z : clamp(p.z, cb.z0, cb.z1), td = f ? f.dist : (room.def.camDist || 24); const k = Math.min(1, dt * 3.5);
+    const c = this.cam, f = c.focus || this.dlgCam; const cb = this.camBounds();
+    const tx = f ? f.x : clamp(p.x, -cb.mx, cb.mx), tz = f ? f.z : clamp(p.z, cb.z0, cb.z1), td = f ? f.dist : (room.def.camDist || 24); const k = Math.min(1, dt * (!c.focus && this.dlgCam ? 1.4 : 3.5));
     c.x += (tx - c.x) * k; c.z += (tz - c.z) * k; c.dist += (td - c.dist) * k; c.shake = Math.max(0, c.shake - dt * 1.2);
-    const sx = (Math.random() - 0.5) * c.shake, sy = (Math.random() - 0.5) * c.shake; const aspectFix = this.R.cam.aspect < 1 ? 1.25 : 1;
+    const br = this.fast ? 0 : 1; const sx = (Math.random() - 0.5) * c.shake + Math.sin(this.t * 0.55) * 0.06 * br, sy = (Math.random() - 0.5) * c.shake + Math.sin(this.t * 0.8 + 1) * 0.045 * br; /* «дыхание» камеры */ const aspectFix = this.R.cam.aspect < 1 ? 1.25 : 1;
     this.R.cam.position.set(c.x + sx, c.yOff + Math.sin(c.pitch) * c.dist * aspectFix + sy, c.z + Math.cos(c.pitch) * c.dist * aspectFix);
     this.R.cam.up.set(Math.sin(c.roll), Math.cos(c.roll), 0); this.R.cam.lookAt(c.x + sx, c.yOff, c.z);
     this.faceMask();
@@ -349,7 +352,7 @@ class Game {
     // автокачество: если долго меньше 24 к/с, понижаем ступень
     this.fpsT += dt; this.fpsN++; if (this.fpsT > 4) { const fps = this.fpsN / this.fpsT; this.fpsT = 0; this.fpsN = 0; if (fps < 24 && !this.fast && document.visibilityState === 'visible') { if (++this.fpsLow >= 2 && settings.quality !== 'low') { settings.quality = settings.quality === 'high' ? 'med' : 'low'; this.fpsLow = 0; this.R.setup(); ui.toast('Графика упрощена для плавности', '⚙'); } } else this.fpsLow = 0; }
     this.R.render(dt);
-    ui.letterbox(!!this.cam.focus && this.lock > 0);
+    ui.letterbox((!!this.cam.focus || !!this.dlgCam) && this.lock > 0);
     if (best) { const v = new THREE.Vector3(best.x, best.y + 0.9, best.z).project(this.R.cam); ui.prompt(best.label, (v.x + 1) / 2, (1 - v.y) / 2); } else ui.prompt(null);
     input.endFrame();
   }
