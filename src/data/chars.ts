@@ -20,7 +20,7 @@ const C: CharDef[] = [
     role: 'Художественный руководитель', bio: 'Его никто не видел. Он оставляет письма, пометки на полях и распоряжения, всегда вовремя.' },
   { id: 'polina', acc: ['hoodie', 'collar', 'tie'], name: 'Полина', color: '#c9a7ff', pitch: 610, skin: FAIR, hair: '#b8632c', style: 'shag', eyes: '#5a7a6a', h: 32, build: 'thin', top: '#3a2620', bottom: '#2a2c3a', shoes: '#1a1416', brows: 'soft',
     role: 'Подруга', bio: 'Боится почти всего и смеётся, когда страшно. Замечает то, что другие пропускают.' },
-  { id: 'ruben', sleeve: 'short', male: true, name: 'Рубен', color: '#ffb057', pitch: 240, skin: TAN2, hair: '#3a2418', style: 'curlyBig', eyes: '#3b2416', h: 40, build: 'strong', top: '#d6c2a2', bottom: '#33333c', trim: '#ff9a3c', shoes: '#111', brows: 'strict', acc: ['glasses', 'necklace', 'pendant'],
+  { id: 'ruben', sleeve: 'short', male: true, name: 'Рубен', color: '#ffb057', pitch: 240, skin: TAN2, hair: '#3a2418', style: 'curlyBig', eyes: '#3b2416', h: 40, build: 'strong', top: '#d6c2a2', bottom: '#33333c', trim: '#ff9a3c', shoes: '#111', brows: 'strict', acc: ['necklace', 'pendant'],
     role: 'Друг', bio: 'Спокойный и надёжный. Считает, что план нужен, чтобы было от чего отступать.' },
   { inner: '#b8c8dc', id: 'matvey', male: true, name: 'Матвей', color: '#ff8fd0', pitch: 400, skin: FAIR2, hair: '#64412a', style: 'mop', eyes: '#5b3a1e', h: 37, build: 'thin', top: '#e6dcc6', bottom: '#2c2a30', trim: '#e6dcc6', shoes: '#1a1416', acc: ['open', 'stripes', 'suspenders', 'necklace', 'bracelets'], brows: 'soft',
     role: 'Друг', bio: 'Яркий снаружи, осторожный внутри. Сто раз отрепетирует фразу и так её и не скажет.' },
@@ -90,9 +90,9 @@ export function variant(base: string, id: string, patch: Partial<CharDef>): Char
 variant('varya', 'varya_noir', { top: '#6a6a6a', bottom: '#2a2a2a', acc: ['hat'] });
 variant('varya', 'varya_pjm', { top: '#d8c8e8', bottom: '#b8a8d0', acc: [] });
 variant('erika', 'erika_noir', { top: '#9a9a8a', bottom: '#2a2a2a', acc: ['hat', 'coat'] });
-variant('ruben', 'ruben_tux', { top: '#141418', bottom: '#141418', trim: '#f4f0e8', acc: ['glasses', 'bowtie', 'jacket'] });
+variant('ruben', 'ruben_tux', { top: '#141418', bottom: '#141418', trim: '#f4f0e8', acc: ['bowtie', 'jacket'] });
 variant('varya', 'varya_gown', { top: '#5a0c1c', bottom: '#4a0a18', skirt: 'long', acc: ['offshoulder', 'necklace'] });
-variant('ruben', 'ruben_heist', { top: '#16161c', bottom: '#1c2028', trim: '#40e0d0', acc: ['glasses'] });
+variant('ruben', 'ruben_heist', { top: '#16161c', bottom: '#1c2028', trim: '#40e0d0', acc: [] });
 variant('matvey', 'matvey_school', { top: '#2c3550', bottom: '#2a2a33', trim: '#f2c230', acc: ['freckles', 'scarf', 'bracelets', 'pins'] });
 variant('angelina', 'angelina_idol', { top: '#f0f0f8', bottom: '#ff9ad8', trim: '#ff4fa0' });
 variant('angelina', 'angelina_own', { top: '#1a1420', bottom: '#7a1f3d', trim: '#e8c36a' });
