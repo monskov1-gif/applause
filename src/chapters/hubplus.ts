@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import type { RoomDef, Builder } from '../world/room';
 import { canvasTex, ptext } from '../gfx/tex';
 import { T } from '../data/dialogue/theater';
+import { witness } from './casework';
 import { D } from '../data/dialogue/hub';
 import { column, chandelier, sconce, balustrade, rug, PROPTEX, piano, gear, windowBeam, photoWall, costumeRack, vanity, theatreBox } from '../world/decor';
 import { mirror3D, window3D, wardrobe, bookshelf, sofa, armchair, screen3D, coatStand, desk, corkBoard, statue, palm, ticketBooth, cloakroom, barCounter, cafeTable } from '../world/decor3d';
@@ -165,7 +166,7 @@ const foyer: RoomDef = {
     sofa(R, -10.5, 11.6, { w: 3.2, col: 0xb04050 }); sofa(R, 10.5, 11.6, { w: 3.2, col: 0xb04050 }); armchair(R, -14.5, 11.2, { col: 0xb04050, ry: 0.4 }); armchair(R, 14.5, 11.2, { col: 0xb04050, ry: -0.4 });
     for (const sx of [-1, 1]) { mirror3D(R, sx * 20.85, 3.6, 3, 2.2, 4, { ry: -sx * Math.PI / 2 }); window3D(R, -2, { wall: sx < 0 ? 'w' : 'e', y: 5.2, w: 2, h: 3.4 }); }
     // касса, гардероб, буфет
-    ticketBooth(R, 16, 4.2, -Math.PI / 2); R.light(14.2, 3.4, 4.2, 0xffd8a8, 7, 7); R.look('kassa', 14, 4.2, 'Касса', T.kassa);
+    ticketBooth(R, 16, 4.2, -Math.PI / 2); R.light(14.2, 3.4, 4.2, 0xffd8a8, 7, 7); R.look('kassa', 14, 4.2, 'Касса', T.kassa); witness(R, G, 'usher', 13.4, 6.6, { dir: 'l' });
     cloakroom(R, -16.6, 5.8, 6); R.light(-16.6, 3.6, 8.2, 0xffd8a8, 7, 8); R.look('coats', -16.6, 7.6, 'Гардероб', T.coats, { photo: 'Номерок № 18', egg: 'cloak18' });
     R.door('d_buffet', 10, { wall: 'w', to: 'hub_buffet', label: 'Буфет', sign: 'БУФЕТ', col: '#6a1a22' });
     R.light(7.8, 2.2, 12, 0xffe0b0, 4, 4); R.sprite('bookstand', 7.8, 11.2, { scale: 1.4, solid: 0.4 }); R.look('guest', 7.8, 12.2, 'Книга отзывов', T.guestbook, { egg: 'guestbook' });

@@ -8,6 +8,8 @@ import { CHARS } from '../data/chars';
 import { balustrade } from '../world/decor';
 import { mirror3D, window3D, wardrobe, bookshelf, sofa, armchair, screen3D, coatStand, desk, corkBoard, statue, palm } from '../world/decor3d';
 import { sconce, rug, PROPTEX, theatreBox, chandelier, vanity, costumeRack, photoWall, column, clutterTex, photoTex as photoTexV, gear, windowBeam } from '../world/decor';
+import { caseBoard, witness, caseFind, returnClue } from './casework';
+import { CASE } from '../data/dialogue/case';
 import { extraRooms, pWardrobe, coatStandTex, featherTex, pxTex, rr, hsh, pGear, pPalm, layer, crisp, settleTex, falloff } from './hubplus';
 
 const FRIENDS = ['polina', 'ruben', 'matvey', 'erika', 'liza', 'angelina'];
@@ -63,6 +65,7 @@ const dressing: RoomDef = {
     R.inter('journal', 2.2, -4.0, { label: 'Журнал помрежа (сохранить)', y: 1.4, fn: () => G.ui.saveLoad('save') });
     R.sprite('book', 2.2, -4.5, { y: 0, scale: 1.4 });
     R.door('door', 6, { to: 'hub_corridor', spot: 'dressing', label: 'В коридор', cond: () => !!f.read_invite, locked: 'Сначала, конверт на столе. Не люблю выходить, не зная, куда.' });
+    if (G.doneCount() >= 1) { caseBoard(R, G, -6.6, 1.7, 2.2); for (const sx of [-1, 1]) R.box(-6.6 + sx * 0.8, 2.15, 0.08, 0.08, 1.6, { tex: 'darkwood', solid: false }); R.collider(-7.8, 1.9, -5.4, 2.5); }
     R.spawn('start', -5.4, -2); R.spawn('door', 6, -3.4);
   },
   async enter(G) {
@@ -220,6 +223,7 @@ const stage: RoomDef = {
       if (G.done('angelina')) { R.npc('angelina', 4.5, -12.5, { talk: (G: any) => G.run(G.state.mask === 'drama' ? D.h_angelinaDr : D.h_angelina) }); R.sprite('mic', 5.4, -11.9); }
       if (!f.act4) { R.npc('alla', 8.8, -9.2, { dir: 'r', mask: 'none', talk: (G: any) => G.run((D as any)['alla' + Math.min(5, n)]) }); R.npc('alla', 8.8, -9.2, { id: 'allaDr', dir: 'r', mask: 'drama', talk: D.allaDr }); R.npc('alla', 8.8, -9.2, { id: 'allaX', dir: 'r', mask: 'comedy', talk: ['alla/smirk: Сними это. В Комедии у меня дрожит левая бровь, а я не давала согласия на бровь.'] }); R.npc('alla', 8.8, -9.2, { id: 'allaT', dir: 'r', mask: 'tragedy', talk: ['~: В маске Трагедии её почти не видно. Контур, как у декорации на просвет. И на полу под ней одна тень. Моя.', { note: 'one_shadow' }] }); }
     }
+    if (G.doneCount() >= 1) { witness(R, G, 'prompter', -1.2, -2.6, { dir: 'f' }); caseFind(R, G, 'c_powder', 8.4, -7.6, 'Пудреница на полу', CASE.powder); }
     R.spawn('start', -16.8, -4.2, 'r'); R.spawn('corridor', -16.8, -4.2, 'r'); R.light(-17.6, 3.2, -4.8, 0xffd8a0, 6, 8); R.sprite('stagelight', -18.4, -5.4, { scale: 1.4 }); R.sprite(PROPTEX.coil(), -18.6, -3.4, { scale: 1.2 }); R.sprite(PROPTEX.sandbag(), -15.6, -7.4, { scale: 1.2 }); R.spawn('back', 12, -20.6); R.spawn('center', 0, -8); R.spawn('stalls', -16.6, 19, 'r'); R.spawn('stalls2', 16.6, 19, 'l'); R.spawn('hatch', 5.4, -6.4);
   },
   async enter(G, from) {
@@ -344,7 +348,7 @@ const backstage: RoomDef = {
   async enter(G, from) {
     const f = G.f;
     if (!f.back_seen) { f.back_seen = 1; G.focus(-4, 0, 22); await G.wait(1); await G.run(D.backstageFirst); G.unfocus(); return; }
-    if (f.ret) { const who = f.ret; delete f.ret; G.audio.music('theater'); await G.wait(0.5); await G.run((D as any)['ret_' + who]); const nd = G.doneCount(); if (nd >= 2 && !f.act3) { f.act3 = 1; await G.ui.card([['АКТ III', 'act'], ['THE SCRIPT KNOWS', 'big'], ['Кто-то пишет этот сценарий заранее. Пора узнать кто.', 'sm']]); } if (nd >= 4 && !f.act4b) { f.act4b = 1; await G.ui.card([['АКТ IV', 'act'], ['BEHIND THE CURTAIN', 'big'], ['У каждого спектакля есть тот, кто дёргает за ниточки.', 'sm']]); } if (nd >= 6) await G.run(D.preAct4); else if (!f.afterRet) { f.afterRet = 1; await G.run(D.afterRet); } G.audio.music('backstage'); await G.save('auto'); await G.rebuild(); }
+    if (f.ret) { const who = f.ret; delete f.ret; G.audio.music('theater'); await G.wait(0.5); await G.run((D as any)['ret_' + who]); await returnClue(G, who); const nd = G.doneCount(); if (nd >= 2 && !f.act3) { f.act3 = 1; await G.ui.card([['АКТ III', 'act'], ['THE SCRIPT KNOWS', 'big'], ['Кто-то пишет этот сценарий заранее. Пора узнать кто.', 'sm']]); } if (nd >= 4 && !f.act4b) { f.act4b = 1; await G.ui.card([['АКТ IV', 'act'], ['BEHIND THE CURTAIN', 'big'], ['У каждого спектакля есть тот, кто дёргает за ниточки.', 'sm']]); } if (nd >= 6) await G.run(D.preAct4); else if (!f.afterRet) { f.afterRet = 1; await G.run(D.afterRet); } G.audio.music('backstage'); await G.save('auto'); await G.rebuild(); }
   },
 };
 
@@ -373,6 +377,7 @@ const workshop: RoomDef = {
     R.sprite(PROPTEX.coil(), 2, 3.6, { scale: 1.5 }); R.sprite(PROPTEX.sandbag(), 5, 3.8, { scale: 1.3 }); R.sprite(PROPTEX.sandbag(), 5.5, 4, { scale: 1.2 });
     R.decal(canvasTex(16, 16, (c) => { c.fillStyle = '#e8e0c8'; c.fillRect(0, 0, 16, 16); c.fillStyle = '#111'; c.fillRect(7, 3, 2, 6); c.fillRect(7, 8, 5, 2); c.strokeStyle = '#3a2a14'; c.strokeRect(0.5, 0.5, 15, 15); }, 'clock'), { x: -3.5, y: 4.6, w: 1, h: 1 });
     if (G.done('ruben')) R.npc('ruben', 3.6, 1.6, { talk: (G: any) => G.run(G.state.mask === 'drama' ? D.h_rubenDr : D.h_ruben) });
+    witness(R, G, 'stagehand', 9.2, -1.6, { dir: 'l' });
     R.spawn('start', -6.5, -3.4);
   },
 };
@@ -380,7 +385,7 @@ const archive: RoomDef = {
   name: 'Архив театра', chapter: 'Акт III · Сценарий знает', w: 18, d: 10, music: 'backstage', amb: 'hall', step: 'wood', grade: { tint: [0.96, 0.98, 1.06], vig: 0.6 },
   build(R, G) {
     const f = G.f; R.floor('parquet'); R.walls('woodwall', { h: 6 }); dustAndBase(R, false); R.light(0, 4, 0.6, 0xfff0d0, 13, 10, { flicker: 0.04 }); R.light(-6, 3, -2, 0x90a8ff, 6, 8);
-    R.door('door', 7, { to: 'hub_mezz', spot: 'arch', label: 'На бельэтаж' });
+    R.door('door', 7, { to: 'hub_mezz', spot: 'arch', label: 'На бельэтаж' }); caseFind(R, G, 'c_poster', -2.6, -3.6, 'Старая афиша на стеллаже', CASE.poster);
     for (const x of [-7, -3.4, 0.2]) bookshelf(R, x, -4.6, { w: 3, h: 4.6, shelves: 6 });
     R.ambient(0x3a3430, 1.2, 0xc8c0b0); rug(R, 0, 1.2, 6.4, 3.6, { col: '#3a2430', border: '#a08850' }); falloff(R, 0, 0, 22, 14, 0.026, 'rgba(8,6,10,0.75)');
     // висячая лампочка, банкирская лампа, картотека, лестница, разбросанные бумаги
