@@ -194,7 +194,7 @@ function buildCastle(R: Builder, set: THREE.Group) {
   N.moon = onStick('moon', '#f4ecc0', false); N.sun = onStick('sun', '#ffd040', true);
   N.clouds = [-5, 0.5, 6].map((x, i) => { const g = new THREE.Group(); R.room.group.add(g); cardFlat(R, g, 'cloud' + i, 4.2, 1.9, (c, W, H) => { c.beginPath(); c.moveTo(4, H - 2); for (let k = 0; k < 5; k++) c.arc(8 + k * 11, H - 10 - (k % 2) * 4, 9 + (k % 2) * 3, Math.PI, 0); c.lineTo(W - 2, H - 2); c.closePath(); }, (c, W, H) => { c.fillStyle = '#5a6078'; c.fillRect(0, 0, W, H); strokes(c, W, H, ['#8a90a8', '#3a4058'], 30); }, 0, 0, { brace: false }); const wire = new THREE.Mesh(new THREE.BoxGeometry(0.02, 8, 0.02), new THREE.MeshBasicMaterial({ color: 0x222222 })); wire.position.y = 5.8; g.add(wire); g.position.set(x, 13, -12.4 + i * 0.6); return g; });
 }
-const aim = (l: any, tx: number, tz: number) => { l.target.position.set(tx, 0, tz); if (l.cone) { l.cone.lookAt(tx, 0, tz); l.cone.rotateY(Math.PI); } };
+const aim = (l: any, tx: number, tz: number) => { l.target.position.set(tx, 0, tz); if (l.cone) l.cone.lookAt(tx, 0, tz); };
 const MARK: Record<string, [number, number]> = { erika: [-9, -5.6], polina: [-5.2, -6.6], angelina: [-2.4, -8.4], matvey: [2.4, -7.6], ruben: [6.4, -9.4], liza: [-7.5, -9.9] };
 const AUD: [string, number, number][] = [['maxim', -8, 3.4], ['nastya', -6.6, 3.4], ['matvey_bro', -5.2, 3.4], ['vasya', -3.8, 3.4], ['sofa', -2.4, 3.4], ['katya', 2.4, 3.4], ['natasha', 3.8, 3.4], ['vanya', 5.2, 3.4], ['sasha', 6.6, 3.4],
   ['vasilisa', -5.2, 6.3], ['dana', -3.8, 6.3], ['nina', -2.4, 6.3], ['anya', 2.4, 6.3], ['olya', 3.8, 6.3]];

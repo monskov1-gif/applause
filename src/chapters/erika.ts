@@ -68,7 +68,7 @@ function noirWindow(R: Builder, x: number, o: { shadow?: boolean; w?: number; h?
   return m;
 }
 /** R.spot с исправленным видимым конусом: в движке конус после lookAt разворачивается от цели (вверх), здесь возвращаем его вниз. */
-function spotC(R: Builder, x: number, y: number, z: number, tx: number, tz: number, col: number, int: number, o: any = {}) { const l = R.spot(x, y, z, tx, tz, col, int, o); const cn = (l as any).cone as THREE.Mesh | undefined; if (cn) cn.rotateY(Math.PI); return l; }
+function spotC(R: Builder, x: number, y: number, z: number, tx: number, tz: number, col: number, int: number, o: any = {}) { const l = R.spot(x, y, z, tx, tz, col, int, o); return l; }
 /** Общий интерьер нуара. */
 function interior(R: Builder, G: any, wall = 'wallpaper', floor = 'parquet', amb = 2.2) {
   R.room.group.userData.bg = 0x050505; fog(R, 0x050505, 18, 40); R.floor(floor); R.walls(wall, { h: 7.5, trim: 'darkwood' }); R.ambient(0x505050, amb, 0xd8d8d8); R.particles('dust', { count: 60, top: 5, color: 0xdddddd }); noirRim(R, G);

@@ -256,7 +256,7 @@ export class Builder {
     if (o.cone) { // видимый «объёмный» луч
       const len = Math.hypot(tx - x, y, tz - z), rad = Math.tan(o.angle || 0.45) * len; const g = new THREE.ConeGeometry(rad, len, 24, 1, true); g.translate(0, -len / 2, 0); g.rotateX(-Math.PI / 2);
       const cm = new THREE.Mesh(g, volumeMat(color, (o.cone === true ? 0.07 : o.cone) * 2.2));
-      cm.position.set(x, y, z); cm.lookAt(tx, 0, tz); cm.rotateY(Math.PI); this.room.group.add(cm); (l as any).cone = cm;
+      cm.position.set(x, y, z); cm.lookAt(tx, 0, tz); this.room.group.add(cm); (l as any).cone = cm;
     }
     if (o.name) this.room.named[o.name] = l; if (o.mask) this.room.masked.push({ obj: l, mask: o.mask }); return l;
   }
