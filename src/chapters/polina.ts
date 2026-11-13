@@ -358,6 +358,28 @@ const road: RoomDef = {
   },
 };
 
+/** Мягкий аддитивный ореол (свет фонаря, лампы) — вместо плоских кругов. */
+const haloTex = (col: string) => canvasTex(32, 32, (c) => { const g = c.createRadialGradient(16, 16, 0, 16, 16, 16); g.addColorStop(0, col); g.addColorStop(0.35, col + '88'); g.addColorStop(1, col + '00'); c.fillStyle = g; c.fillRect(0, 0, 32, 32); }, 'halo' + col);
+function halo(R: Builder, x: number, y: number, z: number, s: number, col = '#ffd890', op = 0.6) {
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(s, s), new THREE.MeshBasicMaterial({ map: haloTex(col), transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); m.position.set(x, y, z); m.renderOrder = 3; R.room.group.add(m); return m;
+}
+/** Чугунный фонарный столб с застеклённым фонарём (пиксель-арт) и ореолом. */
+function lampPost(R: Builder, x: number, z: number) {
+  const t = canvasTex(16, 64, (c) => { const O = '#0a0a0e', I = '#23232a', H = '#3e3e48';
+    px(c, 7, 16, 3, 44, O); px(c, 8, 16, 1, 44, I); px(c, 5, 58, 7, 6, O); px(c, 6, 58, 5, 1, H); px(c, 6, 30, 5, 2, O); // столб, база, кольцо
+    px(c, 4, 13, 9, 3, O); px(c, 3, 3, 11, 11, O); px(c, 4, 4, 9, 9, '#c88a38'); px(c, 5, 5, 7, 7, '#ffd890'); px(c, 7, 6, 3, 5, '#fff6d8'); px(c, 8, 4, 1, 9, O); px(c, 4, 8, 9, 1, O); // фонарь в переплёте
+    px(c, 2, 1, 13, 2, O); px(c, 5, 0, 7, 1, O); px(c, 8, 0, 1, 1, H); px(c, 3, 2, 11, 1, H); }, 'lamppost');
+  R.sprite(t, x, z, { solid: 0.2, scale: 1 }); halo(R, x, 3.55, z + 0.1, 2.6, '#ffd890', 0.75);
+}
+
+/** Мягкий дизерингованный конус зрения вместо плоского пурпурного сектора. */
+const coneTex = () => canvasTex(64, 64, (c) => { for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) { const r = Math.hypot(x - 31.5, y - 31.5) / 32; if (r > 1) continue; const k = Math.pow(1 - r, 0.8) * 0.9 + 0.1; if (hsh(x, y, 61) < k) { c.fillStyle = `rgba(255,${Math.round(120 + 80 * (1 - r))},90,${(0.25 + 0.75 * k).toFixed(2)})`; c.fillRect(x, y, 1, 1); } } }, 'softcone');
+function softCone(g: any, op = 0.32) { const m = g.cone as THREE.Mesh; m.material = new THREE.MeshBasicMaterial({ map: coneTex(), color: 0xffc8a0, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false }); }
+/** Сплошная кладка/земля за боковыми стенами — чтобы за разрезом комнаты не было чёрной пустоты. */
+function outerMass(R: Builder, t: string, tint: string, h: number) { for (const s of [-1, 1]) { R.box(s * (R.w / 2 + 10.4), 2, 20, R.d + 14, h, { tex: t, tint, solid: false, cast: false }); } R.box(0, -R.d / 2 - 5.4, R.w + 42, 10, h, { tex: t, tint, solid: false, cast: false }); }
+const globeTex = () => canvasTex(16, 24, (c) => { px(c, 6, 20, 4, 3, '#3a2414'); px(c, 4, 22, 8, 2, '#2a180c'); px(c, 7, 15, 2, 6, '#5a3a20'); c.fillStyle = '#0c0a08'; c.beginPath(); c.arc(8, 9, 7, 0, 7); c.fill(); c.fillStyle = '#4a6a7a'; c.beginPath(); c.arc(8, 9, 6, 0, 7); c.fill(); px(c, 4, 5, 3, 3, '#8a7a4a'); px(c, 9, 8, 3, 4, '#8a7a4a'); px(c, 5, 11, 2, 2, '#8a7a4a'); px(c, 5, 4, 2, 1, '#8ab0c0'); c.strokeStyle = '#b08a3a'; c.lineWidth = 1; c.beginPath(); c.arc(8, 9, 7.5, -1.2, 2); c.stroke(); }, 'globe');
+const bookPileTex = (v: number) => canvasTex(14, 14, (c) => { const cols = ['#6a1a1a', '#2a3a5a', '#3a5a2a', '#8a6a2a', '#4a2a4a', '#5a3a1a']; let y = 14; for (let i = 0; i < 4 + (v % 3); i++) { const w = 9 + Math.floor(hsh(i, v, 3) * 5), x = Math.floor(hsh(i, v, 4) * (14 - w)), hh = 2; y -= hh; px(c, x, y, w, hh, cols[(i + v) % 6]); px(c, x, y, w, 1, '#e8dcc0'); px(c, x, y + hh - 1, 1, 1, '#1a0e08'); } }, 'bpile' + v);
+
 // ---------------- 2. крыльцо ----------------
 const sidingTex = () => canvasTex(32, 32, (c) => { for (let y = 0; y < 32; y++) { const k = y % 8; px(c, 0, y, 32, 1, k === 0 ? '#1a1e2c' : k === 1 ? '#5a6480' : k < 4 ? '#454e68' : '#3a4258'); } for (let i = 0; i < 40; i++) px(c, Math.floor(hsh(i, 3) * 32), Math.floor(hsh(i, 4) * 32), 2, 1, i % 3 ? '#2e3448' : '#4a5a50'); px(c, 15, 0, 1, 32, '#262c3c'); }, 'siding');
 const shingleTex = () => canvasTex(32, 32, (c) => { for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) { const row = Math.floor(y / 6), off = (row % 2) * 4, k = (x + off) % 8; const yy = y % 6; px(c, x, y, 1, 1, yy === 5 || k === 0 ? '#0c0e16' : yy === 0 ? '#3a4460' : hsh(Math.floor((x + off) / 8), row, 5) < 0.2 ? '#2e4a3a' : '#222a3e'); } }, 'shingle');
@@ -398,10 +420,10 @@ const porch: RoomDef = {
     rainy(R, G, { thunder: true }); mansionFacade(R); R.light(0, 3, -3.0, 0xffc070, 9, 8, { flicker: 0.1 });
     backdrop(R, forestSkyTex('#0e1626', 'porchsky'), { z: -22, w: 200, h: 60, tilt: 0.56 });
     const pines = [0, 1, 2, 3].map(pineTex), fern = fernTex();
-    for (const [x, z, k] of [[-13, -2, 0], [-11, 3, 1], [12, -3, 2], [13, 2.5, 3], [-14, 5.5, 1], [10.5, 5.6, 0], [-9.5, -4.4, 2], [9.5, -4.6, 3]]) R.sprite(pines[k], x, z, { scale: 1.15, solid: 0.4, thin: true });
+    for (const [x, z, k] of [[-13, -2, 0], [-11, 3, 1], [12, -3, 2], [13, 2.5, 3], [-16.5, 4.5, 1], [16, 4.6, 0], [-9.5, -4.4, 2], [9.5, -4.6, 3]]) R.sprite(pines[k], x, z, { scale: 1.15, solid: 0.4, thin: true });
     for (let x = -40, i = 0; x <= 40; x += 3.3, i++) { const j = hsh(i, 6); if (Math.abs(x) < 12) R.sprite(pines[i % 4], x + j, -9.5 - j * 3, { scale: 1.5 + j * 0.4, thin: true }); else { R.sprite(pines[i % 4], x + j, -6 + j * 4, { scale: 1.1 + j * 0.5, thin: true }); R.sprite(pines[(i + 2) % 4], x + j * 2, -12 - j * 2, { scale: 1.4 + j * 0.4, thin: true }); } }
-    for (let i = 0; i < 16; i++) { const j = hsh(i, 8), x = -14 + i * 1.9 + j; if (Math.abs(x) < (i % 2 ? 4.5 : 2.4)) continue; R.sprite(fern, x, i % 2 ? -2.8 : 6.2 + j, { scale: 0.8 + j * 0.4, thin: true }); }
-    R.sprite('streetlamp', -3.5, 0.6, { solid: 0.2 }); R.light(-3.5, 3.8, 0.8, 0xffd890, 10, 9, { flicker: 0.25 });
+    for (let i = 0; i < 16; i++) { const j = hsh(i, 8), x = -14 + i * 1.9 + j; if (Math.abs(x) < (i % 2 ? 4.5 : 6)) continue; R.sprite(fern, x, i % 2 ? -2.8 : 6.2 + j, { scale: 0.55 + j * 0.25, thin: true }); }
+    lampPost(R, -3.5, 0.6); R.light(-3.5, 3.8, 0.8, 0xffd890, 10, 9, { flicker: 0.25 });
     R.door('front', 0, { label: 'Входная дверь', z: -5.05, col: '#6a3a2a', cond: () => G.has('porch_key'), locked: P.frontLocked, fn: async (G) => { G.sfx('creak'); await G.goto('pol_hall', 'front'); } });
     [[-3.7, -2.7, 0], [3.6, -2.7, 1], [4.7, -1.3, 0]].forEach(([x, z, k], i) => { R.sprite('flowerpot', x, z, { scale: 1.6 }); R.inter('pot' + i, x, z + 0.8, { label: 'Цветочный горшок', r: 1.2, fn: async (G) => { if (k && !G.has('porch_key')) { await G.run(P.pot); G.give('porch_key'); } else await G.run(P.potNot); } }); });
     R.photo('window', 'Силуэт в окне', 4, -5);
@@ -413,14 +435,29 @@ const porch: RoomDef = {
   async photo(G, subs) { if (subs.includes('window') && !G.f.pol_win) { G.f.pol_win = 1; await G.run(P.porchPhotoTaken); } },
 };
 
+/** Под ступенями сплошной массив, по бокам косоуры, перила с балясинами и тумбы, чтобы лестница не «висела» полосами. */
+function grandStair(R: Builder, x: number, z: number, w: number, n: number) {
+  const dk = tex('darkwood'), wd = tex('wood', '#7a5236');
+  for (let i = 0; i < n; i++) { const m = new THREE.Mesh(new THREE.BoxGeometry(w - 0.02, i * 0.28 + 0.01, 0.5), lamb(dk, { color: 0x6a5a50 })); m.position.set(x, (i * 0.28) / 2, z - i * 0.5); R.room.group.add(m); }
+  const run = n * 0.5, rise = n * 0.28, ang = Math.atan2(rise, run), len = Math.hypot(run, rise) + 0.3;
+  for (const s of [-1, 1]) {
+    const sx = x + s * (w / 2 + 0.08);
+    const str = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.5, len), lamb(wd)); str.position.set(sx, rise / 2 + 0.05, z - run / 2 + 0.25); str.rotation.x = ang; str.castShadow = true; R.room.group.add(str);
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.12, len), lamb(wd)); rail.position.set(sx, rise / 2 + 1.25, z - run / 2 + 0.25); rail.rotation.x = ang; R.room.group.add(rail);
+    for (let i = 0; i < n; i++) { const b = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.0, 0.06), lamb(dk, { color: 0xc8b090 })); b.position.set(sx, 0.28 * (i + 1) + 0.5, z - i * 0.5); R.room.group.add(b); }
+    const nw = new THREE.Mesh(new THREE.BoxGeometry(0.26, 1.5, 0.26), lamb(wd)); nw.position.set(sx, 0.75, z + 0.25); nw.castShadow = true; R.room.group.add(nw);
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), lamb(tex('wood', '#a07850'))); cap.position.set(sx, 1.6, z + 0.25); R.room.group.add(cap);
+  }
+}
+
 // ---------------- 3. прихожая ----------------
 const hall: RoomDef = {
   name: 'Прихожая', w: 24, d: 12, music: 'horror', amb: 'rain', step: 'wood', grade: GRADE, maskGrade: KAWAII,
   build(R, G) {
     const f = G.f, dark = !!f.pol_dark && !f.pol_light; R.room.group.userData.bg = 0x05060a;
     R.floor('parquet', { tint: '#6a4a34' }); R.walls('wallgreen', { h: 6.5, trim: 'darkwood' }); R.particles('dust', { count: 60, top: 5 }); rug(R, 0, 0.6, 8, 4.6, { col: '#3a1418', border: '#a08850' });
-    if (dark) { R.ambient(0x343a58, 3.0, 0x7a8ab8); carriedLight(R, G, 0xffe0a0, 20, 12); R.light(0, 4, -3, 0x7088d0, 12, 14); }
-    else { R.ambient(0x4a4250, 3.2, 0xc0b0b0); R.light(0, 4.4, 2, 0xffd8a8, 14, 16, { flicker: 0.05 }); chandelier(R, 0, 5.6, 0.4, 0.9, { light: f.pol_light ? 16 : 9 }); sconce(R, -1.7, 3.4, -5.96, { light: 4 }); sconce(R, 5.25, 3.4, -5.96, { light: 4 }); }
+    if (dark) { R.ambient(0x3e4466, 3.9, 0x8a9ac8); carriedLight(R, G, 0xffe0a0, 20, 12); R.light(0, 4, -3, 0x7088d0, 14, 16); R.light(-7, 3.2, 0.5, 0x8090d0, 6, 9); }
+    else { R.ambient(0x5a4e58, 4.1, 0xd8c4b8); R.light(0, 4.4, 2, 0xffd8a8, 16, 18, { flicker: 0.05 }); R.light(-7.5, 3.4, 1.0, 0xffc080, 8, 10); R.light(8, 3.0, 1.5, 0xffc890, 7, 9); chandelier(R, 0, 5.6, 0.4, 0.9, { light: f.pol_light ? 16 : 9 }); sconce(R, -1.7, 3.4, -5.96, { light: 4 }); sconce(R, 5.25, 3.4, -5.96, { light: 4 }); }
     // двери: входная (восток), гостиная (восток), библиотека (запад), подвал и галерея (север)
     R.door('front', 2.6, { wall: 'e', label: 'Входная дверь', col: '#6a3a2a', fn: (G) => G.run(f.pol_dark ? P.polinaRun : P.houseLocked) });
     R.door('liv', -2.6, { wall: 'e', to: 'pol_living', spot: 'hall', label: 'Гостиная', col: '#7a5236', cond: () => !f.pol_dark || !!f.pol_light, locked: ['~: Из гостиной тянет холодом. Без света туда не пойду.'] });
@@ -434,7 +471,7 @@ const hall: RoomDef = {
       if (!r) return; if (r.join() === ANSWER.join()) { G.sfx('ok'); await G.run(P.lockRight); f.pol_open = 1; await G.goto('pol_basement'); } else { G.sfx('laugh', { n: 7 }); G.shake(0.2); await G.run(P.lockWrong); } } });
     R.sprite(canvasTex(6, 6, (c) => { c.fillStyle = f.pol_light ? '#40e040' : '#601010'; c.fillRect(0, 0, 6, 6); }, 'boltled' + !!f.pol_light), 3.9, -5.7, { y: 3.9, glow: true, thin: true });
     // парадная лестница наверх (провалена)
-    R.stairs(-7, -1.4, 3.4, 8, { tex: 'darkwood' }); R.box(-8.8, -3.4, 0.12, 4.4, 1.1, { tex: 'darkwood', y: 0.9 + 0.9, solid: false });
+    R.stairs(-7, -1.4, 3.4, 8, { tex: 'darkwood' }); grandStair(R, -7, -1.4, 3.4, 8);
     R.look('stairs', -7, -0.6, 'Лестница наверх', P.stairs, { mask: 'none' }); R.look('stairsTr', -7, -0.6, 'Следы на лестнице', P.stairsTr, { mask: 'tragedy' });
     // часы, зеркало с консолью, вешалка, скамья
     R.sprite(canvasTex(14, 40, (c) => { c.fillStyle = '#3a2a1c'; c.fillRect(0, 0, 14, 40); c.fillStyle = '#e8e0c8'; c.fillRect(2, 2, 10, 10); c.fillStyle = '#111'; c.fillRect(6, 3, 1, 5); c.fillRect(6, 7, 4, 1); c.fillStyle = '#86641c'; c.fillRect(5, 16, 4, 14); }, 'gclock'), 10.6, -5.3, { scale: 1.3, solid: 0.5 });
@@ -446,9 +483,13 @@ const hall: RoomDef = {
     R.decal(paintingTex(0), { x: -0.2, y: 4.9, w: 1.6, h: 1.25 }); R.decal(paintingTex(2), { wall: 'e', at: 0.1, y: 4.4, w: 1.3, h: 1.0 });
     pbox(R, -10.9, -4.6, 0.8, 1.6, 1.0, { front: wardTex(0, '#5a3a26', '#8a6040', '#2e1c12'), top: tex('wood', '#9a7050') }); R.sprite('lamp', -10.9, -4.6, { y: 1.0, scale: 0.8 }); R.sprite(canvasTex(12, 8, (c) => { px(c, 0, 4, 12, 4, '#3a2a1a'); px(c, 1, 0, 4, 5, '#2a3a5a'); px(c, 6, 1, 5, 4, '#8a1a2a'); px(c, 2, 1, 2, 1, '#e8e0d0'); }, 'hats'), 10.6, -5.3, { y: 2.65, scale: 0.9, thin: true });
     wallpaper(R, -5.5, true); wallpaper(R, 5.5, true);
+    // передний план прихожей: банкетка, подставка для зонтов, столик с лампой, второй ковёр
+    R.light(-1, 2.6, 4.6, dark ? 0x8090c0 : 0xffc890, dark ? 5 : 9, 10); rug(R, -6.4, 4.2, 3.6, 1.8, { col: '#22303a', border: '#8a7a50' });
+    sofa(R, -9.4, 4.9, { w: 2.0, col: 0x5a3a4a, ry: Math.PI, solid: false }); R.sprite(canvasTex(8, 16, (c) => { px(c, 1, 6, 6, 10, '#3a2a1c'); px(c, 1, 6, 6, 1, '#8a6a40'); px(c, 2, 0, 1, 8, '#1a1a2a'); px(c, 4, 1, 1, 7, '#6a1a2a'); px(c, 5, 2, 1, 6, '#2a4a2a'); px(c, 1, 0, 3, 1, '#1a1a2a'); }, 'umbr'), 4.4, 4.8, { scale: 1.1, thin: true });
+    pbox(R, 2.4, 4.6, 1.2, 0.7, 0.9, { front: wardTex(1, '#5a3a26', '#8a6040', '#2e1c12'), top: tex('wood', '#9a7050') }, { solid: false }); R.sprite('lamp', 2.4, 4.6, { y: 0.9, scale: 0.7 }); R.sprite(bookPileTex(5), 9.6, 4.6, { scale: 0.9, thin: true });
     kawaii(R, G, { w: 24, d: 12 });
-    if (!f.pol_dark) { const pol = R.actor('polina_coat', 8.6, 3.6, { id: 'polina' }); G.follow(pol); }
-    R.spawn('front', 10.2, 2.6, 'l'); R.spawn('start', 10.2, 2.6, 'l'); R.spawn('lib', -10.2, -2, 'r'); R.spawn('liv', 10.2, -2.6, 'l'); R.spawn('gal', 8, -4.4); R.spawn('base', 2.5, -4.4);
+    if (!f.pol_dark) { const pol = R.actor('polina_coat', 6.4, 3.4, { id: 'polina' }); G.follow(pol); }
+    R.spawn('front', 8.2, 2.4, 'l'); R.spawn('start', 8.2, 2.4, 'l'); R.spawn('lib', -10.2, -2, 'r'); R.spawn('liv', 10.2, -2.6, 'l'); R.spawn('gal', 8, -4.4); R.spawn('base', 2.5, -4.4);
   },
   async enter(G, from) {
     const f = G.f; if (f.pol_dark && !f.pol_dark_seen) { f.pol_dark_seen = 1; G.grade(DARK, true); await G.run(P.polinaStart); return; }
@@ -468,7 +509,7 @@ function fireplace(R: Builder, x: number, z: number) {
 const living: RoomDef = {
   name: 'Гостиная', w: 20, d: 12, music: 'horror', amb: 'rain', step: 'carpet', grade: GRADE, maskGrade: KAWAII,
   build(R, G) {
-    R.room.group.userData.bg = 0x05060a; R.floor('parquet', { tint: '#6a4a34' }); R.walls('wallpaper', { h: 6, tint: '#7a5a5a', trim: 'darkwood' }); R.ambient(0x4a4048, 3.2, 0xc8b0b0); R.light(0, 4.6, 1.4, 0xffd8a8, 14, 16, { flicker: 0.04 }); R.particles('dust', { count: 50, top: 5 });
+    R.room.group.userData.bg = 0x05060a; R.floor('parquet', { tint: '#6a4a34' }); R.walls('wallpaper', { h: 6, tint: '#7a5a5a', trim: 'darkwood' }); R.ambient(0x5e5058, 4.4, 0xe0c8bc); R.light(0, 4.6, 1.4, 0xffd8a8, 17, 18, { flicker: 0.04 }); R.light(6.5, 2.8, 1.5, 0xffc890, 6, 9); R.light(-6.5, 2.8, 1.5, 0xffc890, 6, 9); R.light(0, 2.6, 5, 0xffc080, 7, 9); R.particles('dust', { count: 50, top: 5 });
     rug(R, 0, 0.2, 9, 5.4, { col: '#2a1a3a', border: '#b89858' }); oldHouse(R, G, { h: 6 });
     R.decal(paintingTex(1), { x: -3.3, y: 4.3, w: 1.5, h: 1.2 }); R.decal(paintingTex(0), { x: 3.3, y: 4.3, w: 1.5, h: 1.2 }); R.decal(paintingTex(2), { wall: 'e', at: -1.4, y: 3.8, w: 1.6, h: 1.25 });
     pbox(R, -9.3, -2.6, 0.7, 1.4, 0.9, { front: wardTex(2, '#5a3a26', '#8a6040', '#2e1c12'), top: tex('wood', '#9a7050') }, { ry: Math.PI / 2 }); R.sprite(canvasTex(10, 14, (c) => { px(c, 3, 8, 4, 6, '#3a5a8a'); px(c, 2, 7, 6, 1, '#5a7aaa'); px(c, 1, 1, 3, 4, '#e8e0d0'); px(c, 5, 0, 3, 5, '#c84a6a'); px(c, 3, 2, 3, 3, '#e8c040'); px(c, 4, 5, 1, 3, '#2e5038'); }, 'flowers'), -9.3, -2.6, { y: 0.9, scale: 1.2, thin: true });
@@ -476,9 +517,9 @@ const living: RoomDef = {
     window3D(R, -6, { wall: 'n', y: 3.2, w: 1.8, h: 2.8, curtains: true }); window3D(R, 6, { wall: 'n', y: 3.2, w: 1.8, h: 2.8, curtains: true });
     sofa(R, 0, 2.4, { w: 3.4, col: 0xc87070, ry: Math.PI }); armchair(R, -3.8, -1.2, { col: 0x6a3a3a, ry: Math.PI / 2 }); armchair(R, 3.8, -1.2, { col: 0x6a3a3a, ry: -Math.PI / 2 });
     R.table(0, -0.8, 2.4, 1.1, { tex: 'darkwood' }); for (const [i, cx] of [-0.6, 0, 0.6].entries()) { const cup = R.box(cx, -0.8 + (i % 2) * 0.2, 0.18, 0.18, 0.14, { color: 0xf4f0e8, y: 1.08, solid: false }); void cup; }
-    R.look('tea', 0, 0.4, 'Чайный столик', P.tea);
+    R.look('tea', 0, 0.4, 'Чайный столик', P.tea, { quiet: true });
     R.sprite(canvasTex(8, 12, (c) => { c.fillStyle = '#e8c230'; c.fillRect(1, 5, 6, 6); c.fillStyle = '#f0e0d0'; c.fillRect(2, 1, 4, 4); c.fillStyle = '#f0d98a'; c.fillRect(1, 0, 6, 2); c.fillStyle = '#111'; c.fillRect(3, 2, 1, 1); c.fillRect(5, 2, 1, 1); }, 'pdoll'), 3.8, -1.2, { y: 0.75, scale: 1.1, thin: true }); R.look('doll', 3.8, 0, 'Кукла в кресле', P.doll);
-    piano(R, 7.4, -3.4, -0.3); R.look('piano', 6.8, -1.8, 'Пианино', P.piano);
+    piano(R, 7.4, -3.4, -0.3); R.look('piano', 6.8, -1.8, 'Пианино', P.piano, { quiet: true });
     bookshelf(R, -9.4, 2.8, { w: 3, h: 4.2, ry: Math.PI / 2 }); R.sprite('lamp', -7.4, -4.6, { scale: 1 }); R.light(-7.4, 2.8, -4.4, 0xffd8a0, 5, 6);
     R.box(7.6, 2.6, 1.2, 0.8, 0.9, { tex: 'darkwood' }); R.box(7.6, 2.6, 0.9, 0.5, 0.55, { color: 0x6a4a2a, y: 0.9, solid: false }); R.box(7.6, 2.86, 0.6, 0.02, 0.35, { color: 0xd8c8a0, y: 0.98, solid: false, cast: false });
     R.inter('radio', 7.6, 3.6, { label: 'Старое радио', fn: async (G) => { G.sfx('laugh', { n: 6, f: 520, vol: 0.2 }); await G.run(P.radio); } });
@@ -499,8 +540,12 @@ async function hide(G: any, actorsToHide: string[] = ['polina']) {
 const library: RoomDef = {
   name: 'Библиотека', w: 24, d: 12, music: 'horror', amb: 'rain', step: 'carpet', grade: GRADE, maskGrade: KAWAII,
   build(R, G) {
-    const f = G.f; R.room.group.userData.bg = 0x05060a; R.floor('parquet', { tint: '#5a3a2a' }); R.walls('woodwall', { h: 6 }); R.ambient(0x463e48, 3.2, 0xc0b0b0); R.light(0, 4.6, 0.4, 0xffd8a8, 14, 16, { flicker: 0.05 }); R.particles('dust', { count: 60, top: 5 });
-    rug(R, 0, 0.6, 7, 3.6, { col: '#3a1a14', border: '#a08850' });
+    const f = G.f; R.room.group.userData.bg = 0x05060a; R.floor('parquet', { tint: '#5a3a2a' }); R.walls('woodwall', { h: 6 }); R.ambient(0x5a4c50, 4.4, 0xd8c4b8); R.light(0, 4.6, 0.4, 0xffd8a8, 16, 18, { flicker: 0.05 }); R.particles('dust', { count: 60, top: 5 });
+    rug(R, 0, 0.6, 7, 3.6, { col: '#3a1a14', border: '#a08850' }); rug(R, -7.4, 3.0, 4, 2.4, { col: '#1e2a3a', border: '#8a7a50' }); rug(R, 7.2, 2.8, 3.6, 2.2, { col: '#2e3a22', border: '#a08850' });
+    R.light(-7.6, 2.6, 2.6, 0xffc080, 7, 9); R.light(-4, 0.5, 3.0, 0xffc080, 9, 8, { pool: true }); R.light(5, 0.5, 2.4, 0xffc080, 9, 8, { pool: true });
+    R.sprite(globeTex(), -5.4, 2.6, { scale: 1.3, solid: 0.35 }); armchair(R, -8.2, 2.2, { col: 0x5a6a8a, ry: Math.PI / 2 + 0.3 }); R.sprite('lamp', -9.2, 3.6, { scale: 0.9 });
+    R.sprite(bookPileTex(0), -6.6, 3.9, { scale: 1.1, thin: true }); R.sprite(bookPileTex(1), 4.2, 2.6, { scale: 1.2, thin: true }); R.sprite(bookPileTex(2), 3.4, 3.2, { scale: 0.9, thin: true });
+    armchair(R, 8.2, 1.6, { col: 0x7a5a3a, ry: -Math.PI / 2 - 0.3 }); R.sprite(bookPileTex(3), 9.0, 3.4, { scale: 1, thin: true });
     for (const x of [-6, 6]) { R.light(x, 3.6, -3.4, 0xe8b070, 10, 10, { flicker: 0.3 }); }
     // портреты: глазами одно, через видоискатель лжецы показывают другое
     const swaps: { a: THREE.Object3D; b: THREE.Object3D }[] = [];
@@ -514,7 +559,7 @@ const library: RoomDef = {
     R.inter('book', 0, 1.6, { label: 'Проклятая книга', fn: async (G) => { await G.run(P.book); await G.ui.paper(P.bookText); if (!f.pol_book) { f.pol_book = 1; await G.run(P.bookAfter); await ownerEnters(G); } } });
     for (const [k, x] of [-10.4, 10.4].entries()) { wardrobeP(R, x, -5.3, { v: k ? 2 : 0, w: 1.9, h: 3.2, base: '#5a3a26', lt: '#8a6040', dk: '#2e1c12' }); R.inter('wd' + (k ? 7.6 : -7.6), x, -4.3, { label: 'Шкаф (спрятаться / выйти)', r: 1.4, fn: (G) => hide(G) }); }
     const g = R.guard('owner', [[-9, -2.6], [7, -2.6]], { speed: 1.6, range: 5.2, half: 0.45, pause: 1.6, onCatch: async (G) => { G.sfx('laugh', { n: 6, f: 300, vol: 0.35 }); G.flash(0.6); G.shake(0.4); await G.run(G.state.mask === 'comedy' ? P.caughtCat : P.caught); G.player.place(10, 1.6, 'l'); G.actor('polina')?.place(10.4, 2.4); G.room.guards[0].actor.place(-9, -2.6); G.camSnap(); } });
-    g.active = !!f.pol_book; catFor(R, G, g);
+    g.active = !!f.pol_book; catFor(R, G, g); softCone(g);
     R.look('catL', 0, -2, 'Котик-Хозяин', P.catLook, { mask: 'comedy', r: 3 });
     kawaii(R, G, { w: 24, d: 12 });
     R.door('back', -2, { wall: 'e', to: 'pol_hall', spot: 'lib', label: 'В прихожую', col: '#7a5236' });
@@ -535,12 +580,16 @@ async function ownerEnters(G: any) {
 const basement: RoomDef = {
   name: 'Подвал', w: 14, d: 10, music: 'horror', amb: null, step: 'stone', grade: { ...GRADE, tint: [1.0, 0.92, 0.9] }, noMasks: true,
   build(R, G) {
-    R.room.group.userData.bg = 0x05060a; R.floor('stone'); R.walls('stone', { h: 5 }); R.ambient(0x4a3c40, 3.0, 0xb09ca0);
+    R.room.group.userData.bg = 0x05060a; R.floor('stone'); R.walls('stone', { h: 5 }); R.ambient(0x5a4a4c, 3.6, 0xc8b0a8);
     vanity(R, 0, -4.2, { w: 3, clutter: 4, photos: 2 }); mirror3D(R, 0, 2.9, -4.92, 2.2, 2.6, { bulbs: true });
     R.sprite(canvasTex(10, 7, (c) => { c.fillStyle = '#fff8e8'; c.fillRect(0, 0, 10, 7); c.fillStyle = '#e84a6f'; c.fillRect(2, 2, 6, 1); }, 'card'), 0.9, -4.1, { y: 1.15, glow: true, thin: true });
     R.look('card', 0.9, -3.0, 'Открытка', ['~: «Варюш, восемнадцать, это не экзамен…» Мамина открытка. Та же, что в моей гримёрке.', '~: Кто-то развесил по чужим историям кусочки меня. Как метки на карте.'], { r: 1.3 });
     // котёл, стеллаж с банками, ящики, решётка
-    const boil = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 2.4, 14), new THREE.MeshLambertMaterial({ color: 0x5a4a3a })); boil.position.set(-5.4, 1.2, -3.6); R.room.group.add(boil); R.collider(-6.2, -4.4, -4.6, -2.8); R.box(-5.4, -3.6, 0.2, 0.2, 2.6, { color: 0x3a3a3a, y: 2.4, solid: false });
+    const boilT = canvasTex(32, 24, (c) => { for (let y = 0; y < 24; y++) for (let x = 0; x < 32; x++) px(c, x, y, 1, 1, hsh(x, y, 71) < 0.12 ? '#3a2416' : (x % 8 < 2 ? '#2e2620' : x % 8 < 4 ? '#5a4a3c' : '#463a30')); for (const yy of [2, 11, 21]) { px(c, 0, yy, 32, 1, '#1a1410'); for (let x = 1; x < 32; x += 4) px(c, x, yy + 1, 1, 1, '#8a7a60'); } px(c, 12, 5, 6, 5, '#0c0a08'); px(c, 13, 6, 4, 3, '#e8e0c8'); px(c, 15, 6, 1, 2, '#a01010'); px(c, 11, 14, 8, 6, '#1a0c06'); px(c, 12, 16, 6, 3, '#c85a18'); px(c, 13, 17, 4, 1, '#ffb040'); }, 'boilertex');
+    const boil = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.85, 2.4, 14), new THREE.MeshLambertMaterial({ map: boilT })); boil.position.set(-5.4, 1.2, -3.6); boil.rotation.y = 0.6; boil.castShadow = true; R.room.group.add(boil); R.collider(-6.2, -4.4, -4.6, -2.8);
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(0.82, 14, 6, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshLambertMaterial({ map: tex('metal', '#6a5a4a') })); dome.position.set(-5.4, 2.4, -3.6); R.room.group.add(dome);
+    R.box(-5.4, -3.6, 0.22, 0.22, 2.4, { tex: 'metal', tint: '#5a4a3a', y: 2.6, solid: false }); R.box(-3.3, -4.75, 4.2, 0.18, 0.18, { tex: 'metal', tint: '#6a5040', y: 4.1, solid: false, cast: false }); R.box(-4.4, -3.6, 1.6, 0.16, 0.16, { tex: 'metal', tint: '#6a5040', y: 1.7, solid: false, cast: false }); R.light(-5.4, 0.6, -2.6, 0xff7a30, 6, 5, { flicker: 0.3 });
+    outerMass(R, 'stone', '#3a3438', 5); R.sprite(bookPileTex(4), 4.4, 3.0, { y: 1.3, scale: 0.9, thin: true }); R.box(-5.6, 1.0, 0.9, 0.9, 0.8, { tex: 'wood', tint: '#6a5038' }); R.sprite(canvasTex(12, 14, (c) => { px(c, 1, 2, 10, 12, '#6a5a3a'); px(c, 2, 0, 8, 3, '#8a7a50'); px(c, 3, 1, 6, 1, '#4a3a20'); px(c, 2, 6, 8, 1, '#4a3a20'); grime(c, 12, 14, '#3a2a18', 0.1, 77); }, 'sack'), 6.0, 1.4, { scale: 1.1, thin: true });
     R.box(5.6, -4.4, 2, 0.7, 3, { tex: 'darkwood' }); for (let k = 0; k < 3; k++) for (let j = 0; j < 4; j++) R.box(4.9 + j * 0.45, -4.1, 0.25, 0.25, 0.35, { color: [0xc86a2a, 0x8a2a3a, 0x6a8a3a, 0xd8c890][(j + k) % 4], y: 0.5 + k * 0.95, solid: false, cast: false, opacity: 0.85 });
     R.decal(canvasTex(16, 10, (c) => { c.fillStyle = '#3a3a40'; c.fillRect(0, 0, 16, 10); c.fillStyle = '#111'; for (let i = 0; i < 4; i++) c.fillRect(2, 1 + i * 2.3, 12, 1); }, 'vent'), { wall: 'e', at: -1.5, y: 3.2, w: 1.5, h: 1 });
     R.inter('vent', 6.2, -1.5, { label: 'Вентиляционная решётка', fn: (G) => G.run(['~: Решётка. Сквозь неё слышен дождь и скрип половиц наверху.']) });
@@ -577,7 +626,7 @@ const gallery: RoomDef = {
     const WD = [{ v: 0, base: '#6a4228', lt: '#9a6a42', dk: '#3a2216' }, { v: 1, base: '#4a3448', lt: '#7a5a76', dk: '#24182a' }, { v: 3, base: '#3e4a3a', lt: '#66785e', dk: '#1e281c' }];
     for (const [i, x] of [-7, 0, 7].entries()) { wardrobeP(R, x, -4.2, { ...WD[i], w: 1.8 + (i === 1 ? 0.3 : 0), h: 3.1 + (i === 1 ? 0.3 : -0.1 * i) }); R.inter('wd' + i, x, -3.2, { label: 'Шкаф (спрятаться / выйти)', r: 1.3, fn: (G) => hide(G, []) }); R.decal(portraitTex([1, 3, 2][i]), { x, y: 4.75, z: -5.44, w: 0.95, h: 1.2, noSlot: true }); }
     for (const x of [-14.6, 14.6]) R.decal(portraitTex(x < 0 ? 0 : 4), { x, y: 3.6, w: 1.3, h: 1.65, noSlot: true });
-    R.guard('owner', [[-13, 1.6], [13, 1.6]], { speed: 2.0, range: 6.2, half: 0.5, pause: 1.2, onCatch: async (G) => { G.sfx('laugh', { n: 6, f: 300, vol: 0.35 }); G.flash(0.6); G.shake(0.4); await G.run(P.galCaught); G.player.place(-14.2, 2, 'r'); G.room.guards[0].actor.place(13, 1.6); G.camSnap(); } });
+    softCone(R.guard('owner', [[-13, 1.6], [13, 1.6]], { speed: 2.0, range: 6.2, half: 0.5, pause: 1.2, onCatch: async (G) => { G.sfx('laugh', { n: 6, f: 300, vol: 0.35 }); G.flash(0.6); G.shake(0.4); await G.run(P.galCaught); G.player.place(-14.2, 2, 'r'); G.room.guards[0].actor.place(13, 1.6); G.camSnap(); } }));
     R.door('back', 2, { wall: 'w', to: 'pol_hall', spot: 'gal', label: 'В прихожую', col: '#7a5236' });
     R.spawn('start', -14.2, 2, 'r');
   },
@@ -592,8 +641,8 @@ const kitchen: RoomDef = {
     const tile = canvasTex(32, 32, (c) => { for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) { const d = ((x >> 4) + (y >> 4)) % 2, g = x % 16 === 0 || y % 16 === 0; px(c, x, y, 1, 1, g ? '#141614' : d ? (hsh(x, y, 3) < 0.25 ? '#6e6a58' : '#7a7462') : (hsh(x, y, 4) < 0.25 ? '#1e2422' : '#262c2a')); } for (let i = 0; i < 9; i++) px(c, 3 + i, 20 + (i % 3), 1, 1, '#141614'); grime(c, 32, 32, 'rgba(20,16,8,0.4)', 0.06, 31); }, 'ktile');
     const wallT = canvasTex(32, 32, (c) => { for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) { const row = y >> 2, off = (row % 2) * 4, g = y % 4 === 0 || (x + off) % 8 === 0; px(c, x, y, 1, 1, g ? '#262a28' : hsh((x + off) >> 3, row, 9) < 0.2 ? '#4e5652' : '#5a625c'); } grime(c, 32, 32, 'rgba(30,24,14,0.45)', 0.07, 33); }, 'kwall');
     paintFloor(R, tile, 1.6); paintWalls(R, wallT, 5, 2);
-    if (!f.pol_light) { R.ambient(0x262c40, 2.6, 0x5a6a90); carriedLight(R, G, 0xffe0a0, 20, 12); R.light(0, 4.2, -1, 0x7088d0, 3, 10); R.light(6.0, 1.3, -2.8, 0xfff0c8, 7, 6, { flicker: 0.05 }); R.light(-3.6, 2.2, -3.9, 0xffa040, 5, 7, { flicker: 0.12 }); }
-    else { R.ambient(0x50483c, 2.8, 0xffe0c0); R.light(0, 4, 0, 0xffe8c0, 16, 16); R.light(-3.6, 2.2, -3.9, 0xffb060, 4, 7); }
+    if (!f.pol_light) { R.ambient(0x3a3640, 3.4, 0x9a8a80); carriedLight(R, G, 0xffe0a0, 20, 12); R.light(0, 4.2, -1, 0x7088d0, 3, 10); R.light(-2.4, 2.6, 1.4, 0xffb060, 7, 8, { flicker: 0.2 }); R.light(6.0, 1.3, -2.8, 0xfff0c8, 7, 6, { flicker: 0.05 }); R.light(-3.6, 2.2, -3.9, 0xffa040, 5, 7, { flicker: 0.12 }); }
+    else { R.ambient(0x5a4c3c, 3.6, 0xffe0c0); R.light(0, 4, 0, 0xffd8a0, 18, 16); R.light(-2.6, 2.4, 1.4, 0xffb060, 6, 8); R.light(-3.6, 2.2, -3.9, 0xffb060, 4, 7); }
     // кухонный гарнитур: расписанные тумбы, навесные шкафы с подсветкой снизу, плита, мойка, холодильник
     const cab = canvasTex(24, 16, (c) => { px(c, 0, 0, 24, 16, '#141a16'); px(c, 1, 1, 22, 15, '#4e6256'); px(c, 1, 1, 22, 3, '#3a4a40'); px(c, 10, 2, 4, 1, '#c8c0a0'); bev(c, 2, 5, 9, 10, '#4e6256', '#7a9282', '#2a3630'); bev(c, 13, 5, 9, 10, '#4e6256', '#7a9282', '#2a3630'); px(c, 9, 8, 1, 3, '#c8c0a0'); px(c, 14, 8, 1, 3, '#c8c0a0'); grime(c, 24, 16, 'rgba(10,8,4,0.4)', 0.07, 41); }, 'kcab');
     const upper = canvasTex(24, 16, (c) => { px(c, 0, 0, 24, 16, '#141a16'); px(c, 1, 1, 22, 14, '#4e6256'); for (const dx of [2, 13]) { bev(c, dx, 2, 9, 12, '#4e6256', '#7a9282', '#2a3630'); px(c, dx + 2, 4, 5, 8, '#1a2220'); px(c, dx + 2, 7, 5, 1, '#5a5a50'); px(c, dx + 3, 5, 2, 2, '#d8d0c0'); px(c, dx + 5, 9, 2, 2, '#c86a4a'); } }, 'kup');
