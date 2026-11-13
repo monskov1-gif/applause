@@ -221,7 +221,7 @@ class Game {
       for (const e of this.fadeCache) { if (!e.m.visible) continue; if (e.bb.max.y > 1.7 && e.p.distanceToSquared(from) < 56.25) { want.add(e.m); continue; } // низкие предметы (кресла, столы) не прячем
         // высокие предметы между камерой и героиней (люстры, портал, козырьки) прячутся
         const b = e.bb; if (b.min.y > 3.8 && b.max.z > p.z + 0.5 && b.max.z - b.min.z < 12 && Math.max(b.min.x - p.x, p.x - b.max.x, 0) < 7) want.add(e.m); }
-      for (const m of want) { let e = this.faded.get(m); if (!e) { const orig = m.material; const clone = (orig as THREE.Material).clone(); clone.transparent = true; e = { orig, clone, a: 1, tgt: 0.1 }; m.material = clone; this.faded.set(m, e); } e.tgt = 0.1; }
+      for (const m of want) { let e = this.faded.get(m); if (!e) { const orig = m.material; const clone = (orig as THREE.Material).clone(); clone.transparent = true; e = { orig, clone, a: 1, tgt: 0.3 }; m.material = clone; this.faded.set(m, e); } e.tgt = 0.3; }
       for (const [m, e] of this.faded) if (!want.has(m)) e.tgt = 1;
     }
     for (const [m, e] of this.faded) { e.a += (e.tgt - e.a) * Math.min(1, dt * 8); e.clone.opacity = e.a * ((e.orig as any).opacity ?? 1); e.clone.depthWrite = e.a > 0.9; if (e.tgt === 1 && e.a > 0.98) { m.material = e.orig; e.clone.dispose(); this.faded.delete(m); } }
