@@ -165,6 +165,12 @@ export const TRACKS: Record<string, Track> = {
     { inst: 'box', d: 2, seq: 'g5:4 c6:4 e6:4 d6 c6 | d6:6 c6 a5:8 | b5:4 g5:4 d6:4 b5 d6 | c6:12 .:4 | e5:4 g5:4 c6:6 b5 | a5:4 c6:4 f6:8 | e6:4 d6:4 b5:4 g5:4 | c6:12 .:4' },
     { inst: 'drums', seq: 'k...h...r...h.h.', vol: 0.4 },
   ] },
+  // Музыкальная шкатулка главного меню: аранжировка припева, D♭ мажор, 72 BPM, 8 тактов по кругу
+  menu_box: { bpm: 72, swing: 0.06, vol: 0.9, parts: [
+    { inst: 'box', d: 2, seq: '.:12 g#5 g#5 | g#5 d#5 . g#5:4 f#5:4 g#5 | g#5 f#5:4 g#5:4 f#5 . g#5 | g#5 . g#5 f5:4 c#5 f#5 f5 | . f5:4 d#5 .:4 f5 g#5 | g#5 . f#5 g#5 d#5 f#5:4 g#5 | c#6 c6 c#6 f#6:6 f6:4 | f6:8 . g#5:6' },
+    { inst: 'box', d: 2, vol: 0.4, seq: 'c#3 g#3 c#4 f4 g#4 f4 c#4 g#3 | d#3 a#3 d#4 f#4 a#4 f#4 d#4 a#3 | f#3 c#4 f#4 a4 c#5 a4 f#4 c#4 | c#3 g#3 c#4 f4 g#4 f4 c#4 g#3 | g#2 d#3 g#3 c4 d#4 c4 g#3 d#3 | d#3 a#3 d#4 f#4 a#4 f#4 d#4 a#3 | f#3 c#4 f#4 a#4 c#5 a#4 f#4 c#4 | c#3 g#3 c#4 f4 g#4 f4 c#4 g#3' },
+    { inst: 'pad', seq: 'c#3+g#3:16 d#3+a#3:16 f#3+a3:16 c#3+g#3:16 g#2+d#3:16 d#3+a#3:16 f#3+a#3:16 c#3+g#3:16', vol: 0.22 },
+  ] },
   musicbox: { bpm: 70, swing: 0.12, vol: 0.9, parts: [
     { inst: 'box', d: 4, seq: MOTIF + ' | .:12 | e6:4 c6:4 a5:4 | b5:8 g#5:4 | e5:12 | .:24' },
     { inst: 'box', d: 4, vol: 0.45, seq: 'a3 . e4 | e3 . b3 | a3 . e4 | d3 . a3 | d3 . f3 | c3 . g3 | e3 . g#3 | a3 . c4 | a3 . e4 | a3 . e4 | e3 . b3 | e3 . g#3 | a3 . e4 | a3 . . | .:12' },

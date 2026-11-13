@@ -477,4 +477,4 @@ export class DressingRoom {
   }
 }
 /** После прохождения в меню звучит тема финальных титров. */
-export function menuTheme() { try { return localStorage.getItem('tom-done') ? 'fin_bows' : 'musicbox'; } catch { return 'musicbox'; } }
+export function menuTheme() { try { return localStorage.getItem('tom-done') ? 'fin_bows' : 'menu_box'; } catch { return 'menu_box'; } }
