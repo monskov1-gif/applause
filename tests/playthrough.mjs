@@ -22,7 +22,7 @@ const log = await p.evaluate(async () => {
   await act('d_stage'); expect(G.f.met_cast, 'знакомство с труппой'); await act('script'); expect(G.f.act1, 'акт I'); await act('d_back'); expect(room() === 'hub_backstage', 'закулисье');
   await act('masks'); expect(G.f.masks, 'маски'); await act('cut'); await act('spot'); await act('spot'); expect(G.f.bridge, 'тень-мост'); out.push('Акт I ✓'); out.push('находок: ' + Object.keys(G.f.eggs || {}).length);
   // ---- Полина ----
-  await act('w_polina'); expect(room() === 'pol_porch', 'особняк'); await act('pot1'); await act('front'); await act('lib'); await act('book');
+  await act('w_polina'); expect(room() === 'pol_road', 'дорога'); await act('car'); await act('path'); expect(room() === 'pol_porch', 'особняк'); await act('pot1'); await act('front'); expect(G.f.pol_in, 'дом запер дверь'); await act('liv'); await act('radio'); await act('hall'); await act('lib'); await act('book');
   await photo(['lady', 'kids', 'owner', 'cap']); expect(G.f.pol_photos, 'три аномалии'); await act('back'); await act('basement'); expect(G.f.pol_dark, 'Полина одна');
   await act('gal'); await act('g-3.5'); expect(room() === 'pol_kitchen', 'кухня'); await act('fuse'); await act('back'); await act('basement'); expect(G.f.done_polina, 'глава Полины'); expect(room() === 'hub_backstage', 'возврат'); out.push('Полина ✓');
   // ---- Рубен ----

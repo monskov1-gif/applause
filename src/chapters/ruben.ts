@@ -5,7 +5,7 @@ import type { RoomDef, Builder } from '../world/room';
 import { canvasTex, ptext } from '../gfx/tex';
 import { R as D } from '../data/dialogue/ruben';
 import { pick, runner } from '../ui/minigames';
-import { chapterIntro, finishChapter, fog } from './common';
+import { chapterIntro, finishChapter, fog, actOf } from './common';
 
 const GRADE = { sat: 1.25, tint: [0.92, 0.95, 1.12], vig: 0.5, bloom: 0.9, contrast: 1.08 };
 const neonSign = (text: string, col: string, w = 64) => canvasTex(w, 14, (c) => { c.fillStyle = '#0a0a18'; c.fillRect(0, 0, w, 14); c.strokeStyle = col; c.strokeRect(0.5, 0.5, w - 1, 13); ptext(c, text, w / 2, 3, { size: 8, col, align: 'center' }); }, 'neon' + text + col);
@@ -15,7 +15,7 @@ function neonBase(R: Builder, floor = 'metal') {
 }
 
 const hideout: RoomDef = {
-  card: (G) => G.f.intro_rub ? null : [['АКТ II · THE MISSING CAST', 'act'], ['THE LAST HEIST', 'big'], ['неон · стекло · металл · план, от которого придётся отступить', 'sm']],
+  card: (G) => G.f.intro_rub ? null : [[actOf(G), 'act'], ['THE LAST HEIST', 'big'], ['неон · стекло · металл · план, от которого придётся отступить', 'sm']],
   name: 'Гараж под эстакадой', chapter: 'Акт II · Рубен', w: 22, d: 11, music: 'heist', amb: 'city', step: 'metal', grade: GRADE,
   build(R, G) {
     const f = G.f; neonBase(R, 'concrete');

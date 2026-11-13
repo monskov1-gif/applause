@@ -228,7 +228,7 @@ async function act4(G: any) {
   for (const id of FRIENDS) { const a = G.room.actor(id); if (a) a.place(pos[id][0], pos[id][1], 'f'); else B.actor(id === 'polina' ? 'polina_coat' : id, pos[id][0], pos[id][1], { id }); }
   for (const id of ['alla', 'allaDr', 'allaX', 'allaT']) { const a = G.room.actor(id); if (a) a.hidden = true; }
   if (G.state.mask) G.setMask(G.state.mask);
-  await G.ui.card([['АКТ IV', 'act'], ['THE DIVA', 'big']]); const p = G.player; p.place(0, -6.5, 'b'); G.focus(0, -9.5, 21);
+  await G.ui.card([['АКТ V', 'act'], ['THE DIVA', 'big']]); const p = G.player; p.place(0, -6.5, 'b'); G.focus(0, -9.5, 21);
   const nodes = D.act4 as any[], k = nodes.findIndex((n) => n && n.sfx === 'spot');
   await G.run(nodes.slice(0, k)); G.audio.music('diva');
   const alla = B.actor('alla', 17.6, 5, { id: 'allaB', dir: 'l' }); alla.y = 4; B.spot(14, 12, 6, 17.6, 5, 0xffd0d0, 120, { angle: 0.3, cone: 0.08, shadow: false }); G.focus(8, 0, 28);
@@ -236,7 +236,7 @@ async function act4(G: any) {
 }
 
 const DOORS: { id: string; x: number; to: string; label: string; col: string; sign: string; fade: string; glow?: number; ask: string }[] = [
-  { id: 'polina', x: 1.5, to: 'pol_porch', label: 'Мокрая дверь', col: '#2a3a34', sign: '', fade: 'fade', ask: '' },
+  { id: 'polina', x: 1.5, to: 'pol_road', label: 'Мокрая дверь', col: '#2a3a34', sign: '', fade: 'fade', ask: '' },
   { id: 'ruben', x: 5.5, to: 'rub_hideout', label: 'Двери лифта с неоновой рамкой', col: '#1c2438', sign: '↑↓', fade: 'glitch', glow: 0x40e0d0, ask: 'Лифт гудит. На табло вместо этажа, «ПЛАН Б». Изнутри пахнет озоном и чужими деньгами.' },
   { id: 'matvey', x: 9.5, to: 'mat_yard', label: 'Раздвижная школьная дверь', col: '#c8aa78', sign: '2-Б', fade: 'flash', glow: 0xffc0dc, ask: 'За дверью звенит школьный звонок и падают лепестки. Слишком красиво падают. Как по команде.' },
   { id: 'erika', x: 13.5, to: 'eri_office', label: 'Дверь с матовым стеклом', col: '#3a3a3a', sign: 'СЫСК', fade: 'iris', ask: 'За стеклом, силуэт в шляпе и дождь. Цвета вокруг двери выцветают, как на старой плёнке.' },
@@ -299,7 +299,7 @@ const backstage: RoomDef = {
   async enter(G, from) {
     const f = G.f;
     if (!f.back_seen) { f.back_seen = 1; G.focus(-4, 0, 22); await G.wait(1); await G.run(D.backstageFirst); G.unfocus(); return; }
-    if (f.ret) { const who = f.ret; delete f.ret; G.audio.music('theater'); await G.wait(0.5); await G.run((D as any)['ret_' + who]); if (G.doneCount() >= 6) await G.run(D.preAct4); else if (!f.afterRet) { f.afterRet = 1; await G.run(D.afterRet); } G.audio.music('backstage'); await G.save('auto'); await G.rebuild(); }
+    if (f.ret) { const who = f.ret; delete f.ret; G.audio.music('theater'); await G.wait(0.5); await G.run((D as any)['ret_' + who]); const nd = G.doneCount(); if (nd >= 2 && !f.act3) { f.act3 = 1; await G.ui.card([['АКТ III', 'act'], ['THE SCRIPT KNOWS', 'big'], ['Кто-то пишет этот сценарий заранее. Пора узнать кто.', 'sm']]); } if (nd >= 4 && !f.act4b) { f.act4b = 1; await G.ui.card([['АКТ IV', 'act'], ['BEHIND THE CURTAIN', 'big'], ['У каждого спектакля есть тот, кто дёргает за ниточки.', 'sm']]); } if (nd >= 6) await G.run(D.preAct4); else if (!f.afterRet) { f.afterRet = 1; await G.run(D.afterRet); } G.audio.music('backstage'); await G.save('auto'); await G.rebuild(); }
   },
 };
 
@@ -353,7 +353,7 @@ const archive: RoomDef = {
     R.npc('erika', -5.6, 1.4, { talk: (G: any) => G.run(G.state.mask === 'drama' ? D.h_erikaDr : D.h_erika) });
     R.spawn('start', 7, -3.4);
   },
-  card: (G) => G.f.act3 ? null : (G.f.act3 = 1, [['АКТ III', 'act'], ['THE SCRIPT KNOWS', 'big']]),
+  card: (G) => G.f.arch0 ? null : (G.f.arch0 = 1, [['АРХИВ ТЕАТРА', 'act'], ['то, что уже было сыграно', 'sm']]),
 };
 // Кабинет худрука: дорогой кабинет. Письменный стол с бумагами, книжные стеллажи, доска мыслей с нитками,
 // камин, кресла, кукольный театр, завешенное зеркало.

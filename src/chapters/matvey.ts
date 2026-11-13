@@ -5,7 +5,7 @@ import type { RoomDef, Builder } from '../world/room';
 import { canvasTex, ptext } from '../gfx/tex';
 import { M } from '../data/dialogue/matvey';
 import { pick, timing } from '../ui/minigames';
-import { chapterIntro, finishChapter } from './common';
+import { chapterIntro, finishChapter, actOf } from './common';
 
 const fakeGrade = (n: number) => ({ sat: 1.05 + n * 0.18, tint: [1.04 + n * 0.03, 1.0, 1.02 + n * 0.04], vig: 0.25 + n * 0.08, bright: 0.98, bloom: 0.3 + n * 0.12, wave: n >= 3 ? 0.25 : 0 });
 function schoolFacade(R: Builder, w: number) {
@@ -14,7 +14,7 @@ function schoolFacade(R: Builder, w: number) {
   R.decal(canvasTex(48, 10, (c) => { c.fillStyle = '#2c3550'; c.fillRect(0, 0, 48, 10); ptext(c, 'ШКОЛА № 100', 24, 1, { size: 8, col: '#f0f0f0', align: 'center' }); }, 'schoolsign'), { x: -6, y: 6.1, z: -5.86, w: 4.8, h: 1 });
 }
 const yard: RoomDef = {
-  card: (G) => G.f.intro_mat ? null : [['АКТ II · THE MISSING CAST', 'act'], ['100 STEPS TO THE INEVITABLE', 'big'], ['школьная дорама · по мотивам манги «100 шагов к неизбежному»', 'sm']],
+  card: (G) => G.f.intro_mat ? null : [[actOf(G), 'act'], ['100 STEPS TO THE INEVITABLE', 'big'], ['школьная дорама · по мотивам манги «100 шагов к неизбежному»', 'sm']],
   name: 'Школьный двор', chapter: 'Акт II · Матвей', w: 34, d: 14, music: 'school', amb: null, step: 'stone', grade: fakeGrade(0),
   build(R, G) {
     const f = G.f; R.room.group.userData.bg = 0x9cc2ee; R.floor('grass'); R.floor('schoolfloor', { w: 34, d: 4, z: -3.6, y: 0.01, tex: 'concrete' }); R.floor('concrete', { w: 4, d: 10, x: -6, z: 1, y: 0.012 });

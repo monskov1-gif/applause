@@ -20,3 +20,6 @@ export function rainy(R: Builder, G: any, o: { thunder?: boolean } = {}) {
   if (o.thunder) { let next = 4 + Math.random() * 6; R.onUpdate((dt) => { next -= dt; if (next < 0) { next = 7 + Math.random() * 9; G.flash(0.55); setTimeout(() => G.sfx('thunder'), 600); } }); }
 }
 export function fog(R: Builder, color: number, near = 18, far = 46) { const s = R.room.group; s.userData.fog = new THREE.Fog(color, near, far); }
+
+/** Номер акта зависит от того, сколько друзей уже вернулось: I вступление, II первые двое, III следующие двое и архив, IV последние двое и кабинет. */
+export function actOf(G: any): string { const n = G.doneCount(); return n < 2 ? 'АКТ II · THE MISSING CAST' : n < 4 ? 'АКТ III · THE SCRIPT KNOWS' : 'АКТ IV · BEHIND THE CURTAIN'; }

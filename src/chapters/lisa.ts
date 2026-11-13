@@ -5,7 +5,7 @@ import type { RoomDef, Builder } from '../world/room';
 import { canvasTex, ptext } from '../gfx/tex';
 import { L } from '../data/dialogue/lisa';
 import { timing } from '../ui/minigames';
-import { chapterIntro, finishChapter } from './common';
+import { chapterIntro, finishChapter, actOf } from './common';
 
 const BOOK = { sat: 0.9, tint: [1.06, 1.0, 0.88], vig: 0.6, bright: 0.98, bloom: 0.25, contrast: 1.05 };
 function bookRoom(R: Builder, wall = 'paperstone') { R.room.group.userData.bg = 0xe8dab0; R.floor('paper', { tint: '#c8b07a' }); R.walls(wall, { h: 7 }); R.ambient(0x6a5a40, 1.7, 0xfff0d0); R.particles('dust', { count: 60, top: 6, color: 0xb89858 }); }
@@ -13,7 +13,7 @@ const ink = (R: Builder, text: string, x: number, y: number, w = 6) => R.decal(c
 const lizaNPC = (R: Builder, G: any, x: number, z: number) => { const a = R.actor('liza_long', x, z, { id: 'liza' }); G.follow(a); return a; };
 
 const base: RoomDef = {
-  card: (G) => G.f.intro_liz ? null : [['АКТ II · THE MISSING CAST', 'act'], ['THE TOWER IS NOT A HOME', 'big'], ['сказка · тушь и акварель · с мотивами «Рапунцель»', 'sm']],
+  card: (G) => G.f.intro_liz ? null : [[actOf(G), 'act'], ['THE TOWER IS NOT A HOME', 'big'], ['сказка · тушь и акварель · с мотивами «Рапунцель»', 'sm']],
   name: 'Подножие башни', chapter: 'Акт II · Лиза', w: 30, d: 12, music: 'fairy', amb: 'wind', step: 'grass', grade: BOOK,
   build(R, G) {
     const f = G.f; R.room.group.userData.bg = 0xe8dab0; R.floor('grass', { tint: '#9ab060' }); R.floor('dirt', { w: 4, d: 12, x: 4, y: 0.01, tint: '#c8a070' }); R.ambient(0x6a6040, 1.6, 0xfff4d8); R.sun(0xfff0d0, 1.8, -6, 14, 8);

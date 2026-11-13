@@ -7,6 +7,7 @@ import { audio } from '../core/audio';
 import * as input from '../core/input';
 import { GameState, newState, writeSave, settings } from '../core/state';
 import { CHARS } from '../data/chars';
+import { canvasTex, PPU } from '../gfx/tex';
 import { portrait } from '../gfx/portraits';
 import { NOTES, ITEMS } from '../data/notes';
 import { MECH, EGGS } from '../data/quests';
@@ -175,6 +176,18 @@ class Game {
 
   // ---------- камера и эффекты ----------
   camBounds() { const d = this.room!.def; const mx = Math.max(0, d.w / 2 - 9); const z0 = Math.min(0, -d.d / 2 + 4.5), z1 = d.camZMax ?? Math.max(z0, d.d / 2 - 7); return { mx, z0, z1 }; }
+  // ---------- маска на лице героини ----------
+  private maskMesh: THREE.Mesh | null = null; private maskTexs: Record<string, THREE.Texture> = {};
+  private faceMask() {
+    const p = this.player; if (!p) return; const m = this.room?.def.noMasks ? null : this.state.mask;
+    if (!this.maskMesh || this.maskMesh.parent !== p.group) { const mesh = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.62), new THREE.MeshBasicMaterial({ transparent: true, alphaTest: 0.3, side: THREE.DoubleSide })); p.group.add(mesh); this.maskMesh = mesh; }
+    const mesh = this.maskMesh; mesh.visible = !!m && !p.hidden && p.dir !== 'b'; if (!m) return;
+    if (!this.maskTexs[m]) this.maskTexs[m] = canvasTex(12, 12, (c) => { const base = m === 'comedy' ? '#f2c230' : m === 'tragedy' ? '#b8ccf0' : '#f4f0e8'; c.fillStyle = base; c.fillRect(2, 1, 8, 10); c.fillRect(1, 2, 10, 7); c.fillRect(3, 11, 6, 1); if (m === 'drama') { c.fillStyle = '#c41e3a'; c.fillRect(6, 1, 4, 10); c.fillRect(6, 2, 5, 7); c.fillRect(6, 11, 3, 1); }
+      c.fillStyle = '#1a1014'; if (m === 'comedy') { c.fillRect(3, 4, 2, 1); c.fillRect(7, 4, 2, 1); c.fillRect(3, 7, 6, 1); c.fillRect(2, 6, 1, 1); c.fillRect(9, 6, 1, 1); } else if (m === 'tragedy') { c.fillRect(3, 4, 2, 2); c.fillRect(7, 4, 2, 2); c.fillRect(3, 8, 6, 1); c.fillRect(2, 9, 1, 1); c.fillRect(9, 9, 1, 1); c.fillStyle = '#4a6ad0'; c.fillRect(4, 6, 1, 2); } else { c.fillRect(3, 4, 2, 2); c.fillRect(7, 4, 2, 2); c.fillRect(4, 8, 4, 1); }
+      c.fillStyle = 'rgba(255,255,255,.5)'; c.fillRect(2, 2, 2, 1); }, 'facemask' + m);
+    (mesh.material as THREE.MeshBasicMaterial).map = this.maskTexs[m]; (mesh.material as THREE.MeshBasicMaterial).needsUpdate = true;
+    const h = (CHARS[p.charId]?.h || 31) / PPU; mesh.position.set(p.dir === "l" ? -0.08 : p.dir === "r" ? 0.08 : 0, h - 0.42, 0.06); mesh.scale.x = p.dir === 'l' ? -0.85 : p.dir === 'r' ? 0.85 : 1;
+  }
   // ---------- прозрачность того, что заслоняет героиню или висит прямо у камеры ----------
   private fadeT = 0; private faded = new Map<THREE.Mesh, { orig: any; clone: any; a: number; tgt: number }>(); private ray = new THREE.Raycaster();
   private fadeBlockers(dt: number) {
@@ -307,6 +320,7 @@ class Game {
     const sx = (Math.random() - 0.5) * c.shake, sy = (Math.random() - 0.5) * c.shake; const aspectFix = this.R.cam.aspect < 1 ? 1.25 : 1;
     this.R.cam.position.set(c.x + sx, c.yOff + Math.sin(c.pitch) * c.dist * aspectFix + sy, c.z + Math.cos(c.pitch) * c.dist * aspectFix);
     this.R.cam.up.set(Math.sin(c.roll), Math.cos(c.roll), 0); this.R.cam.lookAt(c.x + sx, c.yOff, c.z);
+    this.faceMask();
     this.fadeBlockers(dt);
     this.R.render(dt);
     ui.letterbox(!!this.cam.focus && this.lock > 0);

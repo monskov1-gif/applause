@@ -5,7 +5,7 @@ import type { RoomDef, Builder } from '../world/room';
 import { canvasTex, ptext } from '../gfx/tex';
 import { A } from '../data/dialogue/angelina';
 import { pick, rhythm, sequence } from '../ui/minigames';
-import { chapterIntro, finishChapter } from './common';
+import { chapterIntro, finishChapter, actOf } from './common';
 
 const GLOSS = { sat: 1.15, tint: [1.04, 0.98, 1.06], vig: 0.3, bright: 1.0, bloom: 0.7 };
 const STAGE = { sat: 1.3, tint: [1.05, 0.95, 1.1], vig: 0.55, bloom: 1.0, contrast: 1.08 };
@@ -14,7 +14,7 @@ const screen = (R: Builder, x: number, y: number, w: number, h: number, txt = 'A
 function glossRoom(R: Builder) { R.room.group.userData.bg = 0x100810; R.floor('gloss'); R.walls('white', { h: 6.5 }); R.ambient(0x8a7a90, 1.7, 0xfff0fa); R.particles('dust', { count: 40, top: 6, color: 0xffc0e0 }); }
 
 const lobby: RoomDef = {
-  card: (G) => G.f.intro_ang ? null : [['АКТ II · THE MISSING CAST', 'act'], ['DEBUT: THE IDOL PROJECT', 'big'], ['глянец · LED · песня, которую написал комитет', 'sm']],
+  card: (G) => G.f.intro_ang ? null : [[actOf(G), 'act'], ['DEBUT: THE IDOL PROJECT', 'big'], ['глянец · LED · песня, которую написал комитет', 'sm']],
   name: 'Агентство «GLOSS»', chapter: 'Акт II · Ангелина', w: 30, d: 12, music: 'idol_agency', amb: null, step: 'stone', grade: GLOSS,
   build(R, G) {
     const f = G.f; glossRoom(R); for (const x of [-8, 0, 8]) { screen(R, x, 3.6, 4.6, 2.9); R.light(x, 3.6, -3.8, 0xff80c0, 8, 8); }

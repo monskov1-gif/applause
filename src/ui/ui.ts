@@ -46,7 +46,7 @@ class UI {
     this.hudR.innerHTML = `<button class="hbtn" data-a="cam" title="Фотоаппарат (C)">◉</button><button class="hbtn" data-a="inv" title="Инвентарь (I)">▣<span class="hb-n"></span></button><button class="hbtn" data-a="note" title="Журнал (Tab)">✎</button><button class="hbtn" data-a="help" title="Подсказка: что делать дальше (?)">?</button><button class="hbtn" data-a="pause" title="Пауза (Esc)">❚❚</button>`;
     this.hudR.addEventListener('click', (e) => { const a = (e.target as HTMLElement).closest('[data-a]')?.getAttribute('data-a'); if (a === 'cam') input.fire('camera'); if (a === 'inv') input.fire('inventory'); if (a === 'note') input.fire('notebook'); if (a === 'pause') input.fire('pause'); if (a === 'help') input.fire('help'); });
     this.questEl = el('div', 'questbox', '', this.hudEl); this.questEl.addEventListener('click', () => this.notebook('quests')); this.questEl.addEventListener('mouseenter', () => this.questEl.classList.remove('mini'));
-    this.maskRow.addEventListener('click', (e) => { const m = (e.target as HTMLElement).closest('.maskb') as HTMLElement | null; if (m) G.setMask(m.dataset.m!); });
+    this.maskRow.addEventListener('click', (e) => { const opt = (e.target as HTMLElement).closest('[data-m]') as HTMLElement | null; if (opt) { const m = opt.dataset.m!; if (m === 'none') { if (G.state.mask) G.setMask(G.state.mask); } else if (G.state.mask !== m) G.setMask(m); this.maskRow.classList.remove('open'); return; } if ((e.target as HTMLElement).closest('.maskmain')) { this.maskRow.classList.toggle('open'); audio.sfx('click'); } });
     this.buildTouch(); this.applySettings();
   }
   applySettings() { document.documentElement.style.setProperty('--s', String(settings.uiScale)); document.body.classList.toggle('contrast', settings.contrast); audio.applyVolumes(); this.touchEl.classList.toggle('hidden', !settings.touch || !G.running); }
@@ -91,7 +91,8 @@ class UI {
   hudShow(on: boolean) { this.hudEl.classList.toggle('hidden', !on); this.touchEl.classList.toggle('hidden', !on || !settings.touch); if (!on) { this.sayHide(); this.prompt(null); this.lyric(null); } }
   hud() {
     const f = G.state.f, noM = G.room?.def.noMasks;
-    this.maskRow.innerHTML = f.masks && !noM ? Object.entries(MASK_NAMES).map(([k, n], i) => `<button class="maskb${G.state.mask === k ? ' on' : ''}" data-m="${k}" title="${n} (${i + 1})">${k === 'comedy' ? '☺' : k === 'tragedy' ? '☹' : '❦'}<small>${i + 1} ${n}</small></button>`).join('') : '';
+    const ic = (k: string | null) => k === 'comedy' ? '☺' : k === 'tragedy' ? '☹' : k === 'drama' ? '❦' : '◐'; const cur = G.state.mask;
+    this.maskRow.innerHTML = f.masks && !noM ? `<button class="maskb maskmain${cur ? ' on m-' + cur : ''}" title="Маски: 1 Комедия, 2 Трагедия, 3 Драма, Q снять">${ic(cur)}<small>${cur ? (MASK_NAMES as any)[cur] : 'Маски'}</small></button><div class="maskmenu">${Object.entries(MASK_NAMES).map(([k, n], i) => `<button class="maskopt${cur === k ? ' on' : ''}" data-m="${k}"><b>${ic(k)}</b>${n}<i>${i + 1}</i></button>`).join('')}<button class="maskopt" data-m="none"><b>◐</b>Без маски<i>Q</i></button></div>` : '';
     (this.hudR.children[0] as HTMLElement).classList.toggle('hidden', !G.has('camera') || !!G.room?.def.noCamera);
     const inv = this.hudR.children[1] as HTMLElement; inv.classList.toggle('hidden', !G.state.inv.length); (inv.querySelector('.hb-n') as HTMLElement).textContent = String(G.state.inv.length); this.quest();
   }
@@ -112,6 +113,7 @@ class UI {
     const m = el('div', 'reveal', `<div class="reveal-card"><img src="${itemIcon(id)}" alt=""><b>${esc(it?.name || id)}</b><span>${esc(it?.desc || '')}</span><small>в инвентаре · I</small></div>`, root());
     const close = () => { m.classList.add('out'); setTimeout(() => m.remove(), 450); }; setTimeout(close, 2600); m.onclick = close;
   }
+  photoZoom(img: string, caption: string) { audio.sfx('paper'); const m = el('div', 'reveal zoom', `<div class="reveal-card photo-pop big" style="--r:-1.5deg"><img class="ph" src="${img}" alt=""><span class="cap">${esc(caption)}</span><small>нажмите, чтобы закрыть</small></div>`, root()); m.style.zIndex = '90'; m.onclick = (e) => { e.stopPropagation(); m.classList.add('out'); setTimeout(() => m.remove(), 450); }; }
   showPhoto(img: string, caption: string) {
     if (G.fast) return; audio.sfx('paper');
     const m = el('div', 'reveal', `<div class="reveal-card photo-pop" style="--r:-3deg"><img class="ph" src="${img}" alt=""><span class="cap">${esc(caption)}</span><small>снимок в журнале · Tab</small></div>`, root());
@@ -222,11 +224,11 @@ class UI {
       if (t === 'mech') { const got = Object.keys(f.mech || {}); body.innerHTML = got.length ? got.filter((k) => MECH[k]).map((k) => `<div class="entry noimg"><div><h4>${esc(MECH[k].title)}</h4><p>${esc(MECH[k].text)}</p></div></div>`).join('') : '<p><i>Механики появятся по ходу игры.</i></p>'; return; }
       if (t === 'eggs') { const e = f.eggs || {}; const all = Object.entries(EGGS); body.innerHTML = `<p class="warn">Найдено ${Object.keys(e).length} из ${all.length}. Пасхалки, отсылки и мелкие радости.</p><div class="eggs">${all.map(([k, v]) => `<div class="egg ${e[k] ? 'on' : ''}"><b>${e[k] ? '★ ' + esc(v.title) : '☆ ???'}</b><span>${e[k] ? esc(v.desc) : 'Где искать: ' + esc(v.hint)}</span></div>`).join('')}</div>`; return; }
       if (t === 'map') { body.innerHTML = theaterMap(G.state.room, f.visited || {}); return; }
-      if (t === 'photos') { body.innerHTML = G.state.photos.length ? `<div class="photos">${G.state.photos.map((p, i) => `<div class="photo" style="--r:${(i * 37 % 7) - 3}deg"><img src="${p.img}" alt=""><span>${esc(p.caption)}</span></div>`).join('')}</div>` : '<p><i>Плёнка пока пуста. Фотоаппарат, клавиша C.</i></p>'; return; }
+      if (t === 'photos') { body.innerHTML = G.state.photos.length ? `<div class="photos">${G.state.photos.map((p, i) => `<div class="photo" data-ph="${i}" style="--r:${(i * 37 % 7) - 3}deg"><img src="${p.img}" alt=""><span>${esc(p.caption)}</span></div>`).join('')}</div>` : '<p><i>Плёнка пока пуста. Фотоаппарат, клавиша C.</i></p>'; return; }
       const sec = (cat: string, title: string) => { const list = G.state.notes.map((id) => NOTES[id]).filter((n) => n && n.cat === cat); if (!list.length) return ''; return `<h4 class="q-h">${title}</h4>` + list.map((n) => { const c = n.char ? CHARS[n.char] : null; return `<div class="entry ${c ? '' : 'noimg'}">${c ? `<img src="${portrait(n.char!, (n.expr || 'neutral') as any)}" alt="">` : ''}<div><h4>${esc(n.title)}</h4>${c?.role ? `<div class="role">${esc(c.role)}</div>` : ''}<p>${n.text}</p></div></div>`; }).join(''); };
       body.innerHTML = Object.entries(CATS).filter(([k]) => k !== 'items').map(([k, n]) => sec(k, n)).join('') || '<p><i>Здесь пока пусто.</i></p>';
     };
-    m.addEventListener('click', (e) => { const t = (e.target as HTMLElement).dataset?.t; if (t) { audio.sfx('paper'); draw(t); } }); draw(tab);
+    m.addEventListener('click', (e) => { const t = (e.target as HTMLElement).dataset?.t; if (t) { audio.sfx('paper'); draw(t); return; } const ph = (e.target as HTMLElement).closest('[data-ph]') as HTMLElement | null; if (ph) { const p = G.state.photos[+ph.dataset.ph!]; if (p) this.photoZoom(p.img, p.caption); } }); draw(tab);
   }
   // ---------- главное меню ----------
   private introPlayed = false;
@@ -269,12 +271,12 @@ class UI {
     });
   }
   private buildTouch() {
-    this.touchEl = el('div', 'touch hidden', '<div class="stick"><i></i></div><div class="tbtns"><button class="tbtn" data-a="camera">◉</button><button class="tbtn" data-a="mask0">☺</button><button class="tbtn big" data-a="act">E</button></div>', root());
+    this.touchEl = el('div', 'touch hidden', '<div class="stick"><i></i></div><div class="tbtns"><button class="tbtn" data-a="mask0">◐</button><button class="tbtn big" data-a="act">E</button></div>', root());
     const st = this.touchEl.querySelector('.stick') as HTMLElement, nub = st.querySelector('i') as HTMLElement; let id: number | null = null;
     const mv = (e: PointerEvent) => { const r = st.getBoundingClientRect(); let x = (e.clientX - r.left - r.width / 2) / (r.width / 2), y = (e.clientY - r.top - r.height / 2) / (r.height / 2); const l = Math.hypot(x, y); if (l > 1) { x /= l; y /= l; } input.touchAxis.x = x; input.touchAxis.y = y; nub.style.transform = `translate(${x * 2.2}rem, ${y * 2.2}rem)`; };
     st.addEventListener('pointerdown', (e) => { id = e.pointerId; st.setPointerCapture(id); mv(e); }); st.addEventListener('pointermove', (e) => { if (e.pointerId === id) mv(e); });
     const up = (e: PointerEvent) => { if (e.pointerId === id) { id = null; input.touchAxis.x = input.touchAxis.y = 0; nub.style.transform = ''; } }; st.addEventListener('pointerup', up); st.addEventListener('pointercancel', up);
-    let mi = 0; this.touchEl.querySelector('.tbtns')!.addEventListener('pointerdown', (e) => { const a = (e.target as HTMLElement).dataset?.a; if (!a) return; e.preventDefault(); if (a === 'mask0') { const ms = [null, 'comedy', 'tragedy', 'drama']; mi = (mi + 1) % 4; if (ms[mi]) G.setMask(ms[mi]); else if (G.state.mask) G.setMask(G.state.mask); } else input.fire(a); });
+    let mi = 0; this.touchEl.querySelector('.tbtns')!.addEventListener('pointerdown', (e) => { const a = (e.target as HTMLElement).dataset?.a; if (!a) return; e.preventDefault(); if (a === 'mask0') { if (G.state.f.masks) this.maskRow.classList.toggle('open'); } else input.fire(a); void mi; });
   }
 }
 export const ui = new UI();

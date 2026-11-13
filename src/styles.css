@@ -244,3 +244,9 @@ body.contrast .dlg .box, body.contrast .sheet, body.contrast .choice { backgroun
 .dlg .port.art img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 22%; image-rendering: auto; } .dlg .port.noir img { filter: grayscale(1) contrast(1.15); }
 
 #blackout { position: fixed; inset: 0; background: #000; z-index: 57; opacity: 0; pointer-events: none; transition: opacity .6s ease; } #blackout.on { opacity: 1; }
+
+.masks { align-items: flex-start; } .maskmain.m-comedy { color: #2a0a10; } .maskmenu { display: none; flex-direction: column; gap: .25rem; margin-left: .35rem; background: rgba(20,8,10,.88); border: 1px solid var(--gold); padding: .35rem; border-radius: .3rem; }
+.masks.open .maskmenu { display: flex; animation: paperUp .25s ease; } .maskopt { display: grid; grid-template-columns: 1.6rem 1fr auto; align-items: center; gap: .4rem; min-width: 9rem; background: none; border: 0; color: var(--paper); font-family: 'Playfair Display', serif; font-size: .85rem; padding: .3rem .4rem; cursor: pointer; text-align: left; border-radius: .2rem; }
+.maskopt b { font-size: 1.15rem; font-weight: 400; text-align: center; } .maskopt i { font-style: normal; font-size: .7rem; opacity: .55; } .maskopt:hover, .maskopt.on { background: rgba(212,174,72,.22); } .maskopt[data-m=comedy] b { color: #f2c230; } .maskopt[data-m=tragedy] b { color: #8aa8f0; } .maskopt[data-m=drama] b { color: #f08aa8; }
+
+.photo[data-ph] { cursor: zoom-in; } .reveal.zoom .photo-pop.big { width: min(78vw, 60rem); } .reveal.zoom .photo-pop.big .ph { width: 100%; image-rendering: auto; }

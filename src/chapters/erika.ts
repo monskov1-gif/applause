@@ -5,7 +5,7 @@ import type { RoomDef, Builder } from '../world/room';
 import { canvasTex, ptext } from '../gfx/tex';
 import { E } from '../data/dialogue/erika';
 import { board } from '../ui/minigames';
-import { chapterIntro, finishChapter, rainy, fog } from './common';
+import { chapterIntro, finishChapter, rainy, fog, actOf } from './common';
 
 const NOIR = { sat: 0.04, tint: [1.0, 0.98, 0.94], vig: 0.6, contrast: 1.12, bright: 1.15, bloom: 0.35 };
 const EVID = ['e_photo', 'e_contract', 'e_letter', 'e_ticket', 'e_matches'];
@@ -15,7 +15,7 @@ function blinds(R: Builder, x: number) { R.decal(canvasTex(24, 32, (c) => { c.fi
 const witness = (R: Builder, ch: string, x: number, z: number, talk: any, flag: string, G: any) => R.npc(ch, x, z, { talk: async (G: any) => { await G.run(talk); G.flag(flag) && G.toast('Показание записано', '✎'); } });
 
 const office: RoomDef = {
-  card: (G) => G.f.intro_eri ? null : [['АКТ II · THE MISSING CAST', 'act'], ['THE CITY NEVER SLEEPS', 'big'], ['нуар · 1940-е · дождь, который всё помнит', 'sm']],
+  card: (G) => G.f.intro_eri ? null : [[actOf(G), 'act'], ['THE CITY NEVER SLEEPS', 'big'], ['нуар · 1940-е · дождь, который всё помнит', 'sm']],
   name: 'Контора «Сыск и Ко»', chapter: 'Акт II · Эрика', w: 16, d: 10, music: 'noir', amb: 'rain', step: 'wood', grade: NOIR,
   build(R, G) {
     const f = G.f; interior(R, 'plaster'); blinds(R, -4); blinds(R, 1.5); R.light(4, 2.6, -2, 0xfff0d0, 10, 8, { flicker: 0.04 });
