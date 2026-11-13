@@ -9,7 +9,7 @@ import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass.js';
 import { settings } from '../core/state';
 
 export interface Grade { sat?: number; tint?: number[]; vig?: number; glitch?: number; bright?: number; contrast?: number; wave?: number; bloom?: number; }
-const DEF: Required<Grade> = { sat: 1, tint: [1, 1, 1], vig: 0.35, glitch: 0, bright: 1, contrast: 1, wave: 0, bloom: 0.45 };
+const DEF: Required<Grade> = { sat: 1, tint: [1, 1, 1], vig: 0.5, glitch: 0, bright: 1, contrast: 1, wave: 0, bloom: 0.45 };
 const GradeShader = {
   uniforms: { tDiffuse: { value: null }, uSat: { value: 1 }, uTint: { value: new THREE.Vector3(1, 1, 1) }, uVig: { value: 0.35 }, uGlitch: { value: 0 }, uBright: { value: 1 }, uContrast: { value: 1 }, uWave: { value: 0 }, uTime: { value: 0 }, uFlash: { value: 0 }, uDither: { value: 1 }, uCA: { value: 0.0018 }, uGrain: { value: 0.035 } },
   vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
@@ -22,7 +22,7 @@ const GradeShader = {
       vec2 dc=uv-0.5; float ca=uCA*dot(dc,dc)*4.0; vec3 c=vec3(texture2D(tDiffuse,uv+dc*ca).r, texture2D(tDiffuse,uv).g, texture2D(tDiffuse,uv-dc*ca).b);
       if(sh>0.0){ c.r=texture2D(tDiffuse,uv+vec2(sh,0.0)).r; c.b=texture2D(tDiffuse,uv-vec2(sh,0.0)).b; }
       float l=dot(c,vec3(0.3,0.59,0.11)); c=mix(vec3(l),c,uSat); c*=uTint*uBright; c=(c-0.5)*uContrast+0.5;
-      float d=distance(vUv,vec2(0.5)); c*=1.0-uVig*smoothstep(0.35,0.85,d);
+      vec2 vq=(vUv-0.5)*vec2(1.12,1.0); float d=length(vq); float vg=smoothstep(0.26,0.8,d)+0.35*smoothstep(0.36,0.5,abs(vUv.y-0.5)); c=mix(c,c*vec3(0.16,0.1,0.09),clamp(uVig*vg*1.3,0.0,0.95));
       float lum=dot(c,vec3(0.3,0.59,0.11)); c=mix(c*vec3(0.94,0.98,1.06), c*vec3(1.06,1.0,0.92), smoothstep(0.15,0.75,lum));
       c+=(h(gl_FragCoord.xy+floor(uTime*24.0))-0.5)*uGrain; c+=vec3(uFlash);
       vec2 fp=floor(mod(gl_FragCoord.xy,4.0)); float b=mod(fp.x*8.0+fp.y*2.0+mod(fp.y,2.0)*4.0,16.0)/16.0;
@@ -44,7 +44,7 @@ export class Renderer {
   flash = 0; W = 640; H = 360; time = 0;
   constructor(public canvas: HTMLCanvasElement) {
     this.r = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
-    this.r.shadowMap.enabled = true; this.r.shadowMap.type = THREE.PCFSoftShadowMap; this.r.localClippingEnabled = true;
+    this.r.shadowMap.enabled = true; this.r.shadowMap.type = THREE.PCFShadowMap; this.r.localClippingEnabled = true;
     this.r.toneMapping = THREE.ACESFilmicToneMapping; this.r.toneMappingExposure = 1.3;
     this.cam = new THREE.PerspectiveCamera(30, 16 / 9, 1, 200);
     this.setup(); window.addEventListener('resize', () => this.setup());
