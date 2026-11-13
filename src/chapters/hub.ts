@@ -156,8 +156,8 @@ function hallWalls(R: Builder) {
 }
 /** Зал главной сцены: кулисы, портал, рампа, яма, партер, ложи, люстры. Общий для hub_stage и премьеры. */
 export function hallShell(R: Builder, o: { chandeliers?: boolean } = {}) {
-    for (const z of [-21, -16, -11, -6]) for (const sx of [-1, 1]) R.curtain(sx * 14.5, z, 2.6, 10, { solid: false });
-    R.box(0, -22.6, 34, 0.3, 9, { tex: 'velvet', solid: false }); for (let i = 0; i < 4; i++) R.box(0, -20 + i * 4, 30, 0.1, 0.1, { tex: 'metal', y: 10.2, solid: false, cast: false });
+    for (const z of [-21, -16, -11, -6]) for (const sx of [-1, 1]) R.curtain(sx * (z === -21 && sx > 0 ? 15.8 : 14.5), z, z === -21 && sx > 0 ? 1.6 : 2.6, 10, { solid: false });
+    R.curtain(-3.4, -22.5, 27.2, 9, { folds: 16 }); R.curtain(15.4, -22.5, 3.2, 9, { folds: 2 }); // задник с проёмом: дверь «За кулисы» (x=12) видна for (let i = 0; i < 4; i++) R.box(0, -20 + i * 4, 30, 0.1, 0.1, { tex: 'metal', y: 10.2, solid: false, cast: false });
     R.box(0, -18.5, 27, 0.16, 0.16, { tex: 'metal', y: 10.2, solid: false, cast: false });
     for (const sx of [-1, 1]) { R.curtain(sx * 13.6, -2.6, 2.6, 9.4, { solid: false }); R.drape(sx * 13.6, -2.38, 2.8, 1.2, { y: 8.2, scallop: true, folds: 2 }); }
     R.box(0, -1.8, 36, 0.8, 2, { tex: 'gold', y: 9.6, solid: false }); for (const sx of [-1, 1]) R.box(sx * 16.5, -1.8, 3, 0.8, 11.6, { tex: 'gold' }); R.box(0, -1.76, 30, 0.1, 1.5, { color: 0x2a0608, y: 8.1, solid: false, cast: false }); R.drape(0, -1.66, 30, 1.5, { y: 8.1, scallop: true, folds: 14 });
@@ -208,7 +208,7 @@ const stage: RoomDef = {
     const kn = n >= 5 ? 5 : n >= 3 ? 3 : n >= 1 ? 1 : 0;
     if (kn && !f['kn' + kn]) { R.sprite(canvasTex(8, 6, (c) => { c.fillStyle = '#f4ecd4'; c.fillRect(0, 0, 8, 6); c.fillStyle = '#3a2a5a'; c.fillRect(1, 1, 5, 1); c.fillRect(1, 3, 4, 1); }, 'knote'), -10.9, -5.2, { y: 1.15, glow: true }); R.inter('knote', -11.3, -4.4, { label: 'Записка от К.', r: 1.3, fn: async (G) => { await G.ui.paper((D as any)['kNote' + kn]); f['kn' + kn] = 1; G.note('knotes'); await G.rebuild(); } }); }
     // зеркало на колёсах
-    const mir = mirror3D(R, 9.6, 2.3, -15.2, 2.4, 3.6, {}); R.collider(8.2, -15.5, 11.0, -14.9); void mir;
+    const mir = mirror3D(R, 5.2, 2.3, -15.2, 2.4, 3.6, {}); R.collider(3.8, -15.5, 6.6, -14.9); void mir;
     // следы исчезновения (после первой репетиции, пока Полина не вернулась)
     if (f.act1 && !G.done('polina')) {
       const ch = new THREE.Group(); ch.position.set(-2, 0, -9); ch.rotation.set(0, 0.6, Math.PI / 2 - 0.05); const cm = new THREE.MeshLambertMaterial({ map: tex('darkwood'), color: 0xd0a070 }); const s1 = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.12, 0.9), cm); s1.position.y = 0.6; ch.add(s1); const s2 = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1, 0.1), cm); s2.position.set(0, 1.1, -0.45); ch.add(s2); for (const [x, z] of [[-0.4, -0.4], [0.4, -0.4], [-0.4, 0.4], [0.4, 0.4]]) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.6, 0.08), new THREE.MeshLambertMaterial({ map: tex('gold') })); l.position.set(x, 0.3, z); ch.add(l); } ch.position.y = 0.45; R.room.group.add(ch);
