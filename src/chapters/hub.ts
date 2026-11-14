@@ -211,9 +211,18 @@ const stage: RoomDef = {
       if (pal) { c.fillStyle = '#e8d8b8'; c.fillRect(8, 16, 48, 24); c.beginPath(); c.arc(32, 16, 9, Math.PI, 0); c.fill(); c.fillStyle = '#c8b090'; for (let k = 0; k < 7; k++) c.fillRect(10 + k * 7, 20, 2, 20); c.fillStyle = '#5a2a3a'; for (let k = 0; k < 6; k++) { c.fillRect(13 + k * 7, 24, 3, 7); c.beginPath(); c.arc(14.5 + k * 7, 24, 1.5, Math.PI, 0); c.fill(); } c.fillStyle = '#d4ae48'; c.fillRect(6, 15, 52, 2); c.fillRect(31, 4, 2, 4); }
       else { c.fillStyle = '#f4ecd0'; c.beginPath(); c.arc(50, 8, 4, 0, 7); c.fill(); c.fillStyle = '#1e3a2a'; for (let k = 0; k < 6; k++) { c.beginPath(); c.arc(6 + k * 11, 26, 7, 0, 7); c.fill(); } c.fillStyle = '#2e5a3a'; c.fillRect(0, 30, 64, 10); c.fillStyle = '#c8d8e8'; c.fillRect(29, 24, 6, 8); c.fillRect(26, 31, 12, 2); c.fillStyle = '#ffd890'; for (let k = 0; k < 8; k++) c.fillRect(4 + k * 8, 12 + (k % 3) * 3, 1, 1); }
       c.fillStyle = '#d4ae48'; c.fillRect(0, 0, 64, 2); c.fillStyle = 'rgba(0,0,0,.25)'; c.fillRect(0, 38, 64, 2); }, key) })); m.position.set(0, h / 2, z); m.castShadow = true; turn.add(m); return m; };
-    flat(9, 5.5, -2, '#6a2a3a', 'palace'); flat(9, 5.5, 2, '#2a4a5a', 'garden');
-    for (const sx of [-1, 1]) { const st = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.8, 1.6), new THREE.MeshLambertMaterial({ map: tex('gold') })); st.position.set(sx * 3.5, 0.4, -3); turn.add(st); const c2 = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.35, 4, 10), new THREE.MeshLambertMaterial({ map: tex('white') })); c2.position.set(sx * 3.5, 2.8, -3); turn.add(c2); }
-    R.onUpdate((dt) => { if (!f.turnStop) turn.rotation.y += dt * 0.05; });
+    // в первых актах на круге почти пусто: декорации появляются, когда пьеса начинает складываться (акт III+)
+    const dressed = n >= 2;
+    if (dressed) { flat(9, 5.5, -2, '#6a2a3a', 'palace'); flat(9, 5.5, 2, '#2a4a5a', 'garden'); }
+    else {
+      const tape = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.12), new THREE.MeshBasicMaterial({ color: 0xe8d070 })); tape.rotation.x = -Math.PI / 2; tape.position.set(1.4, 0.09, 1.2); turn.add(tape); const tape2 = tape.clone(); tape2.rotation.z = Math.PI / 2; turn.add(tape2);
+      const chair = new THREE.Group(); const cm = new THREE.MeshLambertMaterial({ map: tex('darkwood') }); for (const [w, h, d, x, y, z] of [[0.8, 0.08, 0.8, 0, 0.5, 0], [0.8, 0.8, 0.08, 0, 0.9, -0.36], [0.07, 0.5, 0.07, -0.34, 0.25, -0.34], [0.07, 0.5, 0.07, 0.34, 0.25, -0.34], [0.07, 0.5, 0.07, -0.34, 0.25, 0.34], [0.07, 0.5, 0.07, 0.34, 0.25, 0.34]]) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), cm); m.position.set(x, y, z); m.castShadow = true; chair.add(m); } chair.position.set(-2.2, 0.06, -1.6); chair.rotation.y = 0.5; turn.add(chair);
+    }
+    if (dressed) for (const sx of [-1, 1]) { const st = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.8, 1.6), new THREE.MeshLambertMaterial({ map: tex('gold') })); st.position.set(sx * 3.5, 0.4, -3); turn.add(st); const c2 = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.35, 4, 10), new THREE.MeshLambertMaterial({ map: tex('white') })); c2.position.set(sx * 3.5, 2.8, -3); turn.add(c2); }
+    // круг реально крутится и везёт за собой всех, кто на нём стоит
+    R.onUpdate((dt) => { if (f.turnStop) return; const da = dt * 0.14; turn.rotation.y += da; const cx = turn.position.x, cz = turn.position.z, co = Math.cos(da), si = Math.sin(da);
+      for (const a of R.room.actors) { if ((a as any).hidden) continue; const dx = a.x - cx, dz = a.z - cz; if (dx * dx + dz * dz > 6.3 * 6.3) continue; const nx = cx + dx * co + dz * si, nz = cz - dx * si + dz * co; const ox = nx - a.x, oz = nz - a.z; a.x = nx; a.z = nz; a.group.position.x = nx; a.group.position.z = nz;
+        const bx = (a as any).box; if (bx) { bx.x0 += ox; bx.x1 += ox; bx.z0 += oz; bx.z1 += oz; } const it: any = R.room.inters.find((i: any) => i.id === a.id); if (it) { it.x += ox; it.z += oz; if (it.marker) { it.marker.position.x += ox; it.marker.position.z += oz; } } } });
     // кулисы-ноги, колосники с подвешенным задником, портал, рампа
     hallShell(R);
     R.spot(0, 15, 2, 0, STZ, 0xffe2b0, 120, { angle: 0.6, cone: 0.05, pen: 0.8 }); R.spot(-10, 13, 0, -6, STZ, 0xffd0a0, 55, { angle: 0.45, shadow: false, cone: 0.035, pen: 0.9, name: 'spotL' }); R.spot(10, 13, 0, 6, STZ, 0xc0d0ff, 55, { angle: 0.45, shadow: false, cone: 0.035, pen: 0.9 });
@@ -235,7 +244,7 @@ const stage: RoomDef = {
     const kn = n >= 5 ? 5 : n >= 3 ? 3 : n >= 1 ? 1 : 0;
     if (kn && !f['kn' + kn]) { R.sprite(canvasTex(8, 6, (c) => { c.fillStyle = '#f4ecd4'; c.fillRect(0, 0, 8, 6); c.fillStyle = '#3a2a5a'; c.fillRect(1, 1, 5, 1); c.fillRect(1, 3, 4, 1); }, 'knote'), -10.9, -5.2, { y: 1.15, glow: true }); R.inter('knote', -11.3, -4.4, { label: 'Записка от К.', r: 1.3, fn: async (G) => { await G.ui.paper((D as any)['kNote' + kn]); f['kn' + kn] = 1; G.note('knotes'); await G.rebuild(); } }); }
     // зеркало на колёсах
-    const mir = mirror3D(R, 5.2, 2.3, -15.2, 2.4, 3.6, {}); R.collider(3.8, -15.5, 6.6, -14.9); void mir;
+    const mir = mirror3D(R, -9.4, 2.3, -15.2, 2.4, 3.6, {}); R.collider(-10.8, -15.5, -8.0, -14.9); void mir;
     // следы исчезновения (после первой репетиции, пока Полина не вернулась)
     if (f.act1 && !G.done('polina')) {
       const ch = new THREE.Group(); ch.position.set(-2, 0, -9); ch.rotation.set(0, 0.6, Math.PI / 2 - 0.05); const cm = new THREE.MeshLambertMaterial({ map: tex('darkwood'), color: 0xd0a070 }); const s1 = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.12, 0.9), cm); s1.position.y = 0.6; ch.add(s1); const s2 = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1, 0.1), cm); s2.position.set(0, 1.1, -0.45); ch.add(s2); for (const [x, z] of [[-0.4, -0.4], [0.4, -0.4], [-0.4, 0.4], [0.4, 0.4]]) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.6, 0.08), new THREE.MeshLambertMaterial({ map: tex('gold') })); l.position.set(x, 0.3, z); ch.add(l); } ch.position.y = 0.45; R.room.group.add(ch);
