@@ -197,7 +197,7 @@ const buffet: RoomDef = {
 };
 // Реквизиторская: стеллажи с реквизитом, маски, оружие, короны, ящики.
 const props: RoomDef = {
-  name: 'Реквизиторская', floor: 'Партер', w: 20, d: 12, music: 'backstage', amb: 'hall', step: 'wood', grade: { tint: [1.04, 0.98, 0.92], vig: 0.5 },
+  name: 'Реквизиторская', floor: 'Партер', w: 20, d: 12, music: 'caper', amb: 'hall', step: 'wood', grade: { tint: [1.04, 0.98, 0.92], vig: 0.5 },
   build(R, G) {
     R.floor('floor'); R.walls('woodwall', { h: 6 }); base(R, 2.3); R.light(0, 4.4, 0, 0xffd8a8, 16, 14, { flicker: 0.04 }); R.light(-6, 3.6, -3.6, 0xffc890, 7, 8); R.light(6, 3.6, -3.6, 0xffc890, 7, 8);
     propShelf(R, -7, -5.3, 3.6, 4, 0); propShelf(R, 0, -5.3, 4.4, 3, 1); propShelf(R, 6.6, -5.3, 2.6, 4.6, 2);
@@ -319,7 +319,7 @@ const rehearsal: RoomDef = {
   async enter(G) { if (!G.f.reh0) { G.f.reh0 = 1; await G.run(T.rehFirst); } },
 };
 const costume: RoomDef = {
-  name: 'Костюмерная', floor: 'Партер', w: 26, d: 14, music: 'backstage', amb: 'hall', step: 'wood', grade: { tint: [1.04, 0.97, 0.94], vig: 0.5 },
+  name: 'Костюмерная', floor: 'Партер', w: 26, d: 14, music: 'caper', amb: 'hall', step: 'wood', grade: { tint: [1.04, 0.97, 0.94], vig: 0.5 },
   build(R, G) {
     R.floor('floor'); R.walls('wallpaper', { h: 6, trim: 'darkwood' }); base(R, 1.5);
     for (const x of [-8, 0, 8]) R.light(x, 4.4, -1, 0xffd8a8, 9, 10, { flicker: 0.03 });

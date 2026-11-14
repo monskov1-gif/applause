@@ -397,7 +397,7 @@ const backstage: RoomDef = {
 };
 
 const workshop: RoomDef = {
-  name: 'Мастерская декораций', w: 18, d: 10, music: 'backstage', amb: 'hall', step: 'wood', grade: { tint: [1.04, 1, 0.92], vig: 0.6 },
+  name: 'Мастерская декораций', w: 18, d: 10, music: 'caper', amb: 'hall', step: 'wood', grade: { tint: [1.04, 1, 0.92], vig: 0.6 },
   build(R, G) {
     const f = G.f; R.floor('floor'); R.walls('plaster', { h: 6, tint: '#b8a888' }); dustAndBase(R); R.light(0, 4.2, -0.6, 0xffe0b0, 12, 14); R.light(-6, 3, 2, 0xffc080, 8, 9);
     // обшивка стен, подвесная лампа над макетом, опилки
@@ -426,7 +426,7 @@ const workshop: RoomDef = {
   },
 };
 const archive: RoomDef = {
-  name: 'Архив театра', chapter: 'Акт III · Сценарий знает', w: 18, d: 10, music: 'backstage', amb: 'hall', step: 'wood', grade: { tint: [0.96, 0.98, 1.06], vig: 0.6 },
+  name: 'Архив театра', chapter: 'Акт III · Сценарий знает', w: 18, d: 10, music: 'tension', amb: 'hall', step: 'wood', grade: { tint: [0.96, 0.98, 1.06], vig: 0.6 },
   build(R, G) {
     const f = G.f; R.floor('parquet'); R.walls('woodwall', { h: 6 }); dustAndBase(R, false); R.light(0, 4, 0.6, 0xfff0d0, 13, 10, { flicker: 0.04 }); R.light(-6, 3, -2, 0x90a8ff, 6, 8);
     R.door('door', 7, { to: 'hub_mezz', spot: 'arch', label: 'На бельэтаж' }); caseFind(R, G, 'c_poster', -2.6, -3.6, 'Старая афиша на стеллаже', CASE.poster);
@@ -461,7 +461,7 @@ const archive: RoomDef = {
 // Кабинет худрука: дорогой кабинет. Письменный стол с бумагами, книжные стеллажи, доска мыслей с нитками,
 // камин, кресла, кукольный театр, завешенное зеркало.
 const office: RoomDef = {
-  name: 'Кабинет худрука', floor: 'Бельэтаж', w: 18, d: 12, music: 'dressing', amb: 'hall', step: 'carpet', grade: { tint: [1.02, 0.95, 0.96], vig: 0.6, sat: 0.9 },
+  name: 'Кабинет худрука', floor: 'Бельэтаж', w: 18, d: 12, music: 'tension', amb: 'hall', step: 'carpet', grade: { tint: [1.02, 0.95, 0.96], vig: 0.6, sat: 0.9 },
   build(R, G) {
     const f = G.f; R.floor('parquet'); R.walls('wallgreen', { h: 6.5, trim: 'gold' }); dustAndBase(R, false); R.ambient(0x40302a, 1.4, 0xffe0c8); rug(R, -0.5, 0.8, 9, 5.5, { col: '#2a1a3a', border: '#b89858' });
     desk(R, -1, -1.8, 3.6);
