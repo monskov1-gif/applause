@@ -6,11 +6,52 @@
 import * as THREE from 'three';
 import type { RoomDef, Builder } from '../world/room';
 import { canvasTex, ptext, tex } from '../gfx/tex';
-import { E } from '../data/dialogue/erika';
+import { E, ECUE } from '../data/dialogue/erika';
 import { board } from '../ui/minigames';
 import { finishChapter, rainy, fog, actOf } from './common';
 import { cafeTable, bookshelf, armchair, statue, wardrobe, screen3D, coatStand, barCounter } from '../world/decor3d';
 import { vanity, rug, costumeRack, piano } from '../world/decor';
+
+// ---------- кино: тёплый свет в нежные моменты, медленная камера, паузы (всё мгновенно в G.fast) ----------
+const WARM = { tint: [1.12, 1.0, 0.86], sat: 1.1, bloom: 0.9, vig: 0.35, bright: 1.05 };
+function tween(G: any, dur: number, fn: (k: number) => void): Promise<void> {
+  const room = G.room; if (G.fast || !room || dur <= 0) { fn(1); return Promise.resolve(); }
+  return new Promise((res) => { let t = 0, done = false; const u = (dt: number) => { t += dt; const k = Math.min(1, t / dur); fn(k * k * (3 - 2 * k)); if (k >= 1) end(); };
+    const end = () => { if (done) return; done = true; if (G.room === room) fn(1); const i = room.updaters.indexOf(u); if (i >= 0) room.updaters.splice(i, 1); res(); };
+    room.updaters.push(u); setTimeout(end, dur * 1000 + 1500); });
+}
+/** Медленный наезд/отъезд: фокус, дистанция и ракурс камеры плавно меняются за dur секунд. */
+let camTok = 0;
+function camMove(G: any, to: { x?: number; z?: number; dist?: number; pitch?: number; yOff?: number }, dur = 2): Promise<void> {
+  const my = ++camTok, c = G.cam, f0 = c.focus ? { ...c.focus } : { x: c.x, z: c.z, dist: c.dist }, p0 = c.pitch, y0 = c.yOff, L = (a: number, b: number | undefined, k: number) => b === undefined ? a : a + (b - a) * k;
+  return tween(G, dur, (k) => { if (my !== camTok) return; G.focus(L(f0.x, to.x, k), L(f0.z, to.z, k), L(f0.dist, to.dist, k)); c.pitch = L(p0, to.pitch, k); c.yOff = L(y0, to.yOff, k); });
+}
+/** Вернуть ракурс комнаты и отпустить фокус. */
+async function camBack(G: any, pitch = 0.56, yOff = 1.2, dur = 1.2) { const my = ++camTok, p0 = G.cam.pitch, y0 = G.cam.yOff; await tween(G, dur, (k) => { if (my !== camTok) return; G.cam.pitch = p0 + (pitch - p0) * k; G.cam.yOff = y0 + (yOff - y0) * k; }); G.unfocus(); }
+/** Тёплый «ключевой» свет и золотые пылинки: спрятаны, пока не наступит нежный момент. */
+function warmRig(R: Builder, x: number, z: number, o: { col?: number; kind?: 'dust' | 'petals' | 'sparks'; pcol?: number; y?: number; count?: number } = {}) {
+  R.light(x, o.y ?? 3.4, z + 1.6, o.col ?? 0xffc078, 0, 13, { name: 'warmKey', force: true });
+  const m = R.particles(o.kind || 'dust', { count: o.count ?? 90, top: 6, color: o.pcol ?? 0xffd890, name: 'warmMotes' }); m.visible = false; const mm = m.material as THREE.PointsMaterial; mm.opacity = 0; if ((o.kind || 'dust') === 'dust') mm.size = 0.12;
+}
+let warmPrev: any = null;
+/** Нежный момент: грейд теплеет, загорается тёплый ключ, в воздухе золотая пыль; по желанию, тихая музыка. */
+async function warmOn(G: any, o: { int?: number; grade?: any; music?: string; dur?: number } = {}) {
+  if (!G.room) return; if (!warmPrev || warmPrev.room !== G.room) warmPrev = { room: G.room, grade: { ...G.gradeBase }, music: G.audio.cur?.id ?? null, noir: document.body.classList.contains('noir-mode') };
+  G.grade({ ...WARM, ...o.grade }); if ((o.grade?.sat ?? WARM.sat) > 0.3) document.body.classList.remove('noir-mode'); if (o.music) G.audio.music(o.music, { fade: 2.5 });
+  const l = G.room.named.warmKey, m = G.room.named.warmMotes; if (m) m.visible = true; const i0 = l?.intensity || 0, o0 = m?.material.opacity || 0, I = o.int ?? 16;
+  await tween(G, o.dur ?? 1.6, (k) => { if (l) l.intensity = i0 + (I - i0) * k; if (m) m.material.opacity = o0 + (0.75 - o0) * k; });
+}
+async function warmOff(G: any, dur = 1.4) {
+  const p = warmPrev; warmPrev = null; if (!p || G.room !== p.room) return;
+  G.gradeBase = p.grade; G.applyGrade(); if (p.noir) document.body.classList.add('noir-mode'); if (p.music !== (G.audio.cur?.id ?? null)) G.audio.music(p.music, { fade: 2 });
+  const l = G.room.named.warmKey, m = G.room.named.warmMotes, i0 = l?.intensity || 0, o0 = m?.material.opacity || 0;
+  await tween(G, dur, (k) => { if (l) l.intensity = i0 * (1 - k); if (m) m.material.opacity = o0 * (1 - k); }); if (m && !warmPrev) m.visible = false;
+}
+/** Первая подсказка про маски в главе (один раз). */
+function maskHint(G: any, key: string, text: string) { if (G.f['mhint_' + key]) return; G.f['mhint_' + key] = 1; G.toast(text, '◐'); }
+// метки из диалога: пауза перед «Я не знаю», и цвет, который впервые проступает в сером городе
+ECUE.silence = (G: any) => { G.sfx('heart'); void camMove(G, { dist: 7.6, pitch: 0.34, yOff: 1.8 }, 2.4); };
+ECUE.honest = (G: any) => { void warmOn(G, { grade: { sat: 0.6, bloom: 0.75, vig: 0.45 }, int: 14, dur: 2.6 }); };
 
 const NOIR = { sat: 0.04, tint: [1.0, 0.98, 0.94], vig: 0.6, contrast: 1.12, bright: 1.15, bloom: 0.3 };
 const EVID = ['e_photo', 'e_contract', 'e_letter', 'e_ticket', 'e_matches'];
@@ -165,7 +206,7 @@ const office: RoomDef = {
   name: 'Контора «Сыск и Ко»', chapter: 'Акт II · Эрика', w: 16, d: 10, music: 'noir', amb: 'rain', step: 'wood', grade: NOIR, camDist: 18,
   build(R, G) {
     const f = G.f; interior(R, G, 'plaster', 'parquet'); noirWindow(R, -5.0); noirWindow(R, 2.6, { shadow: true }); R.light(4, 2.6, -2, 0xfff0d0, 8, 8, { flicker: 0.04 });
-    rug(R, 0.6, 1.2, 5.4, 3.4, { col: '#3a3a3a', border: '#9a9a9a' });
+    rug(R, 0.6, 1.2, 5.4, 3.4, { col: '#3a3a3a', border: '#9a9a9a' }); warmRig(R, 0.4, -3.6, { count: 70 });
     R.table(4, -2.4, 3, 1.4, { tex: 'darkwood' }); R.sprite('typewriter', 3.4, -2.4, { y: 1.15 }); R.sprite('lamp', 5, -2.6, { y: 1.1, scale: 0.45 });
     R.sprite(canvasTex(10, 14, (c) => { px(c, 3, 0, 4, 3, '#2a2a2a'); px(c, 2, 3, 6, 10, '#5a5a5a'); px(c, 3, 4, 1, 8, '#9a9a9a'); px(c, 2, 8, 6, 3, '#d8d8d8'); px(c, 1, 13, 8, 1, '#1a1a1a'); }, 'nbottle'), 4.9, -2.2, { y: 1.08, scale: 0.6 }); R.sprite(canvasTex(10, 6, (c) => { px(c, 0, 2, 10, 4, '#1a1a1a'); px(c, 1, 0, 8, 3, '#3a3a3a'); px(c, 7, 0, 3, 2, '#d8d8d8'); }, 'nphone'), 2.8, -2.0, { y: 1.08, scale: 0.8 });
     R.box(4, -1.1, 0.8, 0.7, 0.5, { tex: 'darkwood', tint: '#5a5a5a', y: 0.0 }); R.box(4, -0.78, 0.8, 0.12, 0.7, { tex: 'darkwood', tint: '#5a5a5a', y: 0.5, solid: false });
@@ -178,7 +219,7 @@ const office: RoomDef = {
         left: { title: 'Показания', items: [{ id: 't1', title: 'Сол, бармен', text: '«Ушла в полночь, одна, в слезах».' }, { id: 't2', title: 'Мэй, певица', text: '«Мы не общались. Соперницы».' }, { id: 't3', title: 'Грей, режиссёр', text: '«В пятницу была счастлива, главная роль!»' }, { id: 't4', title: 'Вейс, коллекционер', text: '«Не был знаком лично».' }, { id: 't5', title: 'Кассир', text: '«На вокзале не появлялась».' }] },
         right: { title: 'Улики', items: [{ id: 'e1', title: 'Фото из гримёрки Мэй', text: '«Сестрёнке, от той, кто в третьем ряду. Л.»' }, { id: 'e2', title: 'Контракт', text: 'Роль «передана» в четверг.' }, { id: 'e3', title: 'Записка', text: '«Аркадий, спасибо за цветы… у моря. Л.»' }, { id: 'e4', title: 'Квитанция', text: 'Суббота. Чемодан. Сдала: Вронская Л.' }, { id: 'e5', title: 'Спички', text: 'Клуб «Синяя нота».' }] },
         pairs: [['t2', 'e1', 'Мэй и Лидия, подруги. Мэй прикрывает её.'], ['t3', 'e2', 'Роль отобрали до пятницы. «Счастлива», заученная ложь.'], ['t4', 'e3', 'Вейс знал её и помогал ей.'], ['t5', 'e4', 'Чемодан на вокзале, значит, и она была там.']], wrong: E.wrong });
-      if (r.done) { f.eri_board = 1; G.sfx('stamp'); await G.run(E.boardDone); await G.run(E.version); if (f.eri_false) await G.run(E.versionMei); await G.rebuild(); } } });
+      if (r.done) { f.eri_board = 1; G.sfx('stamp'); G.flash(0.25); void camMove(G, { x: -0.2, z: -2.4, dist: 11, pitch: 0.42, yOff: 1.9 }, 1.6); await G.run(E.boardDone); void camMove(G, { dist: 9.4 }, 7); await G.run(E.version); if (f.eri_false) await G.run(E.versionMei); await warmOff(G); await camBack(G); await G.rebuild(); } } });
     R.npc('erika_noir', 2.2, 0.6, { id: 'erika', talk: (G: any) => G.run(f.eri_board ? ['erika: Вокзал. Полночь. Не опаздывай, поезда в этом городе ходят точнее людей.'] : ['erika: Опроси всех. Смотри на руки, а не на лица. Лица здесь давно научились врать.']) });
     const cab = canvasTex(22, 40, (c) => { px(c, 0, 0, 22, 40, '#1e1e1e'); for (let k = 0; k < 4; k++) { px(c, 1, 1 + k * 10, 20, 9, '#5a5a5a'); px(c, 1, 1 + k * 10, 20, 1, '#8a8a8a'); px(c, 8, 4 + k * 10, 6, 2, '#c8c8c8'); px(c, 9, 7 + k * 10, 4, 1, '#d8d8d8'); } }, 'ncabinet');
     pbox(R, -6.4, -4, 1.4, 1, 2.6, cab, { side: 0x3a3a3a }); R.sprite('suitcase', -6.4, -3.5, { y: 2.6 });
@@ -187,7 +228,7 @@ const office: RoomDef = {
     R.door('out', 6.2, { label: 'На улицу', z: -4.96, col: '#3a3a3a', fn: (G) => G.goto('eri_street', 'office') }); R.decal(sign('СЫСК', 30), { x: 6.2, y: 3.95, z: -4.9, w: 1.8, h: 0.42, glow: true, color: 0xcccccc });
     R.spawn('start', 0, 2.4, 'b');
   },
-  async enter(G) { if (!G.f.intro_eri) { G.f.intro_eri = 1; true } if (G.f.intro_eri === 1 && (G.f.intro_eri = 2)) { G.setPlayerChar('varya_noir'); await G.run(E.arrive); } },
+  async enter(G) { if (!G.f.intro_eri) { G.f.intro_eri = 1; true } if (G.f.intro_eri === 1 && (G.f.intro_eri = 2)) { G.setPlayerChar('varya_noir'); G.focus(0.6, -1.4, 22); G.cam.pitch = 0.78; G.cam.yOff = 2.6; G.camSnap(); void camMove(G, { x: 1.4, z: -0.6, dist: 13, pitch: 0.5, yOff: 1.6 }, 8); await G.run(E.arrive); await camBack(G); } },
 };
 
 // ---------------- 2. улица ----------------
@@ -251,17 +292,27 @@ const club: RoomDef = {
     R.spawn('start', -11, -4.4); R.spawn('back', 11, -4.4);
   },
 };
-const witness = (R: Builder, ch: string, x: number, z: number, talk: any, flag: string, G: any) => R.npc(ch, x, z, { talk: async (G: any) => { await G.run(talk); G.flag(flag) && G.toast('Показание записано', '✎'); } });
+// допрос в масках: у трёх свидетелей есть второе дно, и открывает его только нужная маска
+const MASK_TALK: Record<string, [string, string, string]> = { singer: ['drama', 'meiDr', 'eri_mei_dr'], cashier: ['comedy', 'cashierC', 'eri_cash_c'], director: ['tragedy', 'greyTr', 'eri_grey_tr'] };
+const witness = (R: Builder, ch: string, x: number, z: number, talk: any, flag: string, G: any) => R.npc(ch, x, z, { talk: async (G: any) => {
+  await G.run(talk); G.flag(flag) && G.toast('Показание записано', '✎'); const mt = MASK_TALK[ch];
+  if (mt && G.state.mask === mt[0] && !G.f[mt[2]]) { // крупный план, пауза, и человек говорит то, что прятал
+    G.f[mt[2]] = 1; const p0 = G.cam.pitch, y0 = G.cam.yOff; G.sfx('mask'); G.flash(0.2); await camMove(G, { x, z: z + 0.8, dist: 7.6, pitch: 0.38, yOff: 1.9 }, 0.9); await G.wait(0.6);
+    await G.run((E as any)[mt[1]]); G.toast('Маска открыла новое в деле', '◐'); await camBack(G, p0, y0, 0.8);
+  } else if (!G.f.eri_mhint && [1, 2, 3, 4, 5].filter((i) => G.f['eri_t' + i]).length >= 2) { G.f.eri_mhint = 1; await G.run(E.maskHintTalk); maskHint(G, 'eri', 'Маски на допросе (1–3): Комедия развязывает язык, Трагедия видит спрятанное, Драма показывает чувства'); }
+} });
 
 // ---------------- 4. гримёрка Мэй ----------------
 const meiRoom: RoomDef = {
   name: 'Гримёрка Мэй', w: 12, d: 9, music: 'noir', amb: 'crowd', step: 'carpet', grade: NOIR, camDist: 17,
   build(R, G) {
-    interior(R, G, 'wallpaper', 'carpet', 2.8); vanity(R, 0, -3.6, { w: 3, dark: true, clutter: 4, photos: 2 }); R.light(0, 3.2, -2.2, 0xfff0e0, 7, 8); R.light(-3.6, 3.0, 1.6, 0xfff0e0, 6, 8); R.light(3.4, 2.6, 2.6, 0xffffff, 4, 7);
+    interior(R, G, 'wallpaper', 'carpet', 2.8); vanity(R, 0, -3.6, { w: 3, dark: true, clutter: 4, photos: 2 }); R.light(0, 3.2, -2.2, 0xfff0e0, 7, 8); R.light(-3.6, 3.0, 1.6, 0xfff0e0, 6, 8); R.light(3.4, 2.6, 2.6, 0xffffff, 4, 7); warmRig(R, 1.2, -3.8, { count: 50, y: 2.6 });
     R.sprite(canvasTex(10, 12, (c) => { c.fillStyle = '#3a3a3a'; c.fillRect(0, 0, 10, 12); c.fillStyle = '#5a5a5a'; c.fillRect(1, 1, 8, 10); }, 'framebk'), 1.2, -3.6, { y: 1.15, mask: 'none' });
     R.sprite(canvasTex(10, 12, (c) => { c.fillStyle = '#3a3a3a'; c.fillRect(0, 0, 10, 12); c.fillStyle = '#ddd'; c.fillRect(1, 1, 8, 10); c.fillStyle = '#333'; c.fillRect(2, 5, 2, 5); c.fillRect(6, 5, 2, 5); c.fillStyle = '#999'; c.fillRect(2, 3, 2, 2); c.fillRect(6, 3, 2, 2); }, 'framefr'), 1.2, -3.6, { y: 1.15, mask: 'tragedy', glow: true });
-    R.inter('frame', 1.2, -2.6, { label: 'Рамка лицом к стене', mask: 'none', fn: async (G) => { await G.run(E.meiRoom); await G.run(E.meiPhotoNo); if (!G.flag('eri_tr_hint')) { G.set('eri_tr_hint', 1); await G.run(['erika: (из-за двери) Варя, у тебя ведь есть эти твои маски? Трагедия видит то, что спрятали. Попробуй.']); } } });
-    R.inter('frameTr', 1.2, -2.6, { label: 'Перевёрнутая фотография', mask: 'tragedy', photo: 'Мэй и Лидия', fn: (G) => G.run(E.meiPhotoTr) });
+    R.inter('frame', 1.2, -2.6, { label: 'Рамка лицом к стене', mask: 'none', fn: async (G) => { await G.run(E.meiRoom); await G.run(E.meiPhotoNo); maskHint(G, 'eri_tr', 'Маска Трагедии (2) показывает спрятанное. Надень её и посмотри на рамку снова'); if (!G.flag('eri_tr_hint')) { G.set('eri_tr_hint', 1); await G.run(['erika: (из-за двери) Варя, у тебя ведь есть эти твои маски? Трагедия видит то, что спрятали. Попробуй.']); } } });
+    R.inter('frameTr', 1.2, -2.6, { label: 'Перевёрнутая фотография', mask: 'tragedy', photo: 'Мэй и Лидия', fn: async (G) => { // фото-воспоминание: крупно, вспышка, и серое на миг теплеет
+      const p0 = G.cam.pitch, y0 = G.cam.yOff; G.sfx('mask'); void camMove(G, { x: 1.2, z: -2.9, dist: 7.2, pitch: 0.4, yOff: 1.4 }, 1.2); await G.run(E.meiPhotoTr.slice(0, 1)); G.flash(0.3); G.sfx('note');
+      void warmOn(G, { grade: { sat: 0.45, vig: 0.5 }, int: 10, dur: 1.4 }); await G.run(E.meiPhotoTr.slice(1)); await warmOff(G); await camBack(G, p0, y0); } });
     { const wt = canvasTex(28, 44, (c) => { px(c, 0, 0, 28, 44, '#1a1a1a'); px(c, 1, 1, 26, 42, '#6a6a66'); px(c, 1, 1, 26, 3, '#8a8a86'); for (const dx of [2, 15]) { px(c, dx, 6, 11, 34, '#4a4a48'); px(c, dx, 6, 11, 1, '#9a9a96'); px(c, dx, 39, 11, 1, '#2a2a28'); px(c, dx + 2, 9, 7, 12, '#5a5a58'); px(c, dx + 2, 24, 7, 12, '#5a5a58'); } px(c, 4, 10, 7, 26, '#a8a8a8'); px(c, 5, 11, 1, 24, '#e8e8e8'); px(c, 12, 20, 1, 4, '#d8d8c8'); px(c, 15, 20, 1, 4, '#d8d8c8'); px(c, 1, 41, 26, 2, '#2a2a28'); for (let i = 0; i < 30; i++) px(c, Math.floor(hsh(i, 81) * 28), Math.floor(hsh(i, 82) * 44), 1, 1, '#3a3a38'); }, 'nwardrobe');
       const wm = pbox(R, -5.4, -0.4, 2.2, 1.0, 3.4, wt, { side: 0x4a4a48, top: 0x5a5a58 }); wm.rotation.y = Math.PI / 2; R.box(-5.4, -0.4, 1.2, 2.4, 0.2, { tex: 'darkwood', tint: '#8a8a8a', y: 3.4, solid: false }); R.sprite('suitcase', -5.2, 1.6, { scale: 1.1 }); R.sprite(canvasTex(10, 8, (c) => { px(c, 0, 2, 10, 6, '#3a3a3a'); px(c, 1, 0, 8, 3, '#8a8a8a'); px(c, 2, 1, 6, 1, '#d8d8d8'); }, 'nhatbox'), -5.2, -2.0, { scale: 1.2 }); } costumeRack(R, 4.2, -1.6, 2.2, 7); screen3D(R, 4.0, 2.4, { ry: -0.5, col: '#9a9a9a' });
     R.sprite('flowerpot', 4.6, -3.8, { scale: 1.4 }); R.sprite('bouquet', -1.8, -3.9, { scale: 0.9, y: 0 }); R.sprite('chair', 0, -2.5, { scale: 1.1 });
@@ -389,15 +440,30 @@ const platform: RoomDef = {
     R.box(-12, 3.8, 1.8, 1.0, 0.6, { tex: 'darkwood', tint: '#6a6a6a' }); R.box(-12, 3.8, 1.4, 0.8, 0.5, { tex: 'paper', tint: '#7a7a72', y: 0.6, solid: false }); R.sprite('suitcase', -10.8, 4.0, { scale: 1.1 });
     const ps = canvasTex(200, 28, (c) => { px(c, 0, 0, 200, 28, '#111'); c.strokeStyle = '#ccc'; c.lineWidth = 2; c.strokeRect(1, 1, 198, 26); ptext(c, 'ПУТЬ 1 · К МОРЮ · 00:00', 100, 6, { size: 15, col: '#f0f0f0', align: 'center' }); }, 'npath2'); plane(R, ps, -2, 4.3, 1.8, 4.2, 0.9, { basic: true, col: 0xc8c8c8 }); for (const sx of [-3.8, -0.2]) R.box(sx, 1.8, 0.05, 0.05, 1.0, { tex: 'metal', y: 4.75, solid: false, cast: false });
     R.particles('dust', { count: 140, top: 5, color: 0xffffff, name: 'steam' });
+    // кино: контровой свет из вагона за Лидией (силуэт) и тёплый ключ для прощания
+    { const gl = new THREE.Mesh(new THREE.PlaneGeometry(5, 5), new THREE.MeshBasicMaterial({ map: canvasTex(64, 64, (c) => { const g = c.createRadialGradient(32, 32, 2, 32, 32, 32); g.addColorStop(0, 'rgba(255,250,235,1)'); g.addColorStop(0.35, 'rgba(255,245,225,.45)'); g.addColorStop(1, 'rgba(255,240,220,0)'); c.fillStyle = g; c.fillRect(0, 0, 64, 64); }, 'eriBackGlow'), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
+      gl.position.set(8.8, 2.2, -2.6); R.room.group.add(gl); R.room.named.lydGlow = gl; R.light(9.4, 2.4, -3.2, 0xfff4e0, 0, 8, { name: 'lydBack', force: true }); }
+    warmRig(R, 6.6, -1.6, { col: 0xffb868, count: 110, y: 3 });
     R.actor('lydia', 8.4, -1.8, { id: 'lydia', dir: 'l' }); R.sprite('suitcase', 9.2, -1.6, { scale: 1.2 });
     const er = R.actor('erika_noir', -12, 1, { id: 'erika' }); G.follow(er);
     R.trigger(2, -5, 6, 5, platformScene); R.spawn('start', -14, 1, 'r');
   },
 };
 async function platformScene(G: any) {
-  const ly = G.actor('lydia'), er = G.actor('erika'); G.unfollow(er); await er.walkTo(5.6, -1.4, 3); er.face(ly.x, ly.z); G.player.face(ly.x, ly.z); G.focus(6, -1.4, 16);
-  await G.run(E.platform); await G.run(E.choice.slice(0, 1)); await G.run(E.choice.slice(1, 4));
-  G.sfx('bell'); await ly.walkTo(16, -2.6, 2); ly.hidden = true; G.sfx('engine'); G.shake(0.2); await G.run(E.choice.slice(4)); await G.run(G.f.eri_false ? E.endFalse : E.endTrue); G.unfocus();
+  const ly = G.actor('lydia'), er = G.actor('erika'), nm = G.room.named, glow = nm.lydGlow, back = nm.lydBack, lm = ly.mesh.material as THREE.MeshLambertMaterial; G.unfollow(er);
+  // кадр 1: низкий широкий план, Лидия силуэтом на фоне света из вагона
+  G.grade({ vig: 0.9, contrast: 1.25 }); void camMove(G, { x: 4, z: -1.2, dist: 19, pitch: 0.3, yOff: 2.2 }, 1.6);
+  void tween(G, 2.4, (k) => { if (glow) glow.material.opacity = 0.85 * k; if (back) back.intensity = 24 * k; lm.color.setScalar(1 - 0.62 * k); });
+  await er.walkTo(5.6, -1.4, 3); er.face(ly.x, ly.z); G.player.face(ly.x, ly.z);
+  // кадр 2: медленный наезд, пока Лидия рассказывает
+  void camMove(G, { x: 7, z: -1.6, dist: 10.5 }, 10); await G.run(E.platform); await G.run(E.platformMask); await G.run(E.choice.slice(0, 1));
+  await camMove(G, { x: 7.4, z: -1.7, dist: 8.2, pitch: 0.36, yOff: 1.9 }, 1.4); await G.run(E.choice.slice(1, 2)); await G.wait(0.9);
+  // «…Спасибо»: силуэт оживает, в серый перрон приходит тёплый свет
+  void tween(G, 2.2, (k) => { lm.color.setScalar(0.38 + 0.62 * k); if (glow) glow.material.opacity = 0.85 - 0.45 * k; }); void warmOn(G, { grade: { sat: 0.7, vig: 0.55, contrast: 1.08 }, int: 22, dur: 2.6, music: 'morning' });
+  await G.run(E.choice.slice(2, 4));
+  // кадр 3: поезд уходит, камера медленно отъезжает
+  G.sfx('bell'); void camMove(G, { x: 9, z: -1.8, dist: 17, pitch: 0.44, yOff: 1.6 }, 4.5); await ly.walkTo(16, -2.6, 2); ly.hidden = true; G.sfx('engine'); G.shake(0.2); G.flash(0.18);
+  await G.run(E.choice.slice(4)); await G.wait(0.7); await G.run(G.f.eri_false ? E.endFalse : E.endTrue); await camBack(G, 0.56, 1.2, 1.4);
   G.sfx('applause', { dur: 3 });
   await finishChapter(G, 'erika', [['THE CITY NEVER SLEEPS', 'act'], 'Эрика закрыла дело по-своему.', ['Иногда пропавший человек просто нашёл выход.', 'sm']]);
 }

@@ -4,11 +4,53 @@
 import * as THREE from 'three';
 import type { RoomDef, Builder } from '../world/room';
 import { canvasTex, ptext, tex } from '../gfx/tex';
-import { L } from '../data/dialogue/lisa';
+import { L, LCUE } from '../data/dialogue/lisa';
 import { timing } from '../ui/minigames';
 import { finishChapter, actOf, fog } from './common';
 import { window3D, armchair, mirror3D, bookshelf } from '../world/decor3d';
 import { chandelier, clutterTex, PROPTEX } from '../world/decor';
+
+// ---------- кино: тёплый свет в нежные моменты, медленная камера, паузы (всё мгновенно в G.fast) ----------
+const WARM = { tint: [1.12, 1.0, 0.86], sat: 1.1, bloom: 0.9, vig: 0.35, bright: 1.05 };
+function tween(G: any, dur: number, fn: (k: number) => void): Promise<void> {
+  const room = G.room; if (G.fast || !room || dur <= 0) { fn(1); return Promise.resolve(); }
+  return new Promise((res) => { let t = 0, done = false; const u = (dt: number) => { t += dt; const k = Math.min(1, t / dur); fn(k * k * (3 - 2 * k)); if (k >= 1) end(); };
+    const end = () => { if (done) return; done = true; if (G.room === room) fn(1); const i = room.updaters.indexOf(u); if (i >= 0) room.updaters.splice(i, 1); res(); };
+    room.updaters.push(u); setTimeout(end, dur * 1000 + 1500); });
+}
+/** Медленный наезд/отъезд: фокус, дистанция и ракурс камеры плавно меняются за dur секунд. */
+let camTok = 0;
+function camMove(G: any, to: { x?: number; z?: number; dist?: number; pitch?: number; yOff?: number }, dur = 2): Promise<void> {
+  const my = ++camTok, c = G.cam, f0 = c.focus ? { ...c.focus } : { x: c.x, z: c.z, dist: c.dist }, p0 = c.pitch, y0 = c.yOff, L = (a: number, b: number | undefined, k: number) => b === undefined ? a : a + (b - a) * k;
+  return tween(G, dur, (k) => { if (my !== camTok) return; G.focus(L(f0.x, to.x, k), L(f0.z, to.z, k), L(f0.dist, to.dist, k)); c.pitch = L(p0, to.pitch, k); c.yOff = L(y0, to.yOff, k); });
+}
+/** Вернуть ракурс комнаты и отпустить фокус. */
+async function camBack(G: any, pitch = 0.56, yOff = 1.2, dur = 1.2) { const my = ++camTok, p0 = G.cam.pitch, y0 = G.cam.yOff; await tween(G, dur, (k) => { if (my !== camTok) return; G.cam.pitch = p0 + (pitch - p0) * k; G.cam.yOff = y0 + (yOff - y0) * k; }); G.unfocus(); }
+/** Тёплый «ключевой» свет и золотые пылинки: спрятаны, пока не наступит нежный момент. */
+function warmRig(R: Builder, x: number, z: number, o: { col?: number; kind?: 'dust' | 'petals' | 'sparks'; pcol?: number; y?: number; count?: number } = {}) {
+  R.light(x, o.y ?? 3.4, z + 1.6, o.col ?? 0xffc078, 0, 13, { name: 'warmKey', force: true });
+  const m = R.particles(o.kind || 'dust', { count: o.count ?? 90, top: 6, color: o.pcol ?? 0xffd890, name: 'warmMotes' }); m.visible = false; const mm = m.material as THREE.PointsMaterial; mm.opacity = 0; if ((o.kind || 'dust') === 'dust') mm.size = 0.12;
+}
+let warmPrev: any = null;
+/** Нежный момент: грейд теплеет, загорается тёплый ключ, в воздухе золотая пыль; по желанию, тихая музыка. */
+async function warmOn(G: any, o: { int?: number; grade?: any; music?: string; dur?: number } = {}) {
+  if (!G.room) return; if (!warmPrev || warmPrev.room !== G.room) warmPrev = { room: G.room, grade: { ...G.gradeBase }, music: G.audio.cur?.id ?? null, noir: document.body.classList.contains('noir-mode') };
+  G.grade({ ...WARM, ...o.grade }); if ((o.grade?.sat ?? WARM.sat) > 0.3) document.body.classList.remove('noir-mode'); if (o.music) G.audio.music(o.music, { fade: 2.5 });
+  const l = G.room.named.warmKey, m = G.room.named.warmMotes; if (m) m.visible = true; const i0 = l?.intensity || 0, o0 = m?.material.opacity || 0, I = o.int ?? 16;
+  await tween(G, o.dur ?? 1.6, (k) => { if (l) l.intensity = i0 + (I - i0) * k; if (m) m.material.opacity = o0 + (0.75 - o0) * k; });
+}
+async function warmOff(G: any, dur = 1.4) {
+  const p = warmPrev; warmPrev = null; if (!p || G.room !== p.room) return;
+  G.gradeBase = p.grade; G.applyGrade(); if (p.noir) document.body.classList.add('noir-mode'); if (p.music !== (G.audio.cur?.id ?? null)) G.audio.music(p.music, { fade: 2 });
+  const l = G.room.named.warmKey, m = G.room.named.warmMotes, i0 = l?.intensity || 0, o0 = m?.material.opacity || 0;
+  await tween(G, dur, (k) => { if (l) l.intensity = i0 * (1 - k); if (m) m.material.opacity = o0 * (1 - k); }); if (m && !warmPrev) m.visible = false;
+}
+/** Первая подсказка про маски в главе (один раз). */
+function maskHint(G: any, key: string, text: string) { if (G.f['mhint_' + key]) return; G.f['mhint_' + key] = 1; G.toast(text, '◐'); }
+// метки из диалога: зеркальце в Драме (крупный план и тёплое «будущее»), пауза перед «Нет.»
+LCUE.mirrorDr = async (G: any) => { G.sfx('mask'); G.f.liz_mp = [G.cam.pitch, G.cam.yOff]; void camMove(G, { x: 1, z: -3.2, dist: 7.4, pitch: 0.4, yOff: 2.2 }, 1.2); await warmOn(G, { int: 12, dur: 1.2 }); };
+LCUE.mirrorDrEnd = async (G: any) => { const p = G.f.liz_mp || [0.56, 1.2]; delete G.f.liz_mp; await warmOff(G); await camBack(G, p[0], p[1]); };
+LCUE.beat = (G: any) => { G.audio.music(null, { fade: 1.2 }); void camMove(G, { x: -2, z: 1, dist: 9, pitch: 0.34, yOff: 1.9 }, 1.6); };
 
 // ---------------- акварель: общие кисти ----------------
 type DC = CanvasRenderingContext2D;
@@ -313,17 +355,20 @@ const base: RoomDef = {
     for (const [x, z] of [[-8.6, 3.8], [6.6, 4.4], [-3.4, -3]]) R.sprite(flTex('rosebush'), x, z, { scale: 1.1, thin: true });
     for (const [x, z] of [[-12.2, 2.4], [-4.2, 5.2], [10.8, 4.4]]) R.sprite(flTex('mushroom'), x, z, { scale: 1, thin: true });
     ink(R, 'облака', -7, 9.6, 4, -8); ink(R, 'башня (очень высокая)', 10.4, 9.6, 8, -4);
-    R.npc('fairy', -3, 1.4, { talk: ['fairy: Ждать, это искусство, милочка. Я жду принца для принцессы уже двести страниц. И ничего, держусь.'] });
+    R.npc('fairy', -3, 1.4, { talk: async (G: any) => { await G.run(['fairy: Ждать, это искусство, милочка. Я жду принца для принцессы уже двести страниц. И ничего, держусь.']);
+      if (G.state.mask === 'comedy' && !G.f.liz_fairy_c) { G.f.liz_fairy_c = 1; const p0 = G.cam.pitch, y0 = G.cam.yOff; G.sfx('laugh', { n: 5, f: 700, vol: 0.3 }); await camMove(G, { x: -3, z: 2, dist: 9, pitch: 0.36, yOff: 2 }, 0.9); await G.run(L.fairyC); G.toast('Фея проболталась: это пригодится внизу', '◐'); await camBack(G, p0, y0); }
+      else if (!G.state.mask) maskHint(G, 'liz_c', 'Фея что-то недоговаривает. Маска Комедии (1) развязывает язык'); } });
+    warmRig(R, 5.4, 1, { kind: 'petals', pcol: 0xffd0a0, count: 90, col: 0xffc070, y: 4 });
     R.inter('call', TX, TZ + TR + 0.7, { label: f.liz_hair ? 'Подняться по косе' : 'Позвать Лизу', fn: async (G) => { if (!f.liz_hair) { await G.run(L.call); f.liz_hair = 1; G.sfx('rope'); await G.rebuild(); return; } await G.run(L.climb); G.sfx('rope'); await G.goto('liz_top', 'start', { fade: 'page' }); } });
     R.spawn('start', -2, 3, 'r'); R.spawn('ground', TX, TZ + TR + 1.6);
   },
-  async enter(G) { if (!G.f.intro_liz) G.f.intro_liz = 1; if (G.f.intro_liz === 1 && (G.f.intro_liz = 2)) { G.focus(TX - 1, TZ + 1, 34); await G.run(L.arrive); G.unfocus(); } },
+  async enter(G) { if (!G.f.intro_liz) G.f.intro_liz = 1; if (G.f.intro_liz === 1 && (G.f.intro_liz = 2)) { G.focus(TX - 1, TZ - 1, 44); G.camSnap(); void camMove(G, { x: TX - 1, z: TZ + 1, dist: 30 }, 9); await G.run(L.arrive); G.unfocus(); } },
 };
 // ---------------- покои принцессы ----------------
 const top: RoomDef = {
   name: 'Покои принцессы', w: 16, d: 10, music: 'fairy', amb: 'wind', step: 'wood', grade: BOOK,
   build(R, G) {
-    fairyRoom(R, G); R.light(0, 5, 1, 0xfff0d0, 10, 12);
+    fairyRoom(R, G); R.light(0, 5, 1, 0xfff0d0, 10, 12); warmRig(R, -2.6, 1.2, { kind: 'petals', pcol: 0xffc8d8, count: 60 });
     hairTrail(R, G); fairyRug(R, -0.6, 1.4, 6, 4.4, { a: '#7a5a9a', b: '#e8c890', c: '#c86a8a', d: '#4a2a5a' }, 'top');
     { const w = window3D(R, -4, { wall: 'n', y: 3.2, w: 2, h: 2.8, night: false, curtains: true }); const v = towerView(); w.traverse((o: any) => { if (o.isMesh && o.material?.isMeshBasicMaterial && o.material.map) o.material.map = v; }); }
     bookshelf(R, -6.7, -4.5, { w: 1.9, h: 3.4, shelves: 4 }); armchair(R, -5.4, 2.6, { col: 0xb58ad0, ry: 0.5 });
@@ -344,15 +389,18 @@ const top: RoomDef = {
       const kl = new THREE.PointLight(0xffd070, 4, 4, 1.5); kl.position.set(0, 0.4, 0.4); k.add(kl);
       const string = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.8, 3), lam({ color: 0xd4ae48 })); string.position.set(0, 1.25, 0); k.add(string);
       R.onUpdate((_, t) => { k.position.y = 3.85 + Math.sin(t * 1.6) * 0.06; k.rotation.z = Math.sin(t * 1.1) * 0.08; }); }
-    R.inter('lasso', -1, 1.4, { label: 'Ключ на люстре', cond: () => !G.has('tower_key'), fn: async (G) => { await G.run(L.lassoAsk); const r = await timing({ title: 'Лассо из косы', sub: 'Лиза бросает, скажи «сейчас!»', zone: 0.2, speed: 1.1 }); if (r === 'miss') { G.sfx('crash'); return G.run(L.lassoMiss); } G.sfx('rope'); G.room.named.keySpr.visible = false; G.give('tower_key'); await G.run(L.lassoOk); } });
+    R.inter('lasso', -1, 1.4, { label: 'Ключ на люстре', cond: () => !G.has('tower_key'), fn: async (G) => { await G.run(L.lassoAsk); const r = await timing({ title: 'Лассо из косы', sub: 'Лиза бросает, скажи «сейчас!»', zone: 0.2, speed: 1.1 }); if (r === 'miss') { G.sfx('crash'); return G.run(L.lassoMiss); } G.sfx('rope'); const p0 = G.cam.pitch, y0 = G.cam.yOff; await camMove(G, { x: -1, z: 0.6, dist: 8.5, pitch: 0.3, yOff: 3.2 }, 0.6); G.flash(0.35); G.sfx('bell'); G.room.named.keySpr.visible = false; G.give('tower_key'); await G.wait(0.4); await G.run(L.lassoOk); await camBack(G, p0, y0, 0.8); } });
     R.door('down', 5.6, { label: 'Дверь вниз', z: -4.96, col: '#6a4a2a', cond: () => G.has('tower_key'), locked: ['~: Заперто. Ключ, на люстре.'], fn: async (G) => { await G.run(L.door); G.sfx('door'); await G.goto('liz_mid', 'start', { fade: 'page' }); } });
     lizaNPC(R, G, -2.6, 1.6); R.spawn('start', -4, 2.4, 'b');
   },
-  async enter(G) { if (!G.f.liz_top) { G.f.liz_top = 1; await G.run(L.top); } },
+  async enter(G) { if (!G.f.liz_top) { G.f.liz_top = 1; // встреча: тёплый свет и лепестки на объятии
+      void camMove(G, { x: -3, z: 1.8, dist: 10, pitch: 0.42, yOff: 1.8 }, 1.4); await warmOn(G, { int: 14, dur: 1.2 }); await G.run(L.top.slice(0, 2)); await warmOff(G); await camBack(G); await G.run(L.top.slice(2));
+      maskHint(G, 'liz_dr', 'Зеркальце врёт по сюжету. Маска Драмы (3) покажет, как всё на самом деле'); } },
 };
 // ---------------- механизм башни ----------------
 const mid: RoomDef = {
   name: 'Механизм башни', w: 28, d: 10, music: 'fairy', amb: 'wind', step: 'wood', grade: { ...BOOK, tint: [1.02, 0.98, 0.9] },
+  async enter(G) { maskHint(G, 'liz_tr', 'На стенах башни кто-то что-то закрасил. Маска Трагедии (2) видит спрятанное'); },
   build(R, G) {
     const f = G.f; const W = R.w, D = R.d, H = 16, F = 26; R.room.group.userData.bg = 0x0c0810;
     // стены как в fairyRoom, но пол только по берегам провала
@@ -381,6 +429,9 @@ const mid: RoomDef = {
       if (G.has('gear')) { G.take('gear'); f.liz_gear = 1; G.sfx('gear'); } if (G.has('weight')) { G.take('weight'); f.liz_weight = 1; G.sfx('crash'); }
       if (!f.liz_gear || !f.liz_weight) { if (!f.liz_seen_lift) { f.liz_seen_lift = 1; await G.run(L.gearHole); } await G.rebuild(); return G.run(L.liftNeed(!!f.liz_gear, !!f.liz_weight)); }
       await G.run(L.liftReady); G.sfx('gear'); G.shake(0.2); await G.goto('liz_ground', 'start', { fade: 'page' }); } });
+    // Трагедия: закрашенные палочки-дни на стене, видны только в маске
+    R.decal(canvasTex(64, 32, (c) => { c.clearRect(0, 0, 64, 32); c.fillStyle = '#5a2a2a'; for (let i = 0; i < 46; i++) { const gx = (i % 10) * 6 + 2, gy = Math.floor(i / 10) * 6 + 2; for (let k = 0; k < 4; k++) c.fillRect(gx + k, gy, 1, 5); c.fillRect(gx - 1, gy + 2 + (i % 2), 6, 1); } }, 'ltally'), { x: -8, y: 2.4, z: -4.94, w: 3.2, h: 1.6, mask: 'tragedy', noSlot: true });
+    R.look('tally', -8, -3.8, 'Царапины на стене', [(G: any) => { void camMove(G, { x: -8, z: -3.4, dist: 8, pitch: 0.32, yOff: 2.4 }, 1); G.sfx('mask'); }, ...L.tallyTr, (G: any) => { G.f.liz_tally = 1; return camBack(G); }], { mask: 'tragedy' });
     lizaNPC(R, G, -10.8, -1); R.spawn('start', -12, -1, 'r');
   },
 };
@@ -388,7 +439,7 @@ const mid: RoomDef = {
 const ground: RoomDef = {
   name: 'Нижний ярус', w: 26, d: 11, music: 'fairy', amb: 'wind', step: 'stone', grade: BOOK,
   build(R, G) {
-    const f = G.f; fairyRoom(R, G, { cold: true, floor: tileTex('cold', ['#c89a78', '#b88a6a', '#d0a888', '#bc9478'], ['#8aa0c0', '#e8d8b8'], '#5a4030') }); R.light(0, 4, 0.5, 0xfff0d0, 14, 14);
+    const f = G.f; warmRig(R, -2, 1, { kind: 'petals', pcol: 0xffd8a0, count: 100, col: 0xffc880 }); fairyRoom(R, G, { cold: true, floor: tileTex('cold', ['#c89a78', '#b88a6a', '#d0a888', '#bc9478'], ['#8aa0c0', '#e8d8b8'], '#5a4030') }); R.light(0, 4, 0.5, 0xfff0d0, 14, 14);
     hairTrail(R, G); fairyRug(R, 0, 1.4, 7, 4.6, { a: '#3a6a6a', b: '#e8d0a0', c: '#d86a5a', d: '#1e3a3a' }, 'ground');
     R.door('exit', 0, { label: f.liz_cut ? 'Наружу' : 'Дверь «Только принцам»', col: '#6a4a2a', w: 3.2, h: 4.0, sign: 'ПРИНЦАМ', cond: () => !!f.liz_cut, locked: ['liza_long: С этими волосами я не пролезу. Но сначала, поговорим с Феей.'], fn: outside });
     ink(R, 'ВЫХОД ТОЛЬКО ПРИНЦАМ', 0, 4.95, 8, -5.45);
@@ -406,7 +457,11 @@ const ground: RoomDef = {
   async enter(G) { if (!G.f.liz_gr) { G.f.liz_gr = 1; await groundScene(G); } },
 };
 async function groundScene(G: any) {
-  if (G.f.liz_cut) return; await G.run(L.ground); await G.run(L.choice); G.sfx('snip'); await G.run(L.cut.slice(0, 1)); G.f.liz_cut = 1; G.actor('liza').setChar('liza_short'); G.sfx('snip'); await G.run(L.cut.slice(1)); await G.rebuild();
+  if (G.f.liz_cut) return; void camMove(G, { x: 1, z: 0, dist: 15, pitch: 0.46, yOff: 1.6 }, 1.6); await G.run(L.ground); await G.run(L.groundMask); G.audio.music('fairy', { fade: 1.5 }); await G.run(L.choice);
+  // стрижка: низкий крупный план, тишина, щелчок, вспышка; потом тёплый свет и музыкальная шкатулка
+  G.audio.music(null, { fade: 0.8 }); await camMove(G, { x: -2, z: 1.2, dist: 7.6, pitch: 0.3, yOff: 1.7 }, 1.2); await G.wait(0.9);
+  G.sfx('snip'); G.flash(0.45); G.shake(0.15); await G.run(L.cut.slice(0, 1)); G.f.liz_cut = 1; G.actor('liza').setChar('liza_short'); G.sfx('snip'); await G.wait(0.5);
+  void warmOn(G, { int: 18, dur: 2.2, music: 'musicbox' }); void camMove(G, { dist: 9.5, pitch: 0.4, yOff: 1.8 }, 5); await G.run(L.cut.slice(1)); await warmOff(G, 0.6); await camBack(G, 0.56, 1.2, 0.6); await G.rebuild();
 }
 async function outside(G: any) {
   await G.goto('liz_base', 'ground', { fade: 'page' }); const B = new (await import('../world/room')).Builder(G.room, G);
@@ -414,7 +469,10 @@ async function outside(G: any) {
   const horse = B.sprite('horse', -18, 3, { scale: 1.6 }); const pr = B.actor('prince', -18, 3.2, { id: 'prince' }); pr.y = 0.9; G.focus(-2, 2, 22);
   await G.wait(0.4); G.sfx('engine'); const t0 = performance.now();
   await new Promise<void>((res) => { const tick = () => { const k = Math.min(1, (performance.now() - t0) / 1800); horse.position.x = -18 + k * 16; pr.x = horse.position.x; if (k < 1) requestAnimationFrame(tick); else res(); }; tick(); });
-  pr.face(lz.x, lz.z); await G.run(L.prince); G.unfocus(); G.sfx('applause', { dur: 3 });
+  pr.face(lz.x, lz.z); await G.run(L.prince.slice(0, 6));
+  // «Куда захочу»: наезд на Лизу, золотой час над лугом
+  await camMove(G, { x: 4.4, z: 1.6, dist: 11, pitch: 0.3, yOff: 2.2 }, 1.4); await G.wait(0.6); void warmOn(G, { int: 20, dur: 2.4, music: 'musicbox', grade: { bloom: 1.0 } });
+  await G.run(L.prince.slice(6)); await camBack(G, 0.27, 4.4, 1.4); G.sfx('applause', { dur: 3 });
   await finishChapter(G, 'liza', [['THE TOWER IS NOT A HOME', 'act'], 'Лиза вышла сама. Принц опоздал, спасать было некого.', ['Не всякая башня, дом. Даже если она очень красивая.', 'sm']]);
 }
 export const rooms: Record<string, RoomDef> = { liz_base: base, liz_top: top, liz_mid: mid, liz_ground: ground };
