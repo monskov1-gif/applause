@@ -9,7 +9,9 @@ import { charSheet, FW as FW0, FH as FH0, SS } from '../gfx/sprites';
 const FW = FW0 * SS, FH = FH0 * SS;
 import { P } from '../data/dialogue/polina';
 import { lock } from '../ui/minigames';
-import { finishChapter, carriedLight, rainy, fog, actOf } from './common';
+import { finishChapter, carriedLight, rainy, fog, actOf, chapterHud, bar } from './common';
+/** Блокнот хоррора: сколько правил Варя держит включёнными и как ведёт себя дом. */
+function hud(G: any) { if (!G.f.pol_in) return; chapterHud(G, 'pol_', (f) => { const on = Math.max(0, 3 - (f.pol_off || 0)); return f.pol_dark ? 'ПОЛИНА СЛУШАЕТ ДОМ: щёлк · скрип · тень · дверь' : `ПРАВИЛА ХОРРОРА <span style="color:#9ad0ff">${bar(on, 3)}</span> · Дом: ${(f.pol_off || 0) >= 2 ? 'импровизирует' : (f.pol_rule || 0) >= 2 ? 'по сценарию' : 'присматривается'}`; }); }
 import { rug, sconce, piano, vanity, chandelier } from '../world/decor';
 import { wardrobe, bookshelf, sofa, armchair, window3D, coatStand, mirror3D } from '../world/decor3d';
 import { ctw, dolly, angle, glowTex, warmOn, warmKey, maskHint } from './cine';
@@ -467,7 +469,7 @@ const hall: RoomDef = {
     R.door('gal', 8, { to: 'pol_gallery', label: 'Галерея', col: '#7a5236', cond: () => !!f.pol_dark && !f.pol_light, locked: ['polina/worried: Варь, там галерея. Давай не будем туда, пока можно не туда.'] });
     R.door('basement', 2.5, { label: f.pol_dark ? 'Засов подвала' : 'Дверь в подвал (замок с дисками)', col: '#7a7a88', fn: async (G) => {
       if (f.pol_dark) { if (!f.pol_light) return G.run(P.basementBolt); return polinaFree(G); }
-      if (f.pol_open) return G.goto('pol_basement'); if (!f.pol_book) return G.run(P.basementLocked);
+      if (f.pol_open) return G.goto('pol_basement'); if (!f.pol_ruleDoor) { f.pol_ruleDoor = 1; await G.run(P.basementLocked); await G.run(P.ruleDoor); G.sfx('laugh', { n: 3, f: 320, vol: 0.2 }); if (!f.pol_book) return; } if (!f.pol_book) return G.run(P.basementLocked);
       const found = PORTRAITS.filter((p) => p.lie && f['pol_an_' + p.id]).sort((x, y) => +x.year - +y.year);
       const r = await lock({ title: 'Замок подвала', hint: `Три диска. Знаки трёх портретов-лжецов, по году: от самого давнего к самому новому.${found.length ? '<br><i>Блокнот: ' + found.map((p) => '«' + p.name + '», ' + p.year + ', знак ' + p.sym).join('; ') + '</i>' : '<br><i>Блокнот пока пуст. Портреты в библиотеке, смотреть через камеру.</i>'}`, symbols: SYMS, len: 3, answer: ANSWER });
       if (!r) return; if (r.join() === ANSWER.join()) { G.sfx('ok'); await G.run(P.lockRight); f.pol_open = 1; await G.goto('pol_basement'); } else { G.sfx('laugh', { n: 7 }); G.shake(0.2); await G.run(P.lockWrong); } } });
@@ -478,7 +480,7 @@ const hall: RoomDef = {
     // часы, зеркало с консолью, вешалка, скамья
     R.sprite(canvasTex(14, 40, (c) => { c.fillStyle = '#3a2a1c'; c.fillRect(0, 0, 14, 40); c.fillStyle = '#e8e0c8'; c.fillRect(2, 2, 10, 10); c.fillStyle = '#111'; c.fillRect(6, 3, 1, 5); c.fillRect(6, 7, 4, 1); c.fillStyle = '#86641c'; c.fillRect(5, 16, 4, 14); }, 'gclock'), 10.6, -5.3, { scale: 1.3, solid: 0.5 });
     R.look('clock', 10.6, -4.3, 'Напольные часы', P.clock, { mask: 'none' }); R.look('clockC', 10.6, -4.3, 'Часы (кашляют)', P.clockCom, { mask: 'comedy', egg: 'clock13' });
-    R.table(-3.8, -5.4, 2.4, 0.7, { tex: 'wood', tint: '#8a6448' }); mirror3D(R, -3.8, 3.3, -5.94, 1.6, 2.2, {}); R.look('hmirror', -3.8, -4.4, 'Зеркало', async (G) => { await G.run(P.mirrorHall); if (!f.pol_dark) maskHint(G, 'pol_mirror', 'Маска Драмы (3) показала бы, какое это отражение на самом деле', '♦'); }, { cond: () => G.state.mask !== 'drama' || !!f.pol_dark });
+    R.table(-3.8, -5.4, 2.4, 0.7, { tex: 'wood', tint: '#8a6448' }); mirror3D(R, -3.8, 3.3, -5.94, 1.6, 2.2, {}); R.look('hmirror', -3.8, -4.4, 'Зеркало', async (G) => { if (f.pol_ruleMir || f.pol_dark) await G.run(f.pol_dark ? P.mirrorHall.slice(0, 2) : P.mirrorAgain); else { f.pol_ruleMir = 1; await G.run(P.mirrorHall); await G.run(P.ruleMirror); if (f.pol_laugh) { G.sfx('crash'); G.flash(0.3); G.note('n_pol_page'); } } if (!f.pol_dark) maskHint(G, 'pol_mirror', 'Маска Драмы (3) показала бы, какое это отражение на самом деле', '♦'); }, { cond: () => G.state.mask !== 'drama' || !!f.pol_dark });
     R.look('hmirrorD', -3.8, -4.4, 'Зеркало (Драма)', mirrorDrama, { mask: 'drama', cond: () => !f.pol_dark }); warmKey(R, -3.8, 3.2, -2.6, 9);
     R.sprite('candle', -4.6, -5.4, { y: 1.15, scale: 1.1 }); R.sprite(canvasTex(10, 12, (c) => { px(c, 3, 6, 4, 6, '#3a2a4a'); px(c, 2, 5, 6, 1, '#5a4a6a'); px(c, 1, 0, 3, 4, '#8e1830'); px(c, 5, 1, 3, 4, '#c8a0c0'); px(c, 4, 3, 2, 3, '#2e5038'); }, 'vase'), -3.0, -5.4, { y: 1.15, scale: 1.2, thin: true });
     coatStand(R, 11.0, 0.1, [0x2a2a30, 0xe8c230]); R.look('coat', 10.2, 0.6, 'Вешалка', P.coat);
@@ -497,7 +499,7 @@ const hall: RoomDef = {
   async enter(G, from) {
     const f = G.f; if (f.pol_dark && !f.pol_dark_seen) { f.pol_dark_seen = 1; G.grade(DARK, true); await G.run(P.polinaStart); return; }
     if (f.pol_dark && !f.pol_light) G.grade(DARK, true);
-    if (from === 'pol_porch' && !f.pol_in) { f.pol_in = 1; G.sfx('door'); G.shake(0.5); G.flash(0.2); await G.run(P.slam); G.sfx('laugh', { n: 5, f: 380, vol: 0.18 }); await G.run(P.enterHall); }
+    if (from === 'pol_porch' && !f.pol_in) { f.pol_in = 1; G.sfx('door'); G.shake(0.5); G.flash(0.2); await G.run(P.slam); G.sfx('laugh', { n: 5, f: 380, vol: 0.18 }); await G.run(P.enterHall); G.mech('rules'); } hud(G);
   },
 };
 
@@ -531,7 +533,7 @@ const living: RoomDef = {
     R.door('hall', -2.6, { wall: 'w', to: 'pol_hall', spot: 'liv', label: 'В прихожую', col: '#7a5236' });
     R.spawn('hall', -8.2, -2.6, 'r'); R.spawn('start', -8.2, -2.6, 'r');
   },
-  async enter(G) { if (!G.f.pol_liv) { G.f.pol_liv = 1; await G.run(P.living); } },
+  async enter(G) { hud(G); if (!G.f.pol_liv) { G.f.pol_liv = 1; await G.run(P.living); } },
 };
 
 // ---------------- 5. библиотека: портреты и Хозяин ----------------
@@ -559,7 +561,7 @@ const library: RoomDef = {
     R.table(0, 0.4, 3, 1.3, { tex: 'darkwood' }); R.sprite('bookstand', 0, 0.4, { y: 1.15, scale: 1.1 }); R.sprite('candle', -1.1, 0.3, { y: 1.15, scale: 1.1 }); R.light(-1.1, 1.8, 0.6, 0xffc070, 3, 4, { flicker: 0.3 });
     armchair(R, -2.6, 1.6, { col: 0xb06060, ry: Math.PI + 0.4 }); armchair(R, 2.6, 1.6, { col: 0xb06060, ry: Math.PI - 0.4 }); oldHouse(R, G, { h: 6, base: '#4a2e1c' });
     R.sprite('lamp', -10.6, 4.4, { scale: 1 }); R.light(-10.4, 2.6, 4.2, 0xffd090, 4, 6); pbox(R, 6, 4.8, 2.2, 0.8, 0.9, { front: wardTex(0, '#4a2e1c', '#7a5436', '#24160c'), top: tex('wood', '#8a6040') }); R.sprite('candle', 5.4, 4.8, { y: 0.9, scale: 1 }); R.sprite(canvasTex(14, 8, (c) => { px(c, 0, 4, 14, 4, '#5a2a1a'); px(c, 1, 2, 12, 2, '#2a3a5a'); px(c, 2, 0, 10, 2, '#8a6a2a'); px(c, 0, 4, 14, 1, '#e8e0c8'); }, 'bookpile'), 6.6, 4.8, { y: 0.9, scale: 1, thin: true });
-    R.inter('book', 0, 1.6, { label: 'Проклятая книга', fn: async (G) => { await G.run(P.book); await G.ui.paper(P.bookText); if (!f.pol_book) { f.pol_book = 1; await G.run(P.bookAfter); await ownerEnters(G); maskHint(G, 'pol_tragedy', 'Маска Трагедии (2) тоже видит, что под краской: посмотри на портреты в ней', '☹'); } } });
+    R.inter('book', 0, 1.6, { label: 'Проклятая книга', fn: async (G) => { await G.run(P.book); await G.ui.paper(P.bookText); if (!f.pol_book) { f.pol_book = 1; await G.run(P.bookAfter); await G.run(P.ruleBook); await ownerEnters(G); maskHint(G, 'pol_tragedy', 'Маска Трагедии (2) тоже видит, что под краской: посмотри на портреты в ней', '☹'); } } });
     for (const [k, x] of [-10.4, 10.4].entries()) { wardrobeP(R, x, -5.3, { v: k ? 2 : 0, w: 1.9, h: 3.2, base: '#5a3a26', lt: '#8a6040', dk: '#2e1c12' }); R.inter('wd' + (k ? 7.6 : -7.6), x, -4.3, { label: 'Шкаф (спрятаться / выйти)', r: 1.4, fn: (G) => hide(G) }); }
     const g = R.guard('owner', [[-9, -2.6], [7, -2.6]], { speed: 1.6, range: 5.2, half: 0.45, pause: 1.6, onCatch: async (G) => { G.sfx('laugh', { n: 6, f: 300, vol: 0.35 }); G.flash(0.6); G.shake(0.4); await G.run(G.state.mask === 'comedy' ? P.caughtCat : P.caught); G.player.place(10, 1.6, 'l'); G.actor('polina')?.place(10.4, 2.4); G.room.guards[0].actor.place(-9, -2.6); G.camSnap(); } });
     g.active = !!f.pol_book; catFor(R, G, g); softCone(g);
@@ -655,7 +657,7 @@ const gallery: RoomDef = {
     R.door('back', 2, { wall: 'w', to: 'pol_hall', spot: 'gal', label: 'В прихожую', col: '#7a5236' });
     R.spawn('start', -14.2, 2, 'r');
   },
-  async enter(G) { if (!G.f.pol_gal_seen) { G.f.pol_gal_seen = 1; G.sfx('heart'); await G.run(P.galleryIn); } },
+  async enter(G) { hud(G); if (!G.f.pol_gal_seen) { G.f.pol_gal_seen = 1; G.sfx('heart'); await G.run(P.galleryIn); } },
 };
 
 // ---------------- 8. кухня: щиток и Хозяин ----------------
@@ -663,6 +665,7 @@ const kitchen: RoomDef = {
   name: 'Кухня', w: 16, d: 10, music: 'horror', amb: 'rain', step: 'stone', grade: DARK, noMasks: true,
   build(R, G) {
     const f = G.f; R.room.group.userData.bg = 0x05060a;
+    R.decal(canvasTex(48, 20, (c) => { for (let i = 0; i < 3; i++) { const x = 1 + i * 16; px(c, x, 1, 14, 18, '#2a2018'); px(c, x + 1, 2, 12, 16, '#8a7a68'); px(c, x + 1, 12, 12, 6, '#5a1a22'); px(c, x + 3, 6, 2, 2, '#e8c8a8'); px(c, x + 3, 8, 2, 6, '#c41e3a'); px(c, x + 8, 6, 2, 2, '#e8c8a8'); px(c, x + 8, 8, 2, 6, '#8e1830'); px(c, x + 2, 9, 1, 2, '#c41e3a'); px(c, x + 7, 9, 1, 2, '#8e1830'); } }, 'kthphotos'), { x: -4.6, y: 2.7, w: 2.6, h: 1.1 }); R.look('thphotos', -4.6, -3.4, 'Фотографии над плитой', P.thPhotos);
     const tile = canvasTex(32, 32, (c) => { for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) { const d = ((x >> 4) + (y >> 4)) % 2, g = x % 16 === 0 || y % 16 === 0; px(c, x, y, 1, 1, g ? '#141614' : d ? (hsh(x, y, 3) < 0.25 ? '#6e6a58' : '#7a7462') : (hsh(x, y, 4) < 0.25 ? '#1e2422' : '#262c2a')); } for (let i = 0; i < 9; i++) px(c, 3 + i, 20 + (i % 3), 1, 1, '#141614'); grime(c, 32, 32, 'rgba(20,16,8,0.4)', 0.06, 31); }, 'ktile');
     const wallT = canvasTex(32, 32, (c) => { for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) { const row = y >> 2, off = (row % 2) * 4, g = y % 4 === 0 || (x + off) % 8 === 0; px(c, x, y, 1, 1, g ? '#262a28' : hsh((x + off) >> 3, row, 9) < 0.2 ? '#4e5652' : '#5a625c'); } grime(c, 32, 32, 'rgba(30,24,14,0.45)', 0.07, 33); }, 'kwall');
     paintFloor(R, tile, 1.6); paintWalls(R, wallT, 5, 2);
@@ -693,7 +696,7 @@ const kitchen: RoomDef = {
     R.door('back', 1.2, { wall: 'w', to: 'pol_gallery', label: 'В галерею', col: '#7a5236', fn: async (G) => G.goto(f.pol_light ? 'pol_hall' : 'pol_gallery', f.pol_light ? 'gal' : 'start') });
     R.spawn('start', -6.6, 1.2, 'r');
   },
-  async enter(G) { if (!G.f.pol_k_seen) { G.f.pol_k_seen = 1; G.sfx('ok'); await G.run(P.kitchen); } },
+  async enter(G) { hud(G); if (!G.f.pol_k_seen) { G.f.pol_k_seen = 1; G.sfx('ok'); await G.run(P.kitchen); } },
 };
 /** Свет включён, но Хозяин врывается на кухню, загоняет Полину в угол и... кончается. Разваливается на части. */
 async function breakerScene(G: any) {
@@ -749,8 +752,13 @@ async function polinaFree(G: any) {
   const off = await warmOn(G, -2.6, 2.0, { shafts: 3, motes: 'dust', glow: 0.34, key: 8 });
   await G.wait(0.8); await pol.walkTo(-2, 1.2, 3); pol.face(G.player.x, G.player.z); G.player.face(pol.x, pol.z); await G.wait(0.6);
   await G.run(P.free.slice(0, 1)); G.audio.music('school_soft'); dolly(G, -1.5, 0.9, 16, 10, 4);
-  await G.run(P.free.slice(1)); if (G.f.pol_mirD) await G.run(P.freeMirror); if (G.f.pol_radioC) await G.run(P.freeRadio);
-  G.sfx('applause', { dur: 4 }); await G.wait(1.2); await off(); await back(); G.unfocus();
-  await finishChapter(G, 'polina', [['THE HOUSE THAT LAUGHS', 'act'], 'Полина заметила то, чего не заметил никто.', ['Смелость, это идти, когда страшно.', 'sm']]);
+  await G.run(P.free.slice(1)); if (G.f.pol_mirD) await G.run(P.freeMirror); if (G.f.pol_radioC) await G.run(P.freeRadio); await off();
+  // дом складывается в лабиринт: правило «выход есть» не работает; кто идёт первой, решает Варя
+  const f = G.f; G.audio.music('horror'); G.sfx('gear'); G.shake(0.5); G.grade({ vig: 0.85, sat: 0.7 }); await G.run(P.maze); await G.run(P.mazeChoice); const k: string = f.pol_endk || 'laugh';
+  if (k === 'laugh') { G.sfx('laugh', { n: 8, f: 260, vol: 0.4 }); G.shake(0.6); await G.run(P.endLaugh.slice(0, 2)); G.audio.music(null); await G.run(P.endLaugh.slice(2, 4)); G.sfx('laugh', { n: 6, f: 520, vol: 0.35 }); G.sfx('windup', { down: true }); await G.run(P.endLaugh.slice(4, 6)); const o2 = await warmOn(G, -2.6, 2.0, { shafts: 3, motes: 'dust', glow: 0.34, key: 8, music: 'tender' }); await G.run(P.endLaugh.slice(6)); await o2(); }
+  else if (k === 'route') { G.audio.music(null, { fade: 2 }); await G.run(P.endRoute.slice(0, 6)); const o2 = await warmOn(G, -2.6, 2.0, { shafts: 1, motes: 'dust', glow: 0.22, key: 5, music: 'tender' }); await G.run(P.endRoute.slice(6)); await o2(); }
+  else { G.sfx('shutter'); G.flash(0.6); await G.run(P.endHouse.slice(0, 6)); G.sfx('laugh', { n: 4, f: 240, vol: 0.2 }); await G.run(P.endHouse.slice(6)); G.note('n_pol_still'); }
+  G.sfx('applause', { dur: 4 }); await G.wait(1.2); await back(); G.unfocus();
+  await finishChapter(G, 'polina', [['THE HOUSE THAT LAUGHS', 'act'], k === 'laugh' ? 'Дом привык к крикам. Со смехом он не умеет.' : k === 'route' ? 'Маршрут был идеальный. Полина молчала до самой машины.' : 'Вы вышли. А на снимке всё ещё стоите внутри.', [k === 'house' ? 'Дом не побеждён. Он отпустил.' : 'Смелость это не когда не страшно. Это когда идёшь.', 'sm']]);
 }
 export const rooms: Record<string, RoomDef> = { pol_road: road, pol_porch: porch, pol_hall: hall, pol_living: living, pol_library: library, pol_basement: basement, pol_gallery: gallery, pol_kitchen: kitchen };
