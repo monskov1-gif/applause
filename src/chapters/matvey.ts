@@ -12,6 +12,52 @@ import { finishChapter, actOf, fog } from './common';
 import { window3D, corkBoard } from '../world/decor3d';
 import { costumeRack } from '../world/decor';
 
+// ---------------- кинематограф (локально): тёплые моменты, камера, подсказки масок ----------------
+// Все твины пропускаются в быстром режиме (G.fast) и не зависают, если комната сменилась посреди движения.
+const WARM = { tint: [1.12, 1.0, 0.86], sat: 1.1, bloom: 0.9, vig: 0.35, bright: 1.05 };
+function ctw(G: any, dur: number, fn: (k: number) => void): Promise<void> {
+  const room = G.room; if (G.fast || !room || dur <= 0) { fn(1); return Promise.resolve(); }
+  return new Promise((res) => { let t = 0, done = false; const fin = () => { if (done) return; done = true; const i = room.updaters.indexOf(u); if (i >= 0) room.updaters.splice(i, 1); res(); };
+    const u = (dt: number) => { t += dt; const k = Math.min(1, t / dur); fn(k * k * (3 - 2 * k)); if (k >= 1) fin(); }; room.updaters.push(u); setTimeout(() => { if (G.room !== room) fin(); }, dur * 1000 + 600); });
+}
+/** Медленный наезд/отъезд камеры на точку. */
+async function dolly(G: any, x: number, z: number, d0: number, d1: number, dur: number) { G.focus(x, z, d0); const fo = G.cam.focus; await ctw(G, dur, (k) => { if (G.cam.focus === fo) fo.dist = d0 + (d1 - d0) * k; }); }
+/** Ракурс: наклон и высота камеры плавно; возвращает функцию возврата к прежнему ракурсу. */
+async function angle(G: any, pitch: number, yOff: number, dur = 1.2) {
+  const p0 = G.cam.pitch, y0 = G.cam.yOff; await ctw(G, dur, (k) => { G.cam.pitch = p0 + (pitch - p0) * k; G.cam.yOff = y0 + (yOff - y0) * k; });
+  return (d = 1.2) => { const p1 = G.cam.pitch, y1 = G.cam.yOff; return ctw(G, d, (k) => { G.cam.pitch = p1 + (p0 - p1) * k; G.cam.yOff = y1 + (y0 - y1) * k; }); };
+}
+const glowTex = () => canvasTex(32, 32, (c) => { const g = c.createRadialGradient(16, 16, 0, 16, 16, 16); g.addColorStop(0, 'rgba(255,214,150,1)'); g.addColorStop(0.4, 'rgba(255,190,120,0.45)'); g.addColorStop(1, 'rgba(255,170,100,0)'); c.fillStyle = g; c.fillRect(0, 0, 32, 32); }, 'cine_glow');
+const shaftTex = () => canvasTex(16, 64, (c) => { for (let y = 0; y < 64; y++) for (let x = 0; x < 16; x++) { const e = Math.sin((x + 0.5) / 16 * Math.PI), v = Math.pow(1 - y / 64, 0.7) * 0.25 + 0.75 * Math.sin(y / 64 * Math.PI); const a = e * e * v; if (a > 0.02) { c.fillStyle = `rgba(255,220,160,${a.toFixed(3)})`; c.fillRect(x, y, 1, 1); } } }, 'cine_shaft');
+const additive = (map: THREE.Texture, color = 0xffffff) => new THREE.MeshBasicMaterial({ map, color, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
+/**
+ * Тёплый момент: грейд теплее и мягче, золотое свечение у героев, косые лучи, тёплые пылинки/светлячки,
+ * по желанию тихая музыка. Возвращает функцию, которая плавно всё возвращает (грейд главы, музыку).
+ */
+async function warmOn(G: any, x: number, z: number, o: { music?: string; back?: string | null; shafts?: number; motes?: 'dust' | 'fireflies' | 'petals'; glow?: number; y?: number; grade?: any; key?: number } = {}) {
+  const room = G.room; if (!room) return async () => {};
+  const saved = { ...G.gradeBase, tint: G.gradeBase.tint ? [...G.gradeBase.tint] : undefined }; G.grade(o.grade || WARM);
+  if (o.music) G.audio.music(o.music);
+  const grp = new THREE.Group(); grp.position.set(x, 0, z); room.group.add(grp); const mats: { m: THREE.Material & { opacity: number }; a: number }[] = [];
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex(), color: 0xffd8a0, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); halo.position.set(0, o.y ?? 2.0, 0.2); halo.scale.set(9, 7, 1); grp.add(halo); mats.push({ m: halo.material as any, a: o.glow ?? 0.32 });
+  for (let i = 0; i < (o.shafts ?? 3); i++) { const m = additive(shaftTex(), 0xffe0b0); const s = new THREE.Mesh(new THREE.PlaneGeometry(1.4 + i * 0.5, 10), m); s.position.set(-2.4 + i * 2.2, 4.6, -1.6 - i * 0.3); s.rotation.z = 0.38; grp.add(s); mats.push({ m: m as any, a: 0.16 - i * 0.03 }); }
+  const n = 46, pos = new Float32Array(n * 3), ph = new Float32Array(n); for (let i = 0; i < n; i++) { pos[i * 3] = (Math.random() - 0.5) * 9; pos[i * 3 + 1] = Math.random() * 4.5; pos[i * 3 + 2] = (Math.random() - 0.5) * 4; ph[i] = Math.random() * 6.28; }
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); const kind = o.motes || 'dust';
+  const pm = new THREE.PointsMaterial({ color: kind === 'petals' ? 0xffc8d8 : kind === 'fireflies' ? 0xffe890 : 0xffd8a0, size: kind === 'dust' ? 0.09 : 0.14, transparent: true, opacity: 0, depthWrite: false, blending: kind === 'petals' ? THREE.NormalBlending : THREE.AdditiveBlending }); grp.add(new THREE.Points(geo, pm)); mats.push({ m: pm as any, a: kind === 'fireflies' ? 0.95 : 0.7 });
+  const upd = (dt: number, t: number) => { for (let i = 0; i < n; i++) { const vy = kind === 'petals' ? -0.5 : kind === 'fireflies' ? Math.sin(t * 0.8 + ph[i]) * 0.25 : 0.12; pos[i * 3 + 1] += vy * dt; pos[i * 3] += Math.sin(t * 0.6 + ph[i]) * dt * 0.25; if (pos[i * 3 + 1] > 4.6) pos[i * 3 + 1] = 0.1; if (pos[i * 3 + 1] < 0) pos[i * 3 + 1] = 4.5; } geo.attributes.position.needsUpdate = true; if (kind === 'fireflies') pm.size = 0.12 + Math.sin(t * 5) * 0.04; };
+  room.updaters.push(upd);
+  const key = room.named.warmKey as THREE.PointLight | undefined; const kInt = o.key ?? 6;
+  await ctw(G, 1.4, (k) => { for (const e of mats) e.m.opacity = e.a * k; if (key) key.intensity = kInt * k; });
+  return async () => {
+    if (G.room === room) { G.gradeBase = saved; G.applyGrade(); if (o.back !== undefined) G.audio.music(o.back); await ctw(G, 1.6, (k) => { for (const e of mats) e.m.opacity = e.a * (1 - k); if (key) key.intensity = kInt * (1 - k); }); }
+    const i = room.updaters.indexOf(upd); if (i >= 0) room.updaters.splice(i, 1); grp.parent?.remove(grp); geo.dispose();
+  };
+}
+/** Тёплый «ключевой» свет комнаты: заранее заведён с нулевой яркостью (без перекомпиляции шейдеров посреди сцены). */
+function warmKey(R: Builder, x: number, y: number, z: number, dist = 11) { R.light(x, y, z, 0xffc890, 0, dist, { name: 'warmKey' }); }
+/** Подсказка о маске: один раз за игру для каждого ключа. */
+function maskHint(G: any, key: string, text: string, icon = '❖') { const h = (G.f.maskHints ||= {}); if (h[key] || G.fast) return; h[key] = 1; G.toast(text, icon); }
+
 const fakeGrade = (n: number) => ({ sat: 1.05 + n * 0.12, tint: [1.04 + n * 0.03, 1.0, 1.03 + n * 0.04], vig: 0.28 + n * 0.08, bright: 0.96, contrast: 1.06, bloom: 0.3 + n * 0.1, wave: n >= 3 ? 0.25 : 0 });
 const L = (c: number, o: any = {}) => new THREE.MeshLambertMaterial({ color: c, ...o });
 
@@ -187,7 +233,8 @@ const yard: RoomDef = {
     R.inter('umb', -2, -3.6, { label: f.mat_umb ? 'Стойка (один зонт)' : 'Стойка с зонтами', cond: () => !!f.mat_book && !f.mat_s1, fn: async (G) => { if (!f.mat_umbI) { f.mat_umbI = 1; await G.run(M.umbIntro); } if (!f.mat_umb) { f.mat_umb = 1; await G.run(M.umbTake); await G.rebuild(); } } });
     R.inter('signal', 14, 1.6, { label: 'Дать знак дождю', cond: () => !!f.mat_umb && !f.mat_s1, fn: rainScene });
     R.sprite(canvasTex(14, 10, (c) => { c.fillStyle = '#e88a3a'; c.fillRect(2, 3, 10, 6); c.fillRect(1, 1, 4, 4); c.fillStyle = '#111'; c.fillRect(2, 2, 1, 1); c.fillStyle = '#e88a3a'; c.fillRect(11, 1, 2, 4); }, 'cat'), 6.4, 4.0, { scale: 1.2, y: 0.65 }); R.look('cat', 6.4, 4.8, 'Кот', ['~: Школьный кот, рыжий и круглый. Ему всё равно, кто в кого влюблён, так что он тут самый мудрый персонаж.'], { r: 1.2, egg: 'cat' });
-    if (f.mat_book && !f.mat_s1) R.npc('artemiy', 15.4, 2.0, { dir: 'l', talk: ['artemiy/smile: Жду, когда кончится урок у всего мира. Ну, или дождь. Хотя дождя нет.'] });
+    if (f.mat_book && !f.mat_s1) R.npc('artemiy', 15.4, 2.0, { dir: 'l', talk: async (G: any) => { if (G.state.mask === 'tragedy') { G.focus(15, 1.6, 10); await G.run(M.artTr); G.f.mat_artTr = 1; G.unfocus(); return; } await G.run(['artemiy/smile: Жду, когда кончится урок у всего мира. Ну, или дождь. Хотя дождя нет.']); maskHint(G, 'mat_tr', 'Маска Трагедии (2) видит, что прячут. Даже загадочные переводные ученики', '☹'); } });
+    warmKey(R, 15, 3.2, 3.2, 11);
     if (!f.mat_s1) R.npc('matvey_school', f.mat_book ? -8.6 : -4.6, f.mat_book ? 2.4 : 3.6, { id: 'matvey', talk: (G: any) => G.run(f.mat_book ? ['matvey/worried: Он у ворот. Он всегда уходит через ворота в 15:40. Я не следил. Я просто… знаю.'] : ['matvey/worried: Пойдём внутрь? Только не смотри на того, кто у окна. И на меня не смотри.']) });
     R.npc('student2', 0, 5.6, { talk: ['student2: Вчера у ворот трижды шёл дождь. Над воротами. Только над ними. У нас тут вечно какие-то случайные события.'] }); R.actor('student', -14, -2.6, { dir: 'r' });
     R.spawn('start', -10, 4, 'r'); R.spawn('back', -6, -4.6); R.spawn('gate', 14, 1.2); mangaFinish(R, G);
@@ -203,9 +250,12 @@ async function rainScene(G: any) {
   await G.run(M.umbRain); await G.run(M.umbChoicePrompt);
   let c = await board(G, ['Дать Матвею идеальную реплику', 'Не вмешиваться', 'Дубль!']);
   if (c === 2) { G.flash(0.4); stage(G); await G.run(M.retake); c = await board(G, ['Дать Матвею идеальную реплику', 'Не вмешиваться']); }
-  if (c === 0) { stage(G); await G.run(M.umbPerfect); await art.walkTo(19, 3, 2.4); } else { sincere(G); await G.run(M.umbSelf); await Promise.all([art.walkTo(19, 3, 2.4), mat.walkTo(18.4, 3.2, 2.4)]); mat.hidden = true; }
+  let off: null | (() => Promise<void>) = null;
+  if (c === 0) { stage(G); await G.run(M.umbPerfect); await art.walkTo(19, 3, 2.4); }
+  else { sincere(G); await G.run(M.umbSelf.slice(0, 2)); off = await warmOn(G, 15, 2.0, { shafts: 3, motes: 'petals', glow: 0.3, key: 6 }); dolly(G, 15.6, 2, 13, 10, 2.5);
+    await G.run(M.umbSelf.slice(2)); await Promise.all([art.walkTo(19, 3, 2.4), mat.walkTo(18.4, 3.2, 2.4)]); mat.hidden = true; }
   art.hidden = true; G.room.named.rain.visible = false; G.audio.ambience(null);
-  await G.run(M.umbAfter); f.mat_s1 = 1; G.unfocus(); G.note('n_mat_fake');
+  await G.run(M.umbAfter); if (off) await off(); f.mat_s1 = 1; G.unfocus(); G.note('n_mat_fake');
 }
 
 // ---------------- 2. коридор: столкновение, тетрадь ----------------
@@ -254,12 +304,16 @@ const hall: RoomDef = {
 async function collide(G: any) {
   const f = G.f; if (f.mat_c1) return; f.mat_c1 = 1; const mat = G.actor('matvey'), art = G.actor('artemiy'); G.focus(0, -2, 13);
   await G.run(M.collide0); mat.walkTo(-0.5, -2.6, 2.4); await art.walkTo(0.5, -2.6, 2.4); mat.face(art.x, art.z); art.face(mat.x, mat.z);
+  const back = await angle(G, 0.32, 1.7, 0.9); G.focus(0, -2.4, 10);
   const c = await board(G, ['Включить «идеальный дубль»', 'Усилить эффект', 'Не вмешиваться']);
-  if (c === 0) { stage(G); G.flash(0.5); await G.run(M.collidePerfect); } else if (c === 1) { stage(G); await G.run(M.collideBoost); } else { sincere(G); G.shake(0.2); await G.run(M.collideNone); }
+  if (c === 0) { stage(G); G.audio.music(null); G.flash(0.5); speedLines(1.6); await dolly(G, 0, -2.4, 10, 7, 1.6); await G.wait(0.6); await G.run(M.collidePerfect); G.audio.music('school_soft'); }
+  else if (c === 1) { stage(G); await G.run(M.collideBoost); } else { sincere(G); G.shake(0.2); await G.run(M.collideNone); }
+  await back(1);
   await G.run(M.collideAfter); await art.walkTo(-12, -4.2, 2.6); art.hidden = true; mat.walkTo(-3, -2.6, 2); G.unfocus(); await G.rebuild();
 }
 async function bookScene(G: any) {
   const f = G.f; await G.run(M.bookFind); await G.ui.paper(M.bookText); await G.run(M.bookAgree); f.mat_book = 1; G.mech('storyboard'); await G.rebuild();
+  maskHint(G, 'mat_masks', 'Маски работают и в аниме: Комедия (1) разряжает неловкость, Трагедия (2) видит спрятанное, Драма (3) показывает, как было', '❖');
 }
 
 // ---------------- 3. класс: закрытая дверь и записка ----------------
@@ -291,11 +345,12 @@ const klass: RoomDef = {
     R.door('out', 6, { label: 'В коридор', z: -5.96, col: '#c8aa78', fn: (G) => G.goto('mat_hall', 'class') });
     R.spawn('start', 6, -4.6); mangaFinish(R, G);
   },
-  async enter(G) { if (!G.f.mat_cl) { G.f.mat_cl = 1; await G.run(M.classIntro); } },
+  async enter(G) { if (!G.f.mat_cl) { G.f.mat_cl = 1; await G.run(M.classIntro); maskHint(G, 'mat_com', 'Маска Комедии (1) спасает неловкие сцены. Попробуй её у двери класса', '☺'); } },
 };
 async function lockScene(G: any) {
   const f = G.f; G.focus(0, -0.6, 14); G.sfx('locked'); await G.run(M.classLock); G.sfx('door');
-  const c = await board(G, ['Удержать сцену (запереть снова)', 'Отпустить']); if (c === 0) { stage(G); G.sfx('locked'); await G.run(M.classHold); } else { sincere(G); await G.run(M.classLet); }
+  const com = G.state.mask === 'comedy'; const c = await board(G, ['Удержать сцену (запереть снова)', 'Отпустить', ...(com ? ['Пошутить через дверь (маска Комедии)'] : [])]);
+  if (c === 0) { stage(G); G.sfx('locked'); await G.run(M.classHold); } else if (c === 2) { sincere(G); G.f.mat_joke = 1; await G.run(M.classJoke); } else { sincere(G); await G.run(M.classLet); }
   await G.run(M.classAfter); f.mat_lock = 1; G.unfocus(); await G.rebuild();
 }
 async function noteScene(G: any) {
@@ -334,6 +389,8 @@ const fest: RoomDef = {
     R.table(2, 0.2, 2.4, 1.2, { tex: 'wood' }); R.photo('pair', 'Идеальный кадр', 2, 0.2, { cond: () => !!f.mat_bentoG && !f.mat_shot });
     if (!f.mat_bento) { R.npc('matvey_school', 0.6, 1.4, { id: 'matvey', talk: (G: any) => bentoScene(G) }); R.npc('artemiy', 3.4, 1.4, { dir: 'l', talk: (G: any) => bentoScene(G) }); }
     if (f.mat_bento && !f.mat_break) R.trigger(-4, -2, 8, 4, (G: any) => notebookScene(G));
+    if (f.mat_break && !f.mat_roof) R.look('benchDr', 2, 1.4, 'Место, где лежала тетрадь (Драма)', async (G: any) => { G.focus(2, 1.2, 10); await G.run(M.benchDr); G.f.mat_benchD = 1; G.unfocus(); }, { mask: 'drama', r: 1.8 });
+    warmKey(R, 2, 3.2, 3.0, 11);
     if (f.mat_break) { R.npc('matvey_school', 19.4, 0.8, { id: 'matvey', dir: 'l', talk: ['matvey/sad: Крыша. Шаг 100. Ты же всё рассчитала. Пойдём, раз рассчитала.'] }); R.door('roof', 21, { z: -3.6, label: 'Лестница на крышу школы', col: '#8a3a4a', sign: 'КРЫША', fn: (G) => G.goto('mat_roof') }); }
     R.crowd(['student', 'student2', 'dancer', 'student', 'courtier', 'student2'], -22, 4.6, 6, 3.6, 1.4, 'f');
     R.spawn('start', -9, 1.6, 'r'); mangaFinish(R, G);
@@ -346,11 +403,21 @@ async function bentoScene(G: any) {
   await G.run(M.bentoGive); await G.run(M.bentoShot); G.toast('C: поднять камеру. Или просто подождать', '◉');
   const c = await board(G, ['Поставить идеальный кадр (камера)', 'Не мешать, пусть едят']); if (c === 1) { sincere(G); await bentoTaste(G); }
 }
-async function bentoTaste(G: any) { const f = G.f; if (f.mat_bento) return; await G.run(M.bentoTaste); f.mat_bento = 1; G.give('mat_photo' as any, true); await G.rebuild(); }
+async function bentoTaste(G: any) {
+  const f = G.f; if (f.mat_bento) return; const k = M.bentoTaste.findIndex((s: any) => typeof s === 'string' && s.startsWith('*: Матвей смеётся'));
+  G.focus(2, 1.2, 11); await G.run(M.bentoTaste.slice(0, k)); const off = await warmOn(G, 2, 1.2, { shafts: 2, motes: 'fireflies', glow: 0.34, key: 7 }); dolly(G, 2, 1.2, 11, 9, 2.5);
+  await G.run(M.bentoTaste.slice(k)); await G.wait(0.8); await off(); G.unfocus(); f.mat_bento = 1; G.give('mat_photo' as any, true); await G.rebuild();
+}
 async function notebookScene(G: any) {
   const f = G.f; if (f.mat_break) return; const B = new (await import('../world/room')).Builder(G.room, G); const mat = B.actor('matvey_school', 0.6, 1.4, { id: 'matvey' }); const art = B.actor('artemiy', 3.4, 1.4, { id: 'artemiy', dir: 'l' }); G.focus(2, 0.8, 13);
-  await G.run(M.notebook); await art.walkTo(-24, 2, 3); art.hidden = true; mat.face(G.player.x, G.player.z); await G.run(M.matveyAngry);
-  G.audio.music(null); G.sfx('crash'); G.shake(0.6); G.flash(0.4); f.mat_break = 1; G.grade({ ...fakeGrade(3), sat: 0.55, wave: 0.1 }); await G.run(M.worldBreaks); G.unfocus(); await G.rebuild(); G.audio.music('school_soft');
+  // наезд на Арутеми-куна с тетрадью, музыка уходит, тишина перед приговором
+  await G.run(M.notebook.slice(0, 1)); G.audio.music(null); await dolly(G, 3.2, 1.0, 13, 8, 2); await G.wait(1.0); await G.run(M.notebook.slice(1, 3));
+  G.focus(3.4, 1.2, 7); await G.wait(0.8); await G.run(M.notebook.slice(3)); G.focus(1.6, 1.0, 12);
+  await art.walkTo(-24, 2, 3); art.hidden = true; mat.face(G.player.x, G.player.z); await G.run(M.matveyAngry);
+  // мир трескается: камера отъезжает и поднимается, герои становятся маленькими среди гаснущих фонариков
+  G.sfx('crash'); G.shake(0.6); G.flash(0.4); f.mat_break = 1; G.grade({ ...fakeGrade(3), sat: 0.55, wave: 0.1 });
+  const back = angle(G, 0.82, 0.8, 2.6); dolly(G, 1.4, 0.8, 12, 20, 2.6); await G.run(M.worldBreaks); await (await back)(0.6); G.unfocus(); await G.rebuild(); G.audio.music('school_soft');
+  maskHint(G, 'mat_dr', 'Маска Драмы (3) показывает, как всё было на самом деле. Например, с тетрадью', '♦');
 }
 
 // ---------------- 5. крыша: шаг 100 ----------------
@@ -404,7 +471,8 @@ const roof: RoomDef = {
 };
 async function roofScene(G: any) {
   const f = G.f; if (f.mat_roof) return G.run(['matvey/worried: Он в кабинете драмкружка. Я знаю. Он всегда там, когда ему грустно. Я… пойду сам.']);
-  G.focus(1, -3, 13); await G.run(M.roofWait); await G.run(M.roofChoice); G.sfx('firework'); G.flash(0.3); speedLines(1.4); await G.run(M.roofFire);
+  G.focus(1, -3, 13); await G.run(M.roofWait.slice(0, 1)); await G.wait(1.2); await G.run(M.roofWait.slice(1)); await G.run(M.roofChoice);
+  const back = await angle(G, 0.18, 2.8, 1.4); G.focus(1, -3.6, 18); await G.wait(0.9); G.sfx('firework'); G.flash(0.3); speedLines(1.4); await G.run(M.roofFire); await back(1.2);
   f.mat_roof = 1; G.unfocus(); await G.run(['matvey: Он в кабинете драмкружка. Я знаю. Он всегда там, когда ему грустно.']);
 }
 
@@ -428,22 +496,27 @@ const club: RoomDef = {
     const mir = R.decal(canvasTex(24, 36, (c) => { px(c, 0, 0, 24, 36, '#4a3010'); px(c, 1, 1, 22, 34, '#c89a3a'); px(c, 1, 1, 22, 1, '#f0d478'); px(c, 2, 2, 20, 32, '#3a2a14'); for (let y = 3; y < 33; y++) { const k = y / 33; px(c, 3, y, 18, 1, k < 0.45 ? '#8a7a68' : k < 0.5 ? '#5a4a40' : '#6a5440'); } px(c, 3, 15, 18, 1, '#a07048'); for (let x = 5; x < 19; x += 4) { px(c, x, 17, 2, 6, '#8a5a3a'); px(c, x, 16, 2, 1, '#c08a58'); } px(c, 9, 5, 6, 8, '#b8a890'); px(c, 10, 6, 4, 3, '#2a3a5a'); for (let i = 0; i < 9; i++) px(c, 4 + i, 3 + i * 3, 1, 3, 'rgba(255,255,255,.28)'); px(c, 17, 4, 1, 26, 'rgba(255,255,255,.15)'); px(c, 2, 34, 20, 1, '#2a1a08'); }, 'clubmirror2'), { x: 3, y: 2.6, w: 2, h: 3 });
     const ghost = R.decal(canvasTex(24, 36, (c) => { c.fillStyle = '#86641c'; c.fillRect(0, 0, 24, 36); c.fillStyle = '#7a8898'; c.fillRect(2, 2, 20, 32); const girl = (x: number, hair: string, long: boolean) => { c.fillStyle = hair; c.fillRect(x, 10, 6, long ? 12 : 6); c.fillStyle = '#e8c8a8'; c.fillRect(x + 1, 11, 4, 4); c.fillStyle = '#2a3050'; c.fillRect(x, 16, 6, 10); c.fillStyle = '#c41e3a'; c.fillRect(x + 2, 16, 2, 2); c.fillStyle = '#2a2a3a'; c.fillRect(x, 26, 6, 6); }; girl(5, '#5a341f', false); girl(13, '#8a3a1e', true); }, 'clubghost'), { x: 3, y: 2.6, w: 2, h: 3, noSlot: true }); ghost.visible = false; R.room.named.ghost = ghost; void mir;
     R.look('mirror', 3, -4.4, 'Зеркало', ['~: Обычное зеркало для репетиций. В углу наклейка: «Улыбайся глазами».']);
-    R.npc('artemiy', -4.6, -4.0, { dir: 'f', talk: (G: any) => clubScene(G) });
+    R.npc('artemiy', -4.6, -4.0, { dir: 'f', talk: (G: any) => clubScene(G) }); warmKey(R, -2.4, 3.2, -1.0, 11);
     R.spawn('start', 7.4, 3.6, 'l'); mangaFinish(R, G);
   },
   async enter(G) { if (!G.f.mat_clubI) { G.f.mat_clubI = 1; await clubScene(G); } },
 };
 async function clubScene(G: any) {
   const f = G.f; if (f.mat_done) return; const B = new (await import('../world/room')).Builder(G.room, G); const mat = B.actor('matvey_school', 2.6, 2.6, { id: 'matvey' }); const art = G.actor('artemiy');
-  G.player.place(8.2, 4.4, 'l'); G.focus(-1, -1.4, 13); G.audio.music('school_soft');
-  await G.run(M.clubIntro); await mat.walkTo(-2.6, -2.4, 1.6); mat.face(art.x, art.z); art.face(mat.x, mat.z);
+  G.player.place(8.2, 4.4, 'l'); G.focus(-1, -1.4, 17); G.audio.music(null); const back = await angle(G, 0.4, 1.6, 0);
+  await G.run(M.clubIntro); await Promise.all([mat.walkTo(-2.6, -2.4, 1.6), dolly(G, -3.4, -2.6, 17, 12, 3)]); mat.face(art.x, art.z); art.face(mat.x, mat.z);
+  if (f.mat_artTr) await G.run(M.clubArt); G.audio.music('school_soft');
   // искушение вмешаться: каждый раз можно промолчать
   let fails = 0; for (const [line, bad, good] of M.tempt as string[][]) { await G.run([line]); const c = await board(G, [good, bad]); if (c === 1) { fails++; stage(G); G.flash(0.3); await G.run(M.temptFail); } else sincere(G); }
   const ending = f.mat_perfect ? 'perfect' : staged(f) >= 4 ? 'tear' : 'real'; f.mat_end = ending;
-  await G.run(ending === 'perfect' ? M.confPerfect : ending === 'tear' ? M.confTear : M.confReal);
-  G.room.named.ghost.visible = true; G.sfx('glitch'); await G.wait(0.8); G.room.named.ghost.visible = false; await G.run(M.mirror); await G.run(M.clue);
-  void fails; f.mat_done = 1; await mat.walkTo(7, 3.6, 3); mat.face(G.player.x, G.player.z); G.player.face(mat.x, mat.z); G.unfocus();
-  G.audio.music('school'); await G.run(M.end); G.give('lantern', true); G.sfx('applause', { dur: 3 });
+  // тишина и крупный план на двоих перед признанием; потом тёплый закатный свет из окна
+  G.audio.music(null); await dolly(G, -3.6, -3.0, 12, 8.5, 1.6); await G.wait(1.2);
+  const conf = ending === 'perfect' ? M.confPerfect : ending === 'tear' ? M.confTear : M.confReal;
+  await G.run(conf.slice(0, 1)); const off = await warmOn(G, -3.6, -3.0, ending === 'perfect' ? { shafts: 2, motes: 'dust', glow: 0.2, key: 4, music: 'school_soft', grade: { ...WARM, sat: 0.95, bloom: 0.6 } } : { shafts: 3, motes: 'dust', glow: 0.34, key: 8, music: 'school_soft' });
+  await G.run(conf.slice(1)); if (G.f.mat_benchD && ending !== 'perfect') await G.run(M.clubBench); await G.wait(0.6);
+  G.focus(3, -3.4, 9); await G.wait(0.4); G.room.named.ghost.visible = true; G.sfx('glitch'); G.flash(0.15); await G.wait(0.8); G.room.named.ghost.visible = false; await G.run(M.mirror); G.focus(-3.6, -3.0, 11); await G.run(M.clue);
+  void fails; f.mat_done = 1; await mat.walkTo(7, 3.6, 3); mat.face(G.player.x, G.player.z); G.player.face(mat.x, mat.z); G.focus(7.6, 3.6, 10);
+  await G.run(M.end); G.give('lantern', true); G.sfx('applause', { dur: 3 }); await G.wait(1); await off(); await back(); G.unfocus();
   const title = ending === 'perfect' ? 'Идеальная сцена' : ending === 'tear' ? 'Неизбежный шаг' : 'Настоящий кадр';
   await finishChapter(G, 'matvey', [['100 STEPS TO THE INEVITABLE', 'act'], 'Финал: «' + title + '».', ['Матвей сделал шаг сам. Варя не режиссировала.', 'sm']]);
 }

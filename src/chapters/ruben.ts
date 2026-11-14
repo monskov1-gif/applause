@@ -12,6 +12,52 @@ import { finishChapter, fog, actOf } from './common';
 import { chandelier, sconce, rug, column } from '../world/decor';
 import { barCounter, statue, armchair, window3D } from '../world/decor3d';
 
+// ---------------- кинематограф (локально): тёплые моменты, камера, подсказки масок ----------------
+// Все твины пропускаются в быстром режиме (G.fast) и не зависают, если комната сменилась посреди движения.
+const WARM = { tint: [1.12, 1.0, 0.86], sat: 1.1, bloom: 0.9, vig: 0.35, bright: 1.05 };
+function ctw(G: any, dur: number, fn: (k: number) => void): Promise<void> {
+  const room = G.room; if (G.fast || !room || dur <= 0) { fn(1); return Promise.resolve(); }
+  return new Promise((res) => { let t = 0, done = false; const fin = () => { if (done) return; done = true; const i = room.updaters.indexOf(u); if (i >= 0) room.updaters.splice(i, 1); res(); };
+    const u = (dt: number) => { t += dt; const k = Math.min(1, t / dur); fn(k * k * (3 - 2 * k)); if (k >= 1) fin(); }; room.updaters.push(u); setTimeout(() => { if (G.room !== room) fin(); }, dur * 1000 + 600); });
+}
+/** Медленный наезд/отъезд камеры на точку. */
+async function dolly(G: any, x: number, z: number, d0: number, d1: number, dur: number) { G.focus(x, z, d0); const fo = G.cam.focus; await ctw(G, dur, (k) => { if (G.cam.focus === fo) fo.dist = d0 + (d1 - d0) * k; }); }
+/** Ракурс: наклон и высота камеры плавно; возвращает функцию возврата к прежнему ракурсу. */
+async function angle(G: any, pitch: number, yOff: number, dur = 1.2) {
+  const p0 = G.cam.pitch, y0 = G.cam.yOff; await ctw(G, dur, (k) => { G.cam.pitch = p0 + (pitch - p0) * k; G.cam.yOff = y0 + (yOff - y0) * k; });
+  return (d = 1.2) => { const p1 = G.cam.pitch, y1 = G.cam.yOff; return ctw(G, d, (k) => { G.cam.pitch = p1 + (p0 - p1) * k; G.cam.yOff = y1 + (y0 - y1) * k; }); };
+}
+const glowTex = () => canvasTex(32, 32, (c) => { const g = c.createRadialGradient(16, 16, 0, 16, 16, 16); g.addColorStop(0, 'rgba(255,214,150,1)'); g.addColorStop(0.4, 'rgba(255,190,120,0.45)'); g.addColorStop(1, 'rgba(255,170,100,0)'); c.fillStyle = g; c.fillRect(0, 0, 32, 32); }, 'cine_glow');
+const shaftTex = () => canvasTex(16, 64, (c) => { for (let y = 0; y < 64; y++) for (let x = 0; x < 16; x++) { const e = Math.sin((x + 0.5) / 16 * Math.PI), v = Math.pow(1 - y / 64, 0.7) * 0.25 + 0.75 * Math.sin(y / 64 * Math.PI); const a = e * e * v; if (a > 0.02) { c.fillStyle = `rgba(255,220,160,${a.toFixed(3)})`; c.fillRect(x, y, 1, 1); } } }, 'cine_shaft');
+const additive = (map: THREE.Texture, color = 0xffffff) => new THREE.MeshBasicMaterial({ map, color, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
+/**
+ * Тёплый момент: грейд теплее и мягче, золотое свечение у героев, косые лучи, тёплые пылинки/светлячки,
+ * по желанию тихая музыка. Возвращает функцию, которая плавно всё возвращает (грейд главы, музыку).
+ */
+async function warmOn(G: any, x: number, z: number, o: { music?: string; back?: string | null; shafts?: number; motes?: 'dust' | 'fireflies' | 'petals'; glow?: number; y?: number; grade?: any; key?: number } = {}) {
+  const room = G.room; if (!room) return async () => {};
+  const saved = { ...G.gradeBase, tint: G.gradeBase.tint ? [...G.gradeBase.tint] : undefined }; G.grade(o.grade || WARM);
+  if (o.music) G.audio.music(o.music);
+  const grp = new THREE.Group(); grp.position.set(x, 0, z); room.group.add(grp); const mats: { m: THREE.Material & { opacity: number }; a: number }[] = [];
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex(), color: 0xffd8a0, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); halo.position.set(0, o.y ?? 2.0, 0.2); halo.scale.set(9, 7, 1); grp.add(halo); mats.push({ m: halo.material as any, a: o.glow ?? 0.32 });
+  for (let i = 0; i < (o.shafts ?? 3); i++) { const m = additive(shaftTex(), 0xffe0b0); const s = new THREE.Mesh(new THREE.PlaneGeometry(1.4 + i * 0.5, 10), m); s.position.set(-2.4 + i * 2.2, 4.6, -1.6 - i * 0.3); s.rotation.z = 0.38; grp.add(s); mats.push({ m: m as any, a: 0.16 - i * 0.03 }); }
+  const n = 46, pos = new Float32Array(n * 3), ph = new Float32Array(n); for (let i = 0; i < n; i++) { pos[i * 3] = (Math.random() - 0.5) * 9; pos[i * 3 + 1] = Math.random() * 4.5; pos[i * 3 + 2] = (Math.random() - 0.5) * 4; ph[i] = Math.random() * 6.28; }
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); const kind = o.motes || 'dust';
+  const pm = new THREE.PointsMaterial({ color: kind === 'petals' ? 0xffc8d8 : kind === 'fireflies' ? 0xffe890 : 0xffd8a0, size: kind === 'dust' ? 0.09 : 0.14, transparent: true, opacity: 0, depthWrite: false, blending: kind === 'petals' ? THREE.NormalBlending : THREE.AdditiveBlending }); grp.add(new THREE.Points(geo, pm)); mats.push({ m: pm as any, a: kind === 'fireflies' ? 0.95 : 0.7 });
+  const upd = (dt: number, t: number) => { for (let i = 0; i < n; i++) { const vy = kind === 'petals' ? -0.5 : kind === 'fireflies' ? Math.sin(t * 0.8 + ph[i]) * 0.25 : 0.12; pos[i * 3 + 1] += vy * dt; pos[i * 3] += Math.sin(t * 0.6 + ph[i]) * dt * 0.25; if (pos[i * 3 + 1] > 4.6) pos[i * 3 + 1] = 0.1; if (pos[i * 3 + 1] < 0) pos[i * 3 + 1] = 4.5; } geo.attributes.position.needsUpdate = true; if (kind === 'fireflies') pm.size = 0.12 + Math.sin(t * 5) * 0.04; };
+  room.updaters.push(upd);
+  const key = room.named.warmKey as THREE.PointLight | undefined; const kInt = o.key ?? 6;
+  await ctw(G, 1.4, (k) => { for (const e of mats) e.m.opacity = e.a * k; if (key) key.intensity = kInt * k; });
+  return async () => {
+    if (G.room === room) { G.gradeBase = saved; G.applyGrade(); if (o.back !== undefined) G.audio.music(o.back); await ctw(G, 1.6, (k) => { for (const e of mats) e.m.opacity = e.a * (1 - k); if (key) key.intensity = kInt * (1 - k); }); }
+    const i = room.updaters.indexOf(upd); if (i >= 0) room.updaters.splice(i, 1); grp.parent?.remove(grp); geo.dispose();
+  };
+}
+/** Тёплый «ключевой» свет комнаты: заранее заведён с нулевой яркостью (без перекомпиляции шейдеров посреди сцены). */
+function warmKey(R: Builder, x: number, y: number, z: number, dist = 11) { R.light(x, y, z, 0xffc890, 0, dist, { name: 'warmKey' }); }
+/** Подсказка о маске: один раз за игру для каждого ключа. */
+function maskHint(G: any, key: string, text: string, icon = '❖') { const h = (G.f.maskHints ||= {}); if (h[key] || G.fast) return; h[key] = 1; G.toast(text, icon); }
+
 const GRADE = { sat: 1.05, tint: [1.06, 1.0, 0.92], vig: 0.5, bloom: 0.75, contrast: 1.08 };
 const L = (c: number, o: any = {}) => new THREE.MeshLambertMaterial({ color: c, ...o });
 const dressCode = (G: any) => { if (G.player.charId !== 'varya_gown') G.setPlayerChar('varya_gown'); };
@@ -167,8 +213,10 @@ const terrace: RoomDef = {
     R.sprite(bench, -2, -2.5, { scale: 1.2 }); statue(R, -10, 0.2, { pose: 'muse' });
     car(R, -21, 4.0); R.look('car', -21, 5.4, 'Серебристый автомобиль', D.car); R.look('lake', -6, -2.2, 'Озеро', D.lake);
     R.door('casino', 13, { z: 3.42, label: 'Вход в казино', col: '#5a1a14', sign: 'CASINO', w: 2.6, h: 3.6, glow: '#ffd890', fn: (G) => G.goto('rub_casino', 'start', { fade: 'fade' }) });
-    R.npc('ruben_tux', 3.2, 1.0, { id: 'ruben', dir: 'l', talk: ['ruben/worried: Пойдём? Я буду делать вид, что я агент. А ты делай вид, что не видишь, как у меня трясутся руки.'] });
-    R.npc('nol', -17.4, 2.8, { dir: 'r', talk: ['nol: Наушники проверены, линия чистая. Всё, что скажешь, он услышит. Всё.'] });
+    warmKey(R, -6, 2.6, -0.4, 12);
+    if (G.f.rub_end) { R.actor('ruben_tux', -5.0, -2.0, { id: 'ruben', dir: 'b' }); R.actor('nol', -15.6, 2.6, { dir: 'r' }); R.actor('kasseta', -17.2, 3.0, { dir: 'r' }); R.spawn('end', -7.0, -2.0, 'b'); }
+    else R.npc('ruben_tux', 3.2, 1.0, { id: 'ruben', dir: 'l', talk: async (G: any) => { if (G.state.mask === 'tragedy') { G.focus(3.2, 0.6, 11); await G.run(D.rubenTr); G.f.rub_tr = 1; G.unfocus(); return; } await G.run(['ruben/worried: Пойдём? Я буду делать вид, что я агент. А ты делай вид, что не видишь, как у меня трясутся руки.']); maskHint(G, 'rub_tr', 'Маска Трагедии (2) видит то, что люди прячут', '☹'); } });
+    if (!G.f.rub_end) R.npc('nol', -17.4, 2.8, { dir: 'r', talk: ['nol: Наушники проверены, линия чистая. Всё, что скажешь, он услышит. Всё.'] });
     R.spawn('start', -4.5, 2.6, 'r');
   },
   async enter(G) { dressCode(G); if (!G.f.rub_arr) { G.f.rub_arr = 1; await G.run(D.arrive); } },
@@ -200,7 +248,7 @@ const casino: RoomDef = {
     sideTable(R, -6, 4.6, 5); sideTable(R, 6, 4.6, 7);
     barCounter(R, -13, -6.4, 8); R.npc('barman', -13, -4.6, { dir: 'f', talk: D.bar });
     R.npc('croupier', -11, -0.4, { dir: 'f', talk: ['croupier: Ставки сделаны, ставок больше нет. Ой, простите, мадемуазель, это я по привычке.'] }); R.actor('croupier', 11, -0.4, { dir: 'f', id: 'cr2' });
-    R.npc('hostess', 4, -4.6, { talk: async (G: any) => { await G.run(D.fortuna); if (!f.rub_fort) { f.rub_fort = 1; await G.run(D.fortunaAfter); } } }); R.spot(4, 8, -2, 4, -4.6, 0xffe0a0, 50, { angle: 0.25, cone: 0.05, shadow: false });
+    R.npc('hostess', 4, -4.6, { talk: async (G: any) => { if (G.state.mask === 'drama') return fortunaDrama(G); await G.run(D.fortuna); if (!f.rub_fort) { f.rub_fort = 1; await G.run(D.fortunaAfter); } maskHint(G, 'rub_dr', 'Маска Драмы (3) показывает, что человек чувствует на самом деле', '♦'); } }); R.spot(4, 8, -2, 4, -4.6, 0xffe0a0, 50, { angle: 0.25, cone: 0.05, shadow: false });
     R.photo('fortuna', 'Леди Фортуна', 4, -4.6);
     // салон за бархатной верёвкой: красный луч, светящаяся вывеска и дорожка ведут взгляд к двери
     R.door('salon', 12.5, { label: f.rub_rope ? 'Частный салон' : 'Частный салон (бархатная верёвка)', sign: 'SALON PRIVÉ', col: '#8e1830', w: 2.4, glow: '#ff6080', fn: async (G) => { if (!f.rub_rope) { await G.run(D.ropeLocked); await G.run(D.ropePlan); f.rub_rope = 1; if (f.rub_fake) f.rub_ctrl = (f.rub_ctrl || 0) + 1; } G.sfx('door'); await G.goto('rub_salon', 'start', { fade: 'fade' }); } });
@@ -209,7 +257,7 @@ const casino: RoomDef = {
     R.spot(12.5, 8.5, -3, 12.5, -6.2, 0xff5070, 60, { angle: 0.3, cone: 0.06, shadow: false });
     const runnerT = canvasTex(16, 16, (c) => { px(c, 0, 0, 16, 16, '#7a0e1c'); px(c, 0, 0, 2, 16, '#d4ae48'); px(c, 14, 0, 2, 16, '#d4ae48'); px(c, 7, 6, 2, 4, '#a8283a'); }, 'rrun');
     const run = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 6), lamb(rep(runnerT, 1, 3))); run.rotation.x = -Math.PI / 2; run.position.set(12.5, 0.02, -2.8); R.room.group.add(run);
-    R.npc('guard', 15.2, -6.0, { dir: 'l', talk: D.ropeLocked });
+    R.npc('guard', 15.2, -6.0, { dir: 'l', talk: async (G: any) => { await G.run(D.ropeLocked); maskHint(G, 'rub_com', 'Маска Комедии (1) развязывает языки. Даже охранникам', '☺'); } });
     R.actor('ruben_tux', 9.6, -5.2, { id: 'ruben', dir: 'r' });
     // гости вокруг столов, боком к камере (не спинами)
     for (const [i, [id, x, z, d]] of ([['courtier', -7.6, 3.2, 'r'], ['collector', -4.4, 3.3, 'l'], ['lydia', 4.4, 3.2, 'r'], ['courtier', 7.6, 3.3, 'l']] as [string, number, number, string][]).entries()) R.actor(id, x, z, { dir: d, id: 'crowd_' + i + '_' + id });
@@ -218,7 +266,7 @@ const casino: RoomDef = {
     R.inter('out', 0, 6.6, { label: 'На террасу', y: 2.4, fn: async (G) => { G.sfx('step'); await G.goto('rub_terrace', 'start'); } });
     R.spawn('start', 0, 5.4, 'b');
   },
-  async enter(G) { dressCode(G); if (!G.f.rub_hall) { G.f.rub_hall = 1; await G.run(D.hallIn); } },
+  async enter(G) { dressCode(G); if (!G.f.rub_hall) { G.f.rub_hall = 1; await G.run(D.hallIn); maskHint(G, 'rub_com', 'Маска Комедии (1) развязывает языки. Даже охранникам', '☺'); } },
 };
 
 // ---------------- 3. частный салон: три руки покера ----------------
@@ -241,7 +289,7 @@ const salon: RoomDef = {
     const ped = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.7, 0.9, 10), lamb(rail)); ped.position.set(0, 0.45, TZ); R.room.group.add(ped); R.collider(-2.4, TZ - 1.3, 2.4, TZ + 1.3);
     const lampT = canvasTex(24, 8, (c) => { px(c, 0, 0, 24, 8, '#1a3a24'); px(c, 1, 0, 22, 2, '#2a5a34'); px(c, 0, 6, 24, 2, '#c8a050'); px(c, 2, 7, 20, 1, '#fff0c0'); }, 'plamp');
     pbox(R, 0, TZ, 1.6, 0.6, 0.35, { front: lampT, top: lampT, emissive: 0x302010 }, { y: 3.4, solid: false }); R.box(0, TZ, 0.04, 0.04, 2.3, { tex: 'gold', y: 3.75, solid: false, cast: false });
-    R.light(0, 3.1, TZ + 0.6, 0xffd890, 7, 6); R.spot(0, 3.3, TZ, 0, TZ, 0xffe0a0, 6, { angle: 0.6, cone: 0.03, shadow: false });
+    R.light(0, 3.1, TZ + 0.6, 0xffd890, 7, 6); warmKey(R, 0.6, 2.6, TZ + 1.4, 8); R.spot(0, 3.3, TZ, 0, TZ, 0xffe0a0, 6, { angle: 0.6, cone: 0.03, shadow: false });
     chips(R, -1.2, TZ - 0.3, 6, 1.13); chips(R, 1.0, TZ - 0.35, 5, 1.13);
     // пять общих карт на сукне + колода
     const cards = new THREE.Group(); cards.name = 'board'; for (let i = 0; i < 5; i++) { const m = new THREE.Mesh(new THREE.PlaneGeometry(0.44, 0.62), new THREE.MeshBasicMaterial({ map: backTex(), transparent: true, alphaTest: 0.3 })); m.position.set(-1.0 + i * 0.5, 1.3, TZ + 0.3); m.rotation.x = -1.0; cards.add(m); } R.room.group.add(cards); R.room.named.board = cards;
@@ -256,7 +304,13 @@ const salon: RoomDef = {
     R.door('out', -5.5, { label: 'В большой зал', col: '#8e1830', fn: (G) => G.goto('rub_casino', 'start') });
     R.spawn('start', -5.5, -3.6, 'r');
   },
-  async enter(G) { dressCode(G); if (!G.f.rub_salonI) { G.f.rub_salonI = 1; await G.run(D.salonIn); G.mech('masks'); } },
+  async enter(G) {
+    dressCode(G); if (G.f.rub_salonI) return; G.f.rub_salonI = 1;
+    // медленный наезд через весь салон к столу, Зеро снизу, пауза перед его первой репликой
+    const back = await angle(G, 0.34, 1.6, 0); const d = dolly(G, 0, TZ - 0.6, 19, 10, 3.6);
+    await G.run(D.salonIn.slice(0, 1)); await d; G.focus(0, TZ - 1.4, 8); await G.wait(0.8); G.sfx('clunk');
+    await G.run(D.salonIn.slice(1, 2)); await back(1); G.unfocus(); await G.run(D.salonIn.slice(2)); G.mech('masks');
+  },
 };
 /** Раздачи: карты Рубена (крупно поверх кадра) и стол. Третья рука, конечно, роял-флеш. */
 const DEALS = [{ hole: ['Q♥', 'Q♠'], board: ['K♣', '7♦', '2♠', 'J♥', '9♣'] }, { hole: ['7♠', '7♥'], board: ['7♦', 'K♠', '3♣', '10♥', '2♦'] }, { hole: ['A♠', 'K♠'], board: ['Q♠', 'J♠', '10♠', '4♦', '2♥'] }];
@@ -285,14 +339,36 @@ async function poker(G: any) {
   G.focus(0, -1.6, 11);
   await hand(G, 0, D.hand1, D.hand1Tr, D.hand1Ask, false);
   await hand(G, 1, D.hand2, D.hand2Tr, D.hand2Ask, true);
-  showDeal(G, 2); await G.run(D.hand3); await G.run(D.hand3Choice); G.sfx('heart'); await G.wait(0.6); await G.run(D.hand3Ruben);
-  await G.run(f.rub_silent ? D.hand3Silent : D.hand3Talked); f.rub_won = 1; G.sfx('applause', { dur: 2 }); document.getElementById('rub-hole')?.remove(); G.unfocus(); await G.rebuild();
+  showDeal(G, 2); await G.run(D.hand3.slice(0, 2));
+  // крупно Рубен; музыка гаснет; наушник ложится на сукно; тишина
+  G.audio.music(null); const back = await angle(G, 0.4, 1.5, 0.8); await dolly(G, 1.6, TZ + 1.4, 10, 7, 1.4);
+  await G.run(D.hand3.slice(2, 3)); G.sfx('click'); await G.wait(1.2); await G.run(D.hand3.slice(3)); await G.run(D.hand3Choice); G.sfx('heart'); await G.wait(0.8);
+  // олл-ин снизу; потом крупно Зеро, долгая пауза перед «пас»
+  await angle(G, 0.26, 1.9, 0.6); await G.run(D.hand3Ruben.slice(0, 1)); G.focus(0, TZ - 1.4, 7.5); await G.run(D.hand3Ruben.slice(1, 2)); G.sfx('heart'); await G.wait(1.4);
+  await G.run(D.hand3Ruben.slice(2, 3)); G.flash(0.25); G.audio.music('noir'); await back(1.2); G.focus(1.0, TZ + 0.6, 10);
+  await G.run(D.hand3Ruben.slice(3, 5)); await G.wait(0.5); const off = await warmOn(G, 1.0, TZ + 1.2, { shafts: 2, motes: 'dust', glow: 0.3, key: 6 });
+  await G.run(D.hand3Ruben.slice(5)); await G.run(f.rub_silent ? D.hand3Silent : D.hand3Talked); f.rub_won = 1; G.sfx('applause', { dur: 2 }); document.getElementById('rub-hole')?.remove(); await G.wait(1); await off(); G.unfocus(); await G.rebuild();
 }
 async function vaultScene(G: any) {
-  await G.run(D.vault.slice(0, 2)); G.give('marionette', true); G.sfx('pickup'); await G.run(D.vault.slice(2));
+  await G.run(D.vault.slice(0, 2)); G.give('marionette', true); G.sfx('pickup'); await G.run(D.vault.slice(2, 4)); if (G.f.rub_fortD) await G.run(D.vaultDr); await G.run(D.vault.slice(4));
   G.sfx('alarm'); G.audio.music('chase'); await G.ui.card([['СЕРПАНТИН НАД ОЗЕРОМ', 'act'], ['план ушёл, люди остались', 'sm']]); await G.run(D.chaseIntro);
   let ok = false; while (!ok) { const r = await runner({ track: 'chase', title: 'Погоня', sub: '← → или A / D: уворачиваться от машин охраны', duration: 30 }); ok = r.ok; if (!ok) await G.run(D.chaseLose); }
-  G.audio.music('heist'); await G.run(D.end); G.sfx('applause', { dur: 3 });
+  G.set('rub_end', 1); await G.goto('rub_terrace', 'end', { fade: 'fade' }); await rubenEnd(G);
   await finishChapter(G, 'ruben', [['ROYAL FLUSH', 'act'], 'Рубен поставил всё на свой прочёт.', ['Лучшая подсказка иногда, это тишина.', 'sm']]);
+}
+/** Драма у Леди Фортуны: на миг видно, что она чувствует на самом деле. */
+async function fortunaDrama(G: any) {
+  G.focus(4, -4.2, 9); const back = await angle(G, 0.44, 1.7, 0.8); G.sfx('note'); await G.run(D.fortunaDr); G.f.rub_fortD = 1; await back(); G.unfocus();
+}
+/** Финал на террасе: силуэты у балюстрады на фоне ночного озера, медленный наезд, светлячки и тихий джаз. */
+async function rubenEnd(G: any) {
+  const rub = G.actor('ruben'); G.player.place(-7.0, -2.0, 'b'); G.audio.music(null);
+  const back = await angle(G, 0.16, 2.6, 0); G.focus(-6, -2.4, 26); await G.wait(1.2);
+  await G.run(D.end.slice(0, 1)); const off = await warmOn(G, -6, -2.2, { shafts: 0, motes: 'fireflies', glow: 0.26, key: 6, music: 'noir' });
+  const d = dolly(G, -6, -1.8, 26, 12, 6); await G.wait(0.6);
+  if (rub) { rub.face(G.player.x, G.player.z); G.player.face(rub.x, rub.z); }
+  await G.run(D.end.slice(1, 2)); await d; await angle(G, 0.34, 1.6, 1.2); await G.run(D.end.slice(2, 4));
+  if (rub) { rub.dir = 'b'; G.player.dir = 'b'; } await G.wait(0.8); G.focus(-9, -0.6, 18); await G.run(D.end.slice(4)); G.sfx('applause', { dur: 3 }); await G.wait(1.2);
+  await off(); await back(0.8); G.unfocus();
 }
 export const rooms: Record<string, RoomDef> = { rub_terrace: terrace, rub_casino: casino, rub_salon: salon };

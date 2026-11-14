@@ -13,6 +13,52 @@ import { finishChapter, carriedLight, rainy, fog, actOf } from './common';
 import { rug, sconce, piano, vanity, chandelier } from '../world/decor';
 import { wardrobe, bookshelf, sofa, armchair, window3D, coatStand, mirror3D } from '../world/decor3d';
 
+// ---------------- кинематограф (локально): тёплые моменты, камера, подсказки масок ----------------
+// Все твины пропускаются в быстром режиме (G.fast) и не зависают, если комната сменилась посреди движения.
+const WARM = { tint: [1.12, 1.0, 0.86], sat: 1.1, bloom: 0.9, vig: 0.35, bright: 1.05 };
+function ctw(G: any, dur: number, fn: (k: number) => void): Promise<void> {
+  const room = G.room; if (G.fast || !room || dur <= 0) { fn(1); return Promise.resolve(); }
+  return new Promise((res) => { let t = 0, done = false; const fin = () => { if (done) return; done = true; const i = room.updaters.indexOf(u); if (i >= 0) room.updaters.splice(i, 1); res(); };
+    const u = (dt: number) => { t += dt; const k = Math.min(1, t / dur); fn(k * k * (3 - 2 * k)); if (k >= 1) fin(); }; room.updaters.push(u); setTimeout(() => { if (G.room !== room) fin(); }, dur * 1000 + 600); });
+}
+/** Медленный наезд/отъезд камеры на точку. */
+async function dolly(G: any, x: number, z: number, d0: number, d1: number, dur: number) { G.focus(x, z, d0); const fo = G.cam.focus; await ctw(G, dur, (k) => { if (G.cam.focus === fo) fo.dist = d0 + (d1 - d0) * k; }); }
+/** Ракурс: наклон и высота камеры плавно; возвращает функцию возврата к прежнему ракурсу. */
+async function angle(G: any, pitch: number, yOff: number, dur = 1.2) {
+  const p0 = G.cam.pitch, y0 = G.cam.yOff; await ctw(G, dur, (k) => { G.cam.pitch = p0 + (pitch - p0) * k; G.cam.yOff = y0 + (yOff - y0) * k; });
+  return (d = 1.2) => { const p1 = G.cam.pitch, y1 = G.cam.yOff; return ctw(G, d, (k) => { G.cam.pitch = p1 + (p0 - p1) * k; G.cam.yOff = y1 + (y0 - y1) * k; }); };
+}
+const glowTex = () => canvasTex(32, 32, (c) => { const g = c.createRadialGradient(16, 16, 0, 16, 16, 16); g.addColorStop(0, 'rgba(255,214,150,1)'); g.addColorStop(0.4, 'rgba(255,190,120,0.45)'); g.addColorStop(1, 'rgba(255,170,100,0)'); c.fillStyle = g; c.fillRect(0, 0, 32, 32); }, 'cine_glow');
+const shaftTex = () => canvasTex(16, 64, (c) => { for (let y = 0; y < 64; y++) for (let x = 0; x < 16; x++) { const e = Math.sin((x + 0.5) / 16 * Math.PI), v = Math.pow(1 - y / 64, 0.7) * 0.25 + 0.75 * Math.sin(y / 64 * Math.PI); const a = e * e * v; if (a > 0.02) { c.fillStyle = `rgba(255,220,160,${a.toFixed(3)})`; c.fillRect(x, y, 1, 1); } } }, 'cine_shaft');
+const additive = (map: THREE.Texture, color = 0xffffff) => new THREE.MeshBasicMaterial({ map, color, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
+/**
+ * Тёплый момент: грейд теплее и мягче, золотое свечение у героев, косые лучи, тёплые пылинки/светлячки,
+ * по желанию тихая музыка. Возвращает функцию, которая плавно всё возвращает (грейд главы, музыку).
+ */
+async function warmOn(G: any, x: number, z: number, o: { music?: string; back?: string | null; shafts?: number; motes?: 'dust' | 'fireflies' | 'petals'; glow?: number; y?: number; grade?: any; key?: number } = {}) {
+  const room = G.room; if (!room) return async () => {};
+  const saved = { ...G.gradeBase, tint: G.gradeBase.tint ? [...G.gradeBase.tint] : undefined }; G.grade(o.grade || WARM);
+  if (o.music) G.audio.music(o.music);
+  const grp = new THREE.Group(); grp.position.set(x, 0, z); room.group.add(grp); const mats: { m: THREE.Material & { opacity: number }; a: number }[] = [];
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex(), color: 0xffd8a0, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); halo.position.set(0, o.y ?? 2.0, 0.2); halo.scale.set(9, 7, 1); grp.add(halo); mats.push({ m: halo.material as any, a: o.glow ?? 0.32 });
+  for (let i = 0; i < (o.shafts ?? 3); i++) { const m = additive(shaftTex(), 0xffe0b0); const s = new THREE.Mesh(new THREE.PlaneGeometry(1.4 + i * 0.5, 10), m); s.position.set(-2.4 + i * 2.2, 4.6, -1.6 - i * 0.3); s.rotation.z = 0.38; grp.add(s); mats.push({ m: m as any, a: 0.16 - i * 0.03 }); }
+  const n = 46, pos = new Float32Array(n * 3), ph = new Float32Array(n); for (let i = 0; i < n; i++) { pos[i * 3] = (Math.random() - 0.5) * 9; pos[i * 3 + 1] = Math.random() * 4.5; pos[i * 3 + 2] = (Math.random() - 0.5) * 4; ph[i] = Math.random() * 6.28; }
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); const kind = o.motes || 'dust';
+  const pm = new THREE.PointsMaterial({ color: kind === 'petals' ? 0xffc8d8 : kind === 'fireflies' ? 0xffe890 : 0xffd8a0, size: kind === 'dust' ? 0.09 : 0.14, transparent: true, opacity: 0, depthWrite: false, blending: kind === 'petals' ? THREE.NormalBlending : THREE.AdditiveBlending }); grp.add(new THREE.Points(geo, pm)); mats.push({ m: pm as any, a: kind === 'fireflies' ? 0.95 : 0.7 });
+  const upd = (dt: number, t: number) => { for (let i = 0; i < n; i++) { const vy = kind === 'petals' ? -0.5 : kind === 'fireflies' ? Math.sin(t * 0.8 + ph[i]) * 0.25 : 0.12; pos[i * 3 + 1] += vy * dt; pos[i * 3] += Math.sin(t * 0.6 + ph[i]) * dt * 0.25; if (pos[i * 3 + 1] > 4.6) pos[i * 3 + 1] = 0.1; if (pos[i * 3 + 1] < 0) pos[i * 3 + 1] = 4.5; } geo.attributes.position.needsUpdate = true; if (kind === 'fireflies') pm.size = 0.12 + Math.sin(t * 5) * 0.04; };
+  room.updaters.push(upd);
+  const key = room.named.warmKey as THREE.PointLight | undefined; const kInt = o.key ?? 6;
+  await ctw(G, 1.4, (k) => { for (const e of mats) e.m.opacity = e.a * k; if (key) key.intensity = kInt * k; });
+  return async () => {
+    if (G.room === room) { G.gradeBase = saved; G.applyGrade(); if (o.back !== undefined) G.audio.music(o.back); await ctw(G, 1.6, (k) => { for (const e of mats) e.m.opacity = e.a * (1 - k); if (key) key.intensity = kInt * (1 - k); }); }
+    const i = room.updaters.indexOf(upd); if (i >= 0) room.updaters.splice(i, 1); grp.parent?.remove(grp); geo.dispose();
+  };
+}
+/** Тёплый «ключевой» свет комнаты: заранее заведён с нулевой яркостью (без перекомпиляции шейдеров посреди сцены). */
+function warmKey(R: Builder, x: number, y: number, z: number, dist = 11) { R.light(x, y, z, 0xffc890, 0, dist, { name: 'warmKey' }); }
+/** Подсказка о маске: один раз за игру для каждого ключа. */
+function maskHint(G: any, key: string, text: string, icon = '❖') { const h = (G.f.maskHints ||= {}); if (h[key] || G.fast) return; h[key] = 1; G.toast(text, icon); }
+
 const GRADE = { sat: 0.62, tint: [0.88, 0.94, 1.1], vig: 0.6, bright: 1.12, contrast: 1.05 };
 const DARK = { sat: 0.5, tint: [0.84, 0.9, 1.1], vig: 0.72, bright: 1.08, contrast: 1.08 };
 // маска Комедии: розовое аниме поверх хоррора
@@ -476,7 +522,8 @@ const hall: RoomDef = {
     // часы, зеркало с консолью, вешалка, скамья
     R.sprite(canvasTex(14, 40, (c) => { c.fillStyle = '#3a2a1c'; c.fillRect(0, 0, 14, 40); c.fillStyle = '#e8e0c8'; c.fillRect(2, 2, 10, 10); c.fillStyle = '#111'; c.fillRect(6, 3, 1, 5); c.fillRect(6, 7, 4, 1); c.fillStyle = '#86641c'; c.fillRect(5, 16, 4, 14); }, 'gclock'), 10.6, -5.3, { scale: 1.3, solid: 0.5 });
     R.look('clock', 10.6, -4.3, 'Напольные часы', P.clock, { mask: 'none' }); R.look('clockC', 10.6, -4.3, 'Часы (кашляют)', P.clockCom, { mask: 'comedy', egg: 'clock13' });
-    R.table(-3.8, -5.4, 2.4, 0.7, { tex: 'wood', tint: '#8a6448' }); mirror3D(R, -3.8, 3.3, -5.94, 1.6, 2.2, {}); R.look('hmirror', -3.8, -4.4, 'Зеркало', P.mirrorHall);
+    R.table(-3.8, -5.4, 2.4, 0.7, { tex: 'wood', tint: '#8a6448' }); mirror3D(R, -3.8, 3.3, -5.94, 1.6, 2.2, {}); R.look('hmirror', -3.8, -4.4, 'Зеркало', async (G) => { await G.run(P.mirrorHall); if (!f.pol_dark) maskHint(G, 'pol_mirror', 'Маска Драмы (3) показала бы, какое это отражение на самом деле', '♦'); }, { cond: () => G.state.mask !== 'drama' || !!f.pol_dark });
+    R.look('hmirrorD', -3.8, -4.4, 'Зеркало (Драма)', mirrorDrama, { mask: 'drama', cond: () => !f.pol_dark }); warmKey(R, -3.8, 3.2, -2.6, 9);
     R.sprite('candle', -4.6, -5.4, { y: 1.15, scale: 1.1 }); R.sprite(canvasTex(10, 12, (c) => { px(c, 3, 6, 4, 6, '#3a2a4a'); px(c, 2, 5, 6, 1, '#5a4a6a'); px(c, 1, 0, 3, 4, '#8e1830'); px(c, 5, 1, 3, 4, '#c8a0c0'); px(c, 4, 3, 2, 3, '#2e5038'); }, 'vase'), -3.0, -5.4, { y: 1.15, scale: 1.2, thin: true });
     coatStand(R, 11.0, 0.1, [0x2a2a30, 0xe8c230]); R.look('coat', 10.2, 0.6, 'Вешалка', P.coat);
     sofa(R, -10.4, 3.6, { w: 2.2, col: 0x8a5a5a, ry: Math.PI / 2 }); oldHouse(R, G, { h: 6.5 }); window3D(R, 3.4, { wall: 'w', y: 3.4, w: 1.4, h: 2.4, curtains: true });
@@ -522,7 +569,7 @@ const living: RoomDef = {
     piano(R, 7.4, -3.4, -0.3); R.look('piano', 6.8, -1.8, 'Пианино', P.piano, { quiet: true });
     bookshelf(R, -9.4, 2.8, { w: 3, h: 4.2, ry: Math.PI / 2 }); R.sprite('lamp', -7.4, -4.6, { scale: 1 }); R.light(-7.4, 2.8, -4.4, 0xffd8a0, 5, 6);
     R.box(7.6, 2.6, 1.2, 0.8, 0.9, { tex: 'darkwood' }); R.box(7.6, 2.6, 0.9, 0.5, 0.55, { color: 0x6a4a2a, y: 0.9, solid: false }); R.box(7.6, 2.86, 0.6, 0.02, 0.35, { color: 0xd8c8a0, y: 0.98, solid: false, cast: false });
-    R.inter('radio', 7.6, 3.6, { label: 'Старое радио', fn: async (G) => { G.sfx('laugh', { n: 6, f: 520, vol: 0.2 }); await G.run(P.radio); } });
+    R.inter('radio', 7.6, 3.6, { label: 'Старое радио', fn: async (G) => { G.sfx('laugh', { n: 6, f: 520, vol: 0.2 }); if (G.state.mask === 'comedy') return radioComedy(G); await G.run(P.radio); maskHint(G, 'pol_radio', 'Маска Комедии (1) делает смех настоящим и развязывает язык', '☺'); } }); warmKey(R, 6.4, 3.0, 2.6, 9);
     kawaii(R, G, { w: 20, d: 12 });
     const pol = R.actor('polina_coat', -7.6, -0.6, { id: 'polina' }); G.follow(pol);
     R.door('hall', -2.6, { wall: 'w', to: 'pol_hall', spot: 'liv', label: 'В прихожую', col: '#7a5236' });
@@ -550,13 +597,13 @@ const library: RoomDef = {
     // портреты: глазами одно, через видоискатель лжецы показывают другое
     const swaps: { a: THREE.Object3D; b: THREE.Object3D }[] = [];
     PORTRAITS.forEach((pt, i) => { const x = -8 + i * 4; const a = R.decal(portraitTex(i), { x, y: 3, w: 1.9, h: 2.4, noSlot: true }); if (pt.lie) { const b = R.decal(portraitTex(i, true), { x, y: 3, w: 1.9, h: 2.4, noSlot: true }); b.visible = false; swaps.push({ a, b }); }
-      if (i < 4) sconce(R, x + 2, 3.9, -5.96, { light: 0 }); R.inter('pt_' + pt.id, x, -4.4, { label: 'Портрет: ' + pt.name, fn: (G) => G.run(P.portraitLook(pt.name, pt.year, pt.sym, pt.look)) }); R.photo(pt.id, pt.name, x, -5.5); });
-    R.onUpdate(() => { const v = !!G.inPhoto; for (const s of swaps) { s.a.visible = !v; s.b.visible = v; } });
+      if (i < 4) sconce(R, x + 2, 3.9, -5.96, { light: 0 }); R.inter('pt_' + pt.id, x, -4.4, { label: 'Портрет: ' + pt.name, fn: async (G) => { if (G.state.mask === 'tragedy') return portraitTragedy(G, pt); await G.run(P.portraitLook(pt.name, pt.year, pt.sym, pt.look)); } }); R.photo(pt.id, pt.name, x, -5.5); });
+    R.onUpdate(() => { const v = !!G.inPhoto || G.state.mask === 'tragedy'; for (const s of swaps) { s.a.visible = !v; s.b.visible = v; } });
     bookshelf(R, -11.4, -2.4, { w: 3.2, h: 4.6, ry: Math.PI / 2 }); bookshelf(R, -11.4, 1.4, { w: 3.2, h: 4.6, ry: Math.PI / 2 }); bookshelf(R, 11.4, 2.2, { w: 3, h: 4.6, ry: -Math.PI / 2 });
     R.table(0, 0.4, 3, 1.3, { tex: 'darkwood' }); R.sprite('bookstand', 0, 0.4, { y: 1.15, scale: 1.1 }); R.sprite('candle', -1.1, 0.3, { y: 1.15, scale: 1.1 }); R.light(-1.1, 1.8, 0.6, 0xffc070, 3, 4, { flicker: 0.3 });
     armchair(R, -2.6, 1.6, { col: 0xb06060, ry: Math.PI + 0.4 }); armchair(R, 2.6, 1.6, { col: 0xb06060, ry: Math.PI - 0.4 }); oldHouse(R, G, { h: 6, base: '#4a2e1c' });
     R.sprite('lamp', -10.6, 4.4, { scale: 1 }); R.light(-10.4, 2.6, 4.2, 0xffd090, 4, 6); pbox(R, 6, 4.8, 2.2, 0.8, 0.9, { front: wardTex(0, '#4a2e1c', '#7a5436', '#24160c'), top: tex('wood', '#8a6040') }); R.sprite('candle', 5.4, 4.8, { y: 0.9, scale: 1 }); R.sprite(canvasTex(14, 8, (c) => { px(c, 0, 4, 14, 4, '#5a2a1a'); px(c, 1, 2, 12, 2, '#2a3a5a'); px(c, 2, 0, 10, 2, '#8a6a2a'); px(c, 0, 4, 14, 1, '#e8e0c8'); }, 'bookpile'), 6.6, 4.8, { y: 0.9, scale: 1, thin: true });
-    R.inter('book', 0, 1.6, { label: 'Проклятая книга', fn: async (G) => { await G.run(P.book); await G.ui.paper(P.bookText); if (!f.pol_book) { f.pol_book = 1; await G.run(P.bookAfter); await ownerEnters(G); } } });
+    R.inter('book', 0, 1.6, { label: 'Проклятая книга', fn: async (G) => { await G.run(P.book); await G.ui.paper(P.bookText); if (!f.pol_book) { f.pol_book = 1; await G.run(P.bookAfter); await ownerEnters(G); maskHint(G, 'pol_tragedy', 'Маска Трагедии (2) тоже видит, что под краской: посмотри на портреты в ней', '☹'); } } });
     for (const [k, x] of [-10.4, 10.4].entries()) { wardrobeP(R, x, -5.3, { v: k ? 2 : 0, w: 1.9, h: 3.2, base: '#5a3a26', lt: '#8a6040', dk: '#2e1c12' }); R.inter('wd' + (k ? 7.6 : -7.6), x, -4.3, { label: 'Шкаф (спрятаться / выйти)', r: 1.4, fn: (G) => hide(G) }); }
     const g = R.guard('owner', [[-9, -2.6], [7, -2.6]], { speed: 1.6, range: 5.2, half: 0.45, pause: 1.6, onCatch: async (G) => { G.sfx('laugh', { n: 6, f: 300, vol: 0.35 }); G.flash(0.6); G.shake(0.4); await G.run(G.state.mask === 'comedy' ? P.caughtCat : P.caught); G.player.place(10, 1.6, 'l'); G.actor('polina')?.place(10.4, 2.4); G.room.guards[0].actor.place(-9, -2.6); G.camSnap(); } });
     g.active = !!f.pol_book; catFor(R, G, g); softCone(g);
@@ -567,13 +614,33 @@ const library: RoomDef = {
   },
   async photo(G, subs) {
     const f = G.f; for (const pt of PORTRAITS.filter((p) => subs.includes(p.id))) { if (pt.lie) { await G.run(P.liar(pt.name, pt.year, pt.sym, pt.lie)); f['pol_an_' + pt.id] = 1; } else await G.run(P.honest(pt.name)); }
-    if (PORTRAITS.every((p) => !p.lie || f['pol_an_' + p.id]) && !f.pol_photos) { f.pol_photos = 1; await G.run(P.allLiars); }
+    await liarsCheck(G);
   },
 };
+async function liarsCheck(G: any) { const f = G.f; if (PORTRAITS.every((p) => !p.lie || f['pol_an_' + p.id]) && !f.pol_photos) { f.pol_photos = 1; await G.run(P.allLiars); } }
+/** Маска Трагедии: портрет-лжец показывает настоящее лицо прямо глазами (вторая дорога к разгадке, без камеры). */
+async function portraitTragedy(G: any, pt: typeof PORTRAITS[number]) {
+  if (!pt.lie) return G.run(P.honest(pt.name)); const x = -8 + PORTRAITS.indexOf(pt) * 4;
+  G.focus(x, -3.4, 10); G.sfx('note'); G.flash(0.12); await G.run(P.liarTr(pt.name, pt.year, pt.sym, pt.lie)); G.f['pol_an_' + pt.id] = 1; G.unfocus(); await liarsCheck(G);
+}
+/** Драма в зеркале прихожей: правда за смехом Полины. Тёплый момент. */
+async function mirrorDrama(G: any) {
+  const back = await angle(G, 0.42, 1.6, 0.9); await dolly(G, -3.8, -3.6, 13, 10, 0.9);
+  await G.run(P.mirrorDr.slice(0, 2)); await G.wait(0.6); const off = await warmOn(G, -3.8, -3.4, { shafts: 2, motes: 'dust', glow: 0.26 });
+  await G.run(P.mirrorDr.slice(2)); G.f.pol_mirD = 1; await off(); await back(); G.unfocus();
+}
+/** Комедия в гостиной: смех становится настоящим, и Полина рассказывает, откуда её «хи-хи». */
+async function radioComedy(G: any) {
+  G.focus(6.6, 2.4, 11); await G.run(P.radioCom.slice(0, 3)); const off = await warmOn(G, 6.4, 2.4, { shafts: 2, motes: 'dust', glow: 0.24 });
+  await G.run(P.radioCom.slice(3)); G.f.pol_radioC = 1; await off(); G.unfocus();
+}
 /** Хозяин не стоит в комнате заранее: он входит в дверь, когда книга прочитана. */
 async function ownerEnters(G: any) {
-  const g = G.room.guards[0]; const a = g.actor; a.place(10.8, -2.2, 'l'); g.active = false; a.hidden = false; G.sfx('creak'); G.focus(6, -1, 16);
-  await G.run(P.ownerSeen.slice(0, 1)); await a.walkTo(7, -2.6, 1.6); g.active = true; await G.run(P.ownerSeen.slice(1)); G.unfocus(); G.mech('stealth');
+  const g = G.room.guards[0]; const a = g.actor; a.place(10.8, -2.2, 'l'); g.active = false; a.hidden = false;
+  // тишина, низкий ракурс, крупно дверь; потом медленный отъезд, пока он идёт
+  G.audio.music(null); const back = await angle(G, 0.3, 1.9, 0); G.focus(10, -1.8, 9); await G.wait(0.9); G.sfx('creak'); G.flash(0.12); await G.wait(0.7);
+  await G.run(P.ownerSeen.slice(0, 1)); G.sfx('heart'); await Promise.all([a.walkTo(7, -2.6, 1.6), dolly(G, 8.4, -1.8, 9, 15, 2.6)]); g.active = true; G.audio.music('horror');
+  await back(0.8); await G.run(P.ownerSeen.slice(1)); G.unfocus(); G.mech('stealth');
 }
 
 // ---------------- 6. подвал ----------------
@@ -592,7 +659,7 @@ const basement: RoomDef = {
     outerMass(R, 'stone', '#3a3438', 5); R.sprite(bookPileTex(4), 4.4, 3.0, { y: 1.3, scale: 0.9, thin: true }); R.box(-5.6, 1.0, 0.9, 0.9, 0.8, { tex: 'wood', tint: '#6a5038' }); R.sprite(canvasTex(12, 14, (c) => { px(c, 1, 2, 10, 12, '#6a5a3a'); px(c, 2, 0, 8, 3, '#8a7a50'); px(c, 3, 1, 6, 1, '#4a3a20'); px(c, 2, 6, 8, 1, '#4a3a20'); grime(c, 12, 14, '#3a2a18', 0.1, 77); }, 'sack'), 6.0, 1.4, { scale: 1.1, thin: true });
     R.box(5.6, -4.4, 2, 0.7, 3, { tex: 'darkwood' }); for (let k = 0; k < 3; k++) for (let j = 0; j < 4; j++) R.box(4.9 + j * 0.45, -4.1, 0.25, 0.25, 0.35, { color: [0xc86a2a, 0x8a2a3a, 0x6a8a3a, 0xd8c890][(j + k) % 4], y: 0.5 + k * 0.95, solid: false, cast: false, opacity: 0.85 });
     R.decal(canvasTex(16, 10, (c) => { c.fillStyle = '#3a3a40'; c.fillRect(0, 0, 16, 10); c.fillStyle = '#111'; for (let i = 0; i < 4; i++) c.fillRect(2, 1 + i * 2.3, 12, 1); }, 'vent'), { wall: 'e', at: -1.5, y: 3.2, w: 1.5, h: 1 });
-    R.inter('vent', 6.2, -1.5, { label: 'Вентиляционная решётка', fn: (G) => G.run(['~: Решётка. Сквозь неё слышен дождь и скрип половиц наверху.']) });
+    warmKey(R, 3.6, 3.0, 0.6, 10); R.inter('vent', 6.2, -1.5, { label: 'Вентиляционная решётка', fn: (G) => G.run(['~: Решётка. Сквозь неё слышен дождь и скрип половиц наверху.']) });
     R.box(-5, 3.2, 1.6, 1, 1, { tex: 'wood' }); R.box(5.2, 3.4, 1.3, 1.3, 1.3, { tex: 'wood' }); R.light(0, 3.6, 0, 0xffd9a0, 6, 9, { flicker: 0.08 });
     R.spawn('start', -3.6, 2.4, 'r');
   },
@@ -600,7 +667,9 @@ const basement: RoomDef = {
     const f = G.f; if (f.pol_trapped) return; f.pol_trapped = 1; const pol = G.actor('polina'); G.unfollow?.(pol);
     await G.run(P.basementDown.slice(0, 3)); G.sfx('door'); G.shake(0.5); G.flash(0.3); await G.run(P.basementDown.slice(3)); G.sfx('laugh', { n: 8, f: 260, vol: 0.4 });
     // идём к решётке по свободному проходу, в обход столика
-    await G.player.walkTo(-1, 0.6, 4); await G.player.walkTo(5.2, 0.6, 4); await G.player.walkTo(5.6, -1.5, 3); G.player.dir = 'r'; await G.run(P.vent);
+    await G.player.walkTo(-1, 0.6, 4); await G.player.walkTo(5.2, 0.6, 4); await G.player.walkTo(5.6, -1.5, 3); G.player.dir = 'r';
+    { const k = P.vent.findIndex((s: any) => typeof s === 'string' && s.startsWith('polina/worried: Ладно')); G.focus(5.2, -1.2, 11);
+      await G.run(P.vent.slice(0, k)); await G.wait(0.5); const off = await warmOn(G, 5.2, -1.4, { shafts: 1, motes: 'dust', glow: 0.22, key: 5 }); await G.run(P.vent.slice(k)); await off(); G.unfocus(); }
     f.pol_dark = 1; G.setPlayerChar('polina_coat'); G.give('flashlight', true); await G.ui.card([['ПОЛИНА', 'act'], ['Страшно, и всё равно идти.', 'sm']]);
     await G.goto('pol_hall', 'base', { fade: 'fade' });
   },
@@ -642,7 +711,7 @@ const kitchen: RoomDef = {
     const wallT = canvasTex(32, 32, (c) => { for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) { const row = y >> 2, off = (row % 2) * 4, g = y % 4 === 0 || (x + off) % 8 === 0; px(c, x, y, 1, 1, g ? '#262a28' : hsh((x + off) >> 3, row, 9) < 0.2 ? '#4e5652' : '#5a625c'); } grime(c, 32, 32, 'rgba(30,24,14,0.45)', 0.07, 33); }, 'kwall');
     paintFloor(R, tile, 1.6); paintWalls(R, wallT, 5, 2);
     if (!f.pol_light) { R.ambient(0x3a3640, 3.4, 0x9a8a80); carriedLight(R, G, 0xffe0a0, 20, 12); R.light(0, 4.2, -1, 0x7088d0, 3, 10); R.light(-2.4, 2.6, 1.4, 0xffb060, 7, 8, { flicker: 0.2 }); R.light(6.0, 1.3, -2.8, 0xfff0c8, 7, 6, { flicker: 0.05 }); R.light(-3.6, 2.2, -3.9, 0xffa040, 5, 7, { flicker: 0.12 }); }
-    else { R.ambient(0x5a4c3c, 3.6, 0xffe0c0); R.light(0, 4, 0, 0xffd8a0, 18, 16); R.light(-2.6, 2.4, 1.4, 0xffb060, 6, 8); R.light(-3.6, 2.2, -3.9, 0xffb060, 4, 7); }
+    else { R.ambient(0x5a4c3c, 3.6, 0xffe0c0); R.light(0, 4, 0, 0xffd8a0, 18, 16); warmKey(R, 4.6, 3.0, -0.6, 10); R.light(-2.6, 2.4, 1.4, 0xffb060, 6, 8); R.light(-3.6, 2.2, -3.9, 0xffb060, 4, 7); }
     // кухонный гарнитур: расписанные тумбы, навесные шкафы с подсветкой снизу, плита, мойка, холодильник
     const cab = canvasTex(24, 16, (c) => { px(c, 0, 0, 24, 16, '#141a16'); px(c, 1, 1, 22, 15, '#4e6256'); px(c, 1, 1, 22, 3, '#3a4a40'); px(c, 10, 2, 4, 1, '#c8c0a0'); bev(c, 2, 5, 9, 10, '#4e6256', '#7a9282', '#2a3630'); bev(c, 13, 5, 9, 10, '#4e6256', '#7a9282', '#2a3630'); px(c, 9, 8, 1, 3, '#c8c0a0'); px(c, 14, 8, 1, 3, '#c8c0a0'); grime(c, 24, 16, 'rgba(10,8,4,0.4)', 0.07, 41); }, 'kcab');
     const upper = canvasTex(24, 16, (c) => { px(c, 0, 0, 24, 16, '#141a16'); px(c, 1, 1, 22, 14, '#4e6256'); for (const dx of [2, 13]) { bev(c, dx, 2, 9, 12, '#4e6256', '#7a9282', '#2a3630'); px(c, dx + 2, 4, 5, 8, '#1a2220'); px(c, dx + 2, 7, 5, 1, '#5a5a50'); px(c, dx + 3, 5, 2, 2, '#d8d0c0'); px(c, dx + 5, 9, 2, 2, '#c86a4a'); } }, 'kup');
@@ -675,17 +744,24 @@ async function breakerScene(G: any) {
   const f = G.f; await G.run(P.fuse); f.pol_light = 1; G.flash(0.8); G.grade({ ...GRADE, bright: 1.05, sat: 0.7 }, false); await G.rebuild();
   await G.run(P.burst1); G.sfx('crash'); G.shake(0.9); G.flash(0.3);
   const B = new (await import('../world/room')).Builder(G.room, G); const own = B.actor('owner', -7.2, 1.2, { id: 'ownerK', dir: 'r' });
-  G.audio.music('chase', { restart: true }); G.grade({ tint: [1.3, 0.82, 0.82], vig: 0.95, contrast: 1.25, sat: 0.6 }, false); G.focus(0, -1, 13);
+  G.audio.music('chase', { restart: true }); G.grade({ tint: [1.3, 0.82, 0.82], vig: 0.95, contrast: 1.25, sat: 0.6 }, false);
+  // силуэт в проёме: холодный контровой свет за спиной Хозяина, низкая камера снизу вверх
+  const rim = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex(), color: 0xb8c8ff, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false })); rim.position.set(-7.9, 2.0, 1.0); rim.scale.set(4, 6, 1); G.room.group.add(rim);
+  G.focus(-5.6, 0.6, 10); const back = await angle(G, 0.28, 2.0, 0.9);
   // тесак в руке Хозяина
   const blade = new THREE.Mesh(new THREE.PlaneGeometry(0.45, 0.9), new THREE.MeshBasicMaterial({ map: canvasTex(6, 12, (c) => { c.fillStyle = '#c8d0d8'; c.fillRect(0, 0, 6, 7); c.fillStyle = '#fff'; c.fillRect(0, 0, 1, 7); c.fillStyle = '#3a2a1a'; c.fillRect(2, 7, 2, 5); }, 'cleaver'), transparent: true, alphaTest: 0.3, side: THREE.DoubleSide })); blade.position.set(0.55, 1.5, 0.05); own.group.add(blade);
-  await G.run(P.burst2); G.sfx('heart');
-  await own.walkTo(0, 0.2, 1.4); await G.run(P.burst3); G.sfx('heart'); G.shake(0.3);
+  await G.run(P.burst2); G.sfx('heart'); ctw(G, 1.2, (k) => { rim.material.opacity = 0.85 * (1 - k); });
+  await Promise.all([own.walkTo(0, 0.2, 1.4), dolly(G, -1, -0.2, 10, 12, 2.2)]); await G.run(P.burst3); G.sfx('heart'); G.shake(0.3); rim.parent?.remove(rim);
   await Promise.all([own.walkTo(4.6, -2.2, 1.1), G.player.walkTo(5.8, -3.1, 1.6)]); G.player.dir = 'f'; G.player.pose = 'fear'; own.face(G.player.x, G.player.z);
-  await G.run(P.burst4);
+  dolly(G, 5.2, -2.4, 11, 8, 2.4); await G.run(P.burst4);
   await tweenP(G, 0.7, (k) => { blade.position.y = 1.5 + k * 1.3; blade.rotation.z = k * 0.9; }); G.sfx('heart'); G.shake(0.6); G.flash(0.2);
-  G.audio.music(null); G.sfx('hum'); await G.wait(0.8); await G.run(P.burst5); G.sfx('windup', { down: true });
+  // стоп-кадр: музыка обрывается, гудят лампы, долгая тишина крупным планом
+  G.audio.music(null); G.sfx('hum'); G.focus(own.x + 0.3, own.z, 6.5); await G.wait(1.6); await G.run(P.burst5); G.sfx('windup', { down: true });
   await fallApart(G, own, [blade]); G.player.pose = null; f.pol_pile = 1;
-  G.grade({ ...GRADE, bright: 1.05, sat: 0.7 }, false); G.audio.music('horror'); await G.run(P.owner); G.give('owner_mask' as any, true); G.unfocus(); await G.rebuild();
+  // кран вверх, свет теплеет: Полина справилась сама
+  G.grade({ ...GRADE, bright: 1.05, sat: 0.7 }, false); G.audio.music('horror'); G.focus(5.2, -1.6, 12); await back(1.8);
+  await G.run(P.owner.slice(0, 2)); const off = await warmOn(G, 5.4, -2.2, { shafts: 3, motes: 'dust', glow: 0.3, key: 7, music: 'school_soft', back: 'horror' });
+  await G.run(P.owner.slice(2)); G.give('owner_mask' as any, true); await off(); G.unfocus(); await G.rebuild();
 }
 function tweenP(G: any, dur: number, fn: (k: number) => void) { return new Promise<void>((res) => { let t = 0; const u = (dt: number) => { t += dt; const k = Math.min(1, t / dur); fn(k); if (k >= 1) { const i = G.room.updaters.indexOf(u); if (i >= 0) G.room.updaters.splice(i, 1); res(); } }; G.room.updaters.push(u); }); }
 /** Персонаж «разваливается»: спрайт режется на шляпу, голову, туловище, руки и ноги, и они падают с физикой. */
@@ -712,8 +788,13 @@ async function polinaFree(G: any) {
   G.sfx('gear'); await G.wait(0.4); G.setPlayerChar('varya'); G.set('pol_dark', 0);
   await G.goto('pol_basement', 'start', { fade: 'fade', silent: true });
   const B = new (await import('../world/room')).Builder(G.room, G); const pol = B.actor('polina_coat', -3.6, 3.6, { id: 'polina', dir: 'b' }); G.player.place(-1, 0.6, 'f'); G.camSnap();
-  await pol.walkTo(-2, 1.2, 3); pol.face(G.player.x, G.player.z); G.player.face(pol.x, pol.z); G.audio.music('school_soft');
-  await G.run(P.free); G.sfx('applause', { dur: 4 });
+  // засов поднимается: в подвал падает золотой свет сверху, Полина входит в нём; тишина, потом медленный наезд на двоих
+  G.audio.music(null); const back = await angle(G, 0.38, 1.6, 0); G.focus(-2.2, 1.6, 16); G.flash(0.25);
+  const off = await warmOn(G, -2.6, 2.0, { shafts: 3, motes: 'dust', glow: 0.34, key: 8 });
+  await G.wait(0.8); await pol.walkTo(-2, 1.2, 3); pol.face(G.player.x, G.player.z); G.player.face(pol.x, pol.z); await G.wait(0.6);
+  await G.run(P.free.slice(0, 1)); G.audio.music('school_soft'); dolly(G, -1.5, 0.9, 16, 10, 4);
+  await G.run(P.free.slice(1)); if (G.f.pol_mirD) await G.run(P.freeMirror); if (G.f.pol_radioC) await G.run(P.freeRadio);
+  G.sfx('applause', { dur: 4 }); await G.wait(1.2); await off(); await back(); G.unfocus();
   await finishChapter(G, 'polina', [['THE HOUSE THAT LAUGHS', 'act'], 'Полина заметила то, чего не заметил никто.', ['Смелость, это идти, когда страшно.', 'sm']]);
 }
 export const rooms: Record<string, RoomDef> = { pol_road: road, pol_porch: porch, pol_hall: hall, pol_living: living, pol_library: library, pol_basement: basement, pol_gallery: gallery, pol_kitchen: kitchen };
