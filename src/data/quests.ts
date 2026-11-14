@@ -79,9 +79,9 @@ function erika(f: F, G: any): Objective {
 }
 function liza(f: F, G: any, room: string): Objective {
   if (room === 'liz_base') return f.liz_hair ? { main: 'Подняться по косе' } : { main: 'Позвать Лизу у подножия башни' };
-  if (room === 'liz_top') return G.has('tower_key') ? { main: 'Дверь вниз' } : { main: 'Достать ключ с люстры' };
+  if (room === 'liz_top') return G.has('tower_key') ? { main: 'Дверь вниз', hint: f.liz_book ? undefined : 'На пюпитре лежит книга сказки: стоит заглянуть' } : { main: 'Достать ключ с люстры', hint: 'Книга на пюпитре и окно тоже стоят внимания' };
   if (room === 'liz_mid') { if (!f.liz_bridge) return { main: 'Перебраться через провал' }; if (!f.liz_gear || !f.liz_weight) return { main: 'Запустить лифт: нужны шестерня и груз', hint: 'Обе вещи на этом ярусе' }; return { main: 'Лифт-противовес' }; }
-  return f.liz_cut ? { main: 'Выйти из башни' } : { main: 'Поговорить с Феей' };
+  return f.liz_cut ? { main: 'Выйти из башни' } : { main: 'Поговорить с Мадам Драп' };
 }
 function angelina(f: F): Objective {
   if (!f.ang_aud) return { main: 'Поехать с Ангелиной на кастинг', hint: 'Поговорите с мамой у кейса визажиста, потом дверь «В агентство»' };

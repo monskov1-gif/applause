@@ -7,7 +7,7 @@ import type { RoomDef, Builder } from '../world/room';
 import { canvasTex, ptext, tex } from '../gfx/tex';
 import { R as D } from '../data/dialogue/ruben';
 import { runner } from '../ui/minigames';
-import { finishChapter, fog, actOf } from './common';
+import { finishChapter, fog, actOf, chapterHud, bar } from './common';
 import { chandelier, sconce, rug, column } from '../world/decor';
 import { barCounter, statue, armchair, window3D } from '../world/decor3d';
 import { dolly, angle, warmOn, warmKey, maskHint } from './cine';
@@ -325,12 +325,8 @@ const cellar: RoomDef = {
 function rubChar(G: any) { const t = G.f.rub_tux; return t === 'no' ? 'ruben' : t === 'ask' ? 'ruben_jacket' : 'ruben_tux'; }
 /** Шкала «Давление жанра»: растёт от отказов, спадает от просьб; «картон» растёт, когда Варя подыгрывает. */
 function hud(G: any) {
-  if (!G.f.rub_hud || document.getElementById('rub-hud')) return;
-  const el = document.createElement('div'); el.id = 'rub-hud'; el.style.cssText = 'position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:30;pointer-events:none;font:13px "Pixelify Sans",monospace;color:#f0d478;text-shadow:0 2px 0 #000;background:rgba(10,6,14,.6);border:1px solid #d4ae48;padding:4px 12px;white-space:nowrap;letter-spacing:.04em;';
-  (document.getElementById('ui') || document.body).appendChild(el);
-  const draw = () => { const f = G.f, p = Math.max(0, Math.min(5, 1 + (f.rub_no || 0) - Math.floor((f.rub_ask || 0) / 2))), g = f.rub_genre || 0;
-    el.innerHTML = `ДАВЛЕНИЕ ЖАНРА <span style="color:${p >= 4 ? '#ff5d6c' : '#40e0d0'}">${'▮'.repeat(p)}${'▯'.repeat(5 - p)}</span> · Рубен: ${g >= 3 ? 'почти афиша' : g >= 1 ? 'картон по краям' : 'живой'}`; };
-  draw(); const iv = setInterval(() => { if (!G.running || !G.room || !String(G.room.id).startsWith('rub_')) { clearInterval(iv); el.remove(); return; } el.style.display = G.fast ? 'none' : ''; draw(); }, 400);
+  if (!G.f.rub_hud) return;
+  chapterHud(G, 'rub_', (f) => { const p = Math.max(0, Math.min(5, 1 + (f.rub_no || 0) - Math.floor((f.rub_ask || 0) / 2))), g = f.rub_genre || 0; return `ДАВЛЕНИЕ ЖАНРА <span style="color:${p >= 4 ? '#ff5d6c' : '#40e0d0'}">${bar(p)}</span> · Рубен: ${g >= 3 ? 'почти афиша' : g >= 1 ? 'картон по краям' : 'живой'}`; });
 }
 /** Выбор, который повторяется, пока Варя не выберет итоговый вариант (обычно просьбу); использованные варианты исчезают. */
 async function until(G: any, opts: [string, any[], boolean?][]) {
