@@ -101,7 +101,7 @@ const voidRoom: RoomDef = {
 };
 async function islandScene(G: any) {
   const al = G.actor('alla'); al.place(38, 0.6, 'l'); al.pose = 'sit'; G.player.walkTo(36.6, 0.2, 3); G.focus(37.5, 0, 13); G.audio.music('fin_girl', { restart: true }); G.grade({ sat: 0.95, tint: [1.08, 1.0, 0.98], bright: 1.05, bloom: 1.0 });
-  await G.run(F.island.slice(0, 3)); G.player.pose = 'sit'; await G.run(F.island.slice(3)); al.pose = null; G.player.pose = null; G.sfx('applause', { dur: 2 }); G.flash(1);
+  G.audio.music('tender', { fade: 2 }); await G.run(F.island.slice(0, 3)); G.player.pose = 'sit'; await G.run(F.island.slice(3)); al.pose = null; G.player.pose = null; G.sfx('applause', { dur: 2 }); G.flash(1);
   G.unfocus(); G.f.diva_reconcile = 1; await G.ui.card([['АКТ VII', 'act'], ['THE FINAL SHOW', 'big'], ['премьера', 'sm']]); await G.goto('fin_backstage', 'start', { fade: 'curtain' });
 }
 // ---------- (старый маршрут обрушения оставлен для сохранений) ----------
@@ -333,7 +333,7 @@ async function musicalShow(G: any) {
   // 12. Поклоны и объятия режиссёрки
   await G.run(F.bowsIntro); G.sfx('applause', { dur: 6, dens: 60 });
   for (const id of FRIENDS) { const a = A(id), r = ROLES[id][own(id) ? 1 : 0]; a.pose = 'bow'; await G.run([`*: ${CHARS[id].name}, «${r}». ${own(id) ? 'Эту роль ' + CHARS[id].name + ' выбрал' + (id === 'ruben' || id === 'matvey' ? '' : 'а') + ' сам' + (id === 'ruben' || id === 'matvey' ? '' : 'а') + '. Зал встаёт.' : 'Роль из листа распределения: сидит аккуратно, но не совсем по плечу. Хлопают вежливо.'}`]); if (own(id)) G.sfx('applause', { dur: 2 }); a.pose = null; }
-  await G.run(P.directorIn); G.setPlayerChar('varya');
+  G.audio.music('tender', { fade: 1.5 }); await G.run(P.directorIn); G.setPlayerChar('varya');
   for (const id of FRIENDS) { const a = A(id); G.focus(a.x, a.z, 11); await p.walkTo(a.x + (a.x < 0 ? 1 : -1), a.z + 0.2, 4); p.face(a.x, a.z); a.face(p.x, p.z); p.pose = 'hug'; a.pose = 'hug'; G.sfx('heart'); await G.run(P.hugs[id]); p.pose = null; a.pose = null; a.dir = 'f'; }
   G.cam.pitch = 0.56; G.cam.yOff = 1.2; G.focus(0, 2, 26); await p.walkTo(0, -5, 4); p.dir = 'f';
   for (const [id] of AUD) { const a = G.actor('aud_' + id); if (a) { a.pose = 'arms'; } } await G.run(P.standing); p.pose = 'bow'; G.sfx('applause', { dur: 6, dens: 90 }); G.flash(0.3); await G.wait(3); p.pose = null;
