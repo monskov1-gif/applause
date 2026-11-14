@@ -9,42 +9,9 @@ import { timing } from '../ui/minigames';
 import { finishChapter, actOf, fog } from './common';
 import { window3D, armchair, mirror3D, bookshelf } from '../world/decor3d';
 import { chandelier, clutterTex, PROPTEX } from '../world/decor';
+import { camMove, camBack, warmRig, warmOn, warmOff } from './warm';
 
 // ---------- кино: тёплый свет в нежные моменты, медленная камера, паузы (всё мгновенно в G.fast) ----------
-const WARM = { tint: [1.12, 1.0, 0.86], sat: 1.1, bloom: 0.9, vig: 0.35, bright: 1.05 };
-function tween(G: any, dur: number, fn: (k: number) => void): Promise<void> {
-  const room = G.room; if (G.fast || !room || dur <= 0) { fn(1); return Promise.resolve(); }
-  return new Promise((res) => { let t = 0, done = false; const u = (dt: number) => { t += dt; const k = Math.min(1, t / dur); fn(k * k * (3 - 2 * k)); if (k >= 1) end(); };
-    const end = () => { if (done) return; done = true; if (G.room === room) fn(1); const i = room.updaters.indexOf(u); if (i >= 0) room.updaters.splice(i, 1); res(); };
-    room.updaters.push(u); setTimeout(end, dur * 1000 + 1500); });
-}
-/** Медленный наезд/отъезд: фокус, дистанция и ракурс камеры плавно меняются за dur секунд. */
-let camTok = 0;
-function camMove(G: any, to: { x?: number; z?: number; dist?: number; pitch?: number; yOff?: number }, dur = 2): Promise<void> {
-  const my = ++camTok, c = G.cam, f0 = c.focus ? { ...c.focus } : { x: c.x, z: c.z, dist: c.dist }, p0 = c.pitch, y0 = c.yOff, L = (a: number, b: number | undefined, k: number) => b === undefined ? a : a + (b - a) * k;
-  return tween(G, dur, (k) => { if (my !== camTok) return; G.focus(L(f0.x, to.x, k), L(f0.z, to.z, k), L(f0.dist, to.dist, k)); c.pitch = L(p0, to.pitch, k); c.yOff = L(y0, to.yOff, k); });
-}
-/** Вернуть ракурс комнаты и отпустить фокус. */
-async function camBack(G: any, pitch = 0.56, yOff = 1.2, dur = 1.2) { const my = ++camTok, p0 = G.cam.pitch, y0 = G.cam.yOff; await tween(G, dur, (k) => { if (my !== camTok) return; G.cam.pitch = p0 + (pitch - p0) * k; G.cam.yOff = y0 + (yOff - y0) * k; }); G.unfocus(); }
-/** Тёплый «ключевой» свет и золотые пылинки: спрятаны, пока не наступит нежный момент. */
-function warmRig(R: Builder, x: number, z: number, o: { col?: number; kind?: 'dust' | 'petals' | 'sparks'; pcol?: number; y?: number; count?: number } = {}) {
-  R.light(x, o.y ?? 3.4, z + 1.6, o.col ?? 0xffc078, 0, 13, { name: 'warmKey', force: true });
-  const m = R.particles(o.kind || 'dust', { count: o.count ?? 90, top: 6, color: o.pcol ?? 0xffd890, name: 'warmMotes' }); m.visible = false; const mm = m.material as THREE.PointsMaterial; mm.opacity = 0; if ((o.kind || 'dust') === 'dust') mm.size = 0.12;
-}
-let warmPrev: any = null;
-/** Нежный момент: грейд теплеет, загорается тёплый ключ, в воздухе золотая пыль; по желанию, тихая музыка. */
-async function warmOn(G: any, o: { int?: number; grade?: any; music?: string; dur?: number } = {}) {
-  if (!G.room) return; if (!warmPrev || warmPrev.room !== G.room) warmPrev = { room: G.room, grade: { ...G.gradeBase }, music: G.audio.cur?.id ?? null, noir: document.body.classList.contains('noir-mode') };
-  G.grade({ ...WARM, ...o.grade }); if ((o.grade?.sat ?? WARM.sat) > 0.3) document.body.classList.remove('noir-mode'); if (o.music) G.audio.music(o.music, { fade: 2.5 });
-  const l = G.room.named.warmKey, m = G.room.named.warmMotes; if (m) m.visible = true; const i0 = l?.intensity || 0, o0 = m?.material.opacity || 0, I = o.int ?? 16;
-  await tween(G, o.dur ?? 1.6, (k) => { if (l) l.intensity = i0 + (I - i0) * k; if (m) m.material.opacity = o0 + (0.75 - o0) * k; });
-}
-async function warmOff(G: any, dur = 1.4) {
-  const p = warmPrev; warmPrev = null; if (!p || G.room !== p.room) return;
-  G.gradeBase = p.grade; G.applyGrade(); if (p.noir) document.body.classList.add('noir-mode'); if (p.music !== (G.audio.cur?.id ?? null)) G.audio.music(p.music, { fade: 2 });
-  const l = G.room.named.warmKey, m = G.room.named.warmMotes, i0 = l?.intensity || 0, o0 = m?.material.opacity || 0;
-  await tween(G, dur, (k) => { if (l) l.intensity = i0 * (1 - k); if (m) m.material.opacity = o0 * (1 - k); }); if (m && !warmPrev) m.visible = false;
-}
 /** Первая подсказка про маски в главе (один раз). */
 function maskHint(G: any, key: string, text: string) { if (G.f['mhint_' + key]) return; G.f['mhint_' + key] = 1; G.toast(text, '◐'); }
 // метки из диалога: зеркальце в Драме (крупный план и тёплое «будущее»), пауза перед «Нет.»
@@ -459,7 +426,7 @@ const ground: RoomDef = {
 async function groundScene(G: any) {
   if (G.f.liz_cut) return; void camMove(G, { x: 1, z: 0, dist: 15, pitch: 0.46, yOff: 1.6 }, 1.6); await G.run(L.ground); await G.run(L.groundMask); G.audio.music('fairy', { fade: 1.5 }); await G.run(L.choice);
   // стрижка: низкий крупный план, тишина, щелчок, вспышка; потом тёплый свет и музыкальная шкатулка
-  G.audio.music(null, { fade: 0.8 }); await camMove(G, { x: -2, z: 1.2, dist: 7.6, pitch: 0.3, yOff: 1.7 }, 1.2); await G.wait(0.9);
+  G.audio.music(null, { fade: 0.8 }); { const lz = G.actor('liza'), p = G.player; await camMove(G, { x: lz ? (lz.x + p.x) / 2 : p.x, z: (lz ? Math.max(lz.z, p.z) : p.z) + 0.4, dist: 8.8, pitch: 0.3, yOff: 1.7 }, 1.2); } await G.wait(0.9);
   G.sfx('snip'); G.flash(0.45); G.shake(0.15); await G.run(L.cut.slice(0, 1)); G.f.liz_cut = 1; G.actor('liza').setChar('liza_short'); G.sfx('snip'); await G.wait(0.5);
   void warmOn(G, { int: 18, dur: 2.2, music: 'musicbox' }); void camMove(G, { dist: 9.5, pitch: 0.4, yOff: 1.8 }, 5); await G.run(L.cut.slice(1)); await warmOff(G, 0.6); await camBack(G, 0.56, 1.2, 0.6); await G.rebuild();
 }

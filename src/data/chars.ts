@@ -70,10 +70,11 @@ const C: CharDef[] = [
   { id: 'glyants', male: true, name: 'Директор Глянц', color: '#ff9ad8', pitch: 210, skin: FAIR, hair: '#e8e8f0', style: 'short', eyes: '#3a3a4a', h: 38, build: 'thin', top: '#f0f0f8', bottom: '#f0f0f8', trim: '#ff4fa0', acc: ['glasses'], brows: 'arch' },
   { id: 'trainer', sleeve: 'short', name: 'Тренер Ми', color: '#a0f0c0', pitch: 520, skin: OLIVE, hair: '#222', style: 'ponytail', eyes: '#222', h: 34, build: 'mid', top: '#30c090', bottom: '#222', brows: 'strict' },
   { id: 'stylist', name: 'Ассистентка', color: '#ff5d6c', pitch: 500, skin: TAN, hair: '#2a1512', style: 'curls', eyes: '#5b3a1e', h: 31, build: 'thin', top: '#f0f0f8', bottom: '#ff4fa0', skirt: 'short', acc: ['pearls', 'visor'], brows: 'arch', lips: '#b3122e' },
-  { id: 'zero', male: true, name: 'Мсье Зеро', color: '#e8e8f0', pitch: 180, skin: '#e8d8c8', hair: '#d8d8d8', style: 'short', eyes: '#6a7a8a', h: 37, build: 'mid', top: '#f0ece4', bottom: '#1a1a1e', shoes: '#111', acc: ['bowtie', 'monocle'], brows: 'strict' },
+  { id: 'zero', male: true, name: 'Ле Такки', color: '#f0d478', pitch: 180, skin: '#e8d8c8', hair: '#2a2420', style: 'short', eyes: '#6a7a8a', h: 36, build: 'mid', top: '#d4ae48', bottom: '#f0ece4', trim: '#ff4fa0', shoes: '#f0ece4', acc: ['tie', 'jacket'], brows: 'strict' },
   { id: 'croupier', male: true, name: 'Крупье', color: '#c8c0b0', pitch: 300, skin: FAIR, hair: '#2a1a14', style: 'short', eyes: '#3a2a1a', h: 35, build: 'mid', top: '#1a1a1e', bottom: '#1a1a1e', acc: ['bowtie'], brows: 'soft' },
   { id: 'ang_mom', name: 'Мама Ангелины', color: '#ffb8c8', pitch: 430, skin: OLIVE, hair: '#1a1214', style: 'bun', eyes: '#2a1a14', h: 35, build: 'mid', top: '#3a2a3a', bottom: '#2a2a33', acc: ['earrings'], brows: 'arch', lips: '#b0405a', role: 'Визажистка' },
   { id: 'lusine', sleeve: 'short', name: 'Лусинэ', color: '#ffd0a0', pitch: 620, skin: OLIVE, hair: '#2a1a14', style: 'ponytail', eyes: '#2a1a14', h: 29, build: 'mid', top: '#ff9ad8', bottom: '#3a4a6a', brows: 'soft', role: 'Соседка, фанатка Энджел' },
+  { id: 'veronika', name: 'Вероника', color: '#40e0b0', pitch: 380, skin: FAIR, hair: '#7a2a1a', style: 'longStyled', eyes: '#2a5a4a', h: 34, build: 'thin', top: '#1f8a6a', bottom: '#176a52', skirt: 'long', acc: ['earrings'], brows: 'arch', lips: '#b3122e', role: 'Роковая женщина. Третья в списке' },
   { id: 'hostess', name: 'Леди Фортуна', color: '#ff5d6c', pitch: 500, skin: TAN, hair: '#2a1512', style: 'curls', eyes: '#5b3a1e', h: 31, build: 'thin', top: '#e8c36a', bottom: '#c9a040', skirt: 'long', acc: ['pearls', 'maskhalf'], brows: 'arch', lips: '#b3122e' },
   { id: 'student', male: true, name: 'Школьник', color: '#cccccc', pitch: 400, skin: FAIR, hair: '#3a2a22', style: 'short', eyes: '#333', h: 34, build: 'mid', top: '#2c3550', bottom: '#2a2a33', trim: '#f0f0f0', brows: 'soft' },
   { id: 'student2', name: 'Школьница', color: '#cccccc', pitch: 560, skin: FAIR, hair: '#5a3a2a', style: 'twin', eyes: '#333', h: 32, build: 'thin', top: '#2c3550', bottom: '#8a2a3a', skirt: 'short', trim: '#f0f0f0', brows: 'soft' },
@@ -90,6 +91,7 @@ export function variant(base: string, id: string, patch: Partial<CharDef>): Char
 variant('varya', 'varya_noir', { top: '#6a6a6a', bottom: '#2a2a2a', acc: ['hat'] });
 variant('varya', 'varya_pjm', { top: '#d8c8e8', bottom: '#b8a8d0', acc: [] });
 variant('erika', 'erika_noir', { top: '#9a9a8a', bottom: '#2a2a2a', acc: ['hat', 'coat'] });
+variant('ruben', 'ruben_jacket', { top: '#141418', bottom: '#141418', trim: '#f4f0e8', acc: ['jacket'] });
 variant('ruben', 'ruben_tux', { top: '#141418', bottom: '#141418', trim: '#f4f0e8', acc: ['bowtie', 'jacket'] });
 variant('varya', 'varya_gown', { top: '#5a0c1c', bottom: '#4a0a18', skirt: 'long', acc: ['offshoulder', 'necklace'] });
 variant('ruben', 'ruben_heist', { top: '#16161c', bottom: '#1c2028', trim: '#40e0d0', acc: [] });
