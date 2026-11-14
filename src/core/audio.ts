@@ -10,7 +10,7 @@ export function freq(n: string): number {
   const semi = NOTE[m[1]] + (m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0) + (parseInt(m[3]) + 1) * 12;
   return 440 * Math.pow(2, (semi - 69) / 12);
 }
-interface Ev { step: number; len: number; notes: string[]; }
+interface Ev { step: number; len: number; notes: string[]; vel?: number; }
 const parsed = new Map<Part, { evs: Ev[]; len: number }>();
 export function parsePart(p: Part): { evs: Ev[]; len: number } {
   let c = parsed.get(p); if (c) return c;
@@ -20,8 +20,9 @@ export function parsePart(p: Part): { evs: Ev[]; len: number } {
   } else {
     for (const tok of p.seq.split(/\s+/)) {
       if (!tok || tok === '|') continue;
-      const [n, l] = tok.split(':'); const len = l ? parseFloat(l) : (p.d || 1);
-      if (n !== '.') evs.push({ step, len, notes: n.split('+') });
+      // «нота:длительность:громкость» — третье поле (необязательное) задаёт динамику ноты (0..~1.5)
+      const [n, l, v] = tok.split(':'); const len = l ? parseFloat(l) : (p.d || 1);
+      if (n !== '.') evs.push({ step, len, notes: n.split('+'), vel: v ? parseFloat(v) : undefined });
       step += len;
     }
   }
@@ -98,7 +99,7 @@ class AudioSys {
         c.next[pi]++;
         if (t < this.ctx.currentTime - 0.05) continue;
         if (this.partFilter && !this.partFilter(c.id, p)) continue;
-        for (const n of ev.notes) this.voice(p.inst, n, t, ev.len * sd, (p.vol ?? 1), c.gain);
+        for (const n of ev.notes) this.voice(p.inst, n, t, ev.len * sd, (p.vol ?? 1) * (ev.vel ?? 1), c.gain);
       }
     });
   }
@@ -111,6 +112,11 @@ class AudioSys {
   private osc(type: OscillatorType, f: number, t: number, end: number, dest: AudioNode, detune = 0) {
     const o = this.ctx!.createOscillator(); o.type = type; o.frequency.setValueAtTime(f, t); o.detune.value = detune; o.connect(dest); o.start(t); o.stop(end); return o;
   }
+  /** Стереопанорама (где StereoPanner недоступен — без панорамы). */
+  private pan(dest: AudioNode, p: number): AudioNode {
+    const ctx = this.ctx!; if (!p || !(ctx as any).createStereoPanner) return dest;
+    const sp = ctx.createStereoPanner(); sp.pan.value = p; sp.connect(dest); return sp;
+  }
   private noise(t: number, dur: number, dest: AudioNode, rate = 1) {
     const s = this.ctx!.createBufferSource(); s.buffer = this.noiseBuf; s.playbackRate.value = rate; s.loop = true; s.connect(dest); s.start(t, Math.random()); s.stop(t + dur); return s;
   }
@@ -122,16 +128,68 @@ class AudioSys {
       if (note === 'k') { const o = ctx.createOscillator(); o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.12); o.connect(g); g.gain.setValueAtTime(0.9 * vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.22); o.start(t); o.stop(t + 0.25); }
       else if (note === 's' || note === 'c' || note === 'r') { const f = ctx.createBiquadFilter(); f.type = note === 'r' ? 'bandpass' : 'highpass'; f.frequency.value = note === 'c' ? 1200 : note === 'r' ? 1800 : 1500; f.connect(g); this.noise(t, 0.2, f); g.gain.setValueAtTime((note === 'r' ? 0.25 : 0.5) * vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + (note === 'r' ? 0.05 : 0.16)); if (note !== 'r') wet(0.2); }
       else if (note === 'h' || note === 'o' || note === 'b') { const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = note === 'b' ? 4000 : 7000; f.connect(g); this.noise(t, 0.3, f); const d = note === 'o' ? 0.22 : note === 'b' ? 0.12 : 0.04; g.gain.setValueAtTime((note === 'b' ? 0.16 : 0.2) * vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + d); }
+      else if (note === 'T') { const o = ctx.createOscillator(); o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(48, t + 0.18); o.connect(g); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.85 * vol, t + 0.006); g.gain.exponentialRampToValueAtTime(0.001, t + 0.6); o.start(t); o.stop(t + 0.62); const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 700; const ng = ctx.createGain(); ng.gain.setValueAtTime(0.35 * vol, t); ng.gain.exponentialRampToValueAtTime(0.001, t + 0.12); f.connect(ng); ng.connect(dest); this.noise(t, 0.14, f); wet(0.35); }
+      else if (note === 'x') { const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 4500; f.connect(g); this.noise(t, 1.6, f, 0.9); g.gain.setValueAtTime(0.16 * vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + 1.5); wet(0.4); }
       else if (note === 't') { const o = ctx.createOscillator(); o.frequency.setValueAtTime(200, t); o.frequency.exponentialRampToValueAtTime(90, t + 0.15); o.connect(g); g.gain.setValueAtTime(0.5 * vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.2); o.start(t); o.stop(t + 0.22); }
       return;
     }
     const f = freq(note);
     switch (inst) {
-      case 'piano': { this.env(g.gain, t, 0.005, 0.25, 0.25, dur, 0.4, 0.26 * vol); const end = t + dur + 0.6; this.osc('triangle', f, t, end, g); const g2 = ctx.createGain(); g2.gain.value = 0.3; g2.connect(g); this.osc('sine', f * 2, t, end, g2); wet(0.35); break; }
+      case 'piano': {
+        // мягкий молоточек: фильтр закрывается по мере затухания, лёгкий хорус второй струны
+        const fl = ctx.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.setValueAtTime(Math.min(9000, f * 9), t); fl.frequency.exponentialRampToValueAtTime(Math.max(500, f * 2.5), t + 0.9); fl.connect(g);
+        this.env(g.gain, t, 0.004, 0.45, 0.3, dur, 0.5, 0.26 * vol); const end = t + dur + 0.7;
+        const g1 = ctx.createGain(); g1.gain.value = 0.75; g1.connect(fl); this.osc('triangle', f, t, end, g1); this.osc('triangle', f, t, end, g1, 4);
+        const g2 = ctx.createGain(); g2.gain.value = 0.3; g2.connect(fl); this.osc('sine', f * 2, t, end, g2); wet(0.35); break; }
       case 'box': { this.env(g.gain, t, 0.002, 0.5, 0.05, Math.min(dur, 0.3), 0.9, 0.2 * vol); const end = t + 1.6; this.osc('sine', f, t, end, g); const g2 = ctx.createGain(); g2.gain.value = 0.25; g2.connect(g); this.osc('sine', f * 3.01, t, end, g2); wet(0.5); break; }
       case 'bass': { const fl = ctx.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.setValueAtTime(900, t); fl.frequency.exponentialRampToValueAtTime(220, t + 0.2); fl.connect(g); this.env(g.gain, t, 0.005, 0.1, 0.7, dur * 0.9, 0.08, 0.34 * vol); this.osc('sawtooth', f, t, t + dur + 0.2, fl); this.osc('square', f / 2, t, t + dur + 0.2, fl, 4); break; }
       case 'upright': { const fl = ctx.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = 600; fl.connect(g); this.env(g.gain, t, 0.008, 0.25, 0.2, dur * 0.8, 0.15, 0.5 * vol); this.osc('triangle', f, t, t + dur + 0.3, fl); this.osc('sine', f * 2, t, t + dur + 0.3, fl); break; }
-      case 'pad': case 'strings': { const fl = ctx.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = inst === 'pad' ? 900 : 2200; fl.connect(g); const a = inst === 'pad' ? 0.35 : 0.12; this.env(g.gain, t, Math.min(a, dur * 0.5), 0.2, 0.85, dur, 0.5, 0.075 * vol); const end = t + dur + 0.7; this.osc('sawtooth', f, t, end, fl, -7); this.osc('sawtooth', f, t, end, fl, 8); wet(0.5); break; }
+      case 'strings': case 'trem': case 'swell': case 'cello': {
+        // струнная группа: три пилы с расстройкой, разведённые по стерео, с отложенным вибрато; trem — тремоло смычком, swell — медленное крещендо
+        const cello = inst === 'cello', trem = inst === 'trem', sw = inst === 'swell';
+        const fl = ctx.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = cello ? 1300 : trem ? 3000 : 2400; fl.Q.value = 0.6;
+        const out = trem ? ctx.createGain() : null; if (out) { out.connect(g); fl.connect(out); const lfo = ctx.createOscillator(), lg = ctx.createGain(); lfo.frequency.value = 11 + Math.random(); lg.gain.value = 0.45; out.gain.value = 0.55; lfo.connect(lg); lg.connect(out.gain); lfo.start(t); lfo.stop(t + dur + 0.8); } else fl.connect(g);
+        const a = sw ? Math.max(0.3, dur * 0.7) : cello ? 0.09 : trem ? 0.15 : 0.12;
+        this.env(g.gain, t, Math.min(a, dur * (sw ? 0.85 : 0.5)), 0.2, sw ? 1 : 0.85, dur, sw ? 0.9 : 0.5, (cello ? 0.1 : 0.066) * vol); const end = t + dur + (sw ? 1.1 : 0.7);
+        const vib = ctx.createOscillator(), vg = ctx.createGain(); vib.frequency.value = cello ? 5 : 5.6; vg.gain.setValueAtTime(0, t); vg.gain.linearRampToValueAtTime(f * 0.004, t + Math.min(0.45, dur * 0.8) + 0.05); vib.connect(vg); vib.start(t); vib.stop(end);
+        const spread = cello ? [[-5, -0.25], [6, 0.05]] : [[-9, -0.6], [0, 0], [9, 0.6]];
+        for (const [dt, pn] of spread) { const o = this.osc('sawtooth', f, t, end, this.pan(fl, pn), dt); vg.connect(o.frequency); }
+        if (cello) { const sub = ctx.createGain(); sub.gain.value = 0.35; sub.connect(fl); this.osc('triangle', f / 2, t, end, sub); }
+        wet(cello ? 0.4 : 0.5); break; }
+      case 'pizz': {
+        const fl = ctx.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.setValueAtTime(Math.min(5000, f * 6), t); fl.frequency.exponentialRampToValueAtTime(Math.max(250, f * 1.2), t + 0.25); fl.connect(this.pan(g, (Math.random() - 0.5) * 0.5));
+        this.env(g.gain, t, 0.003, 0.3, 0.02, 0.05, 0.2, 0.3 * vol); const end = t + 0.6; this.osc('triangle', f, t, end, fl); const g2 = ctx.createGain(); g2.gain.value = 0.35; g2.connect(fl); this.osc('sawtooth', f, t, end, g2, 5); wet(0.45); break; }
+      case 'spic': {
+        const fl = ctx.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = 2600; fl.connect(g); const d = Math.min(dur * 0.7, 0.13);
+        this.env(g.gain, t, 0.008, 0.06, 0.45, d, 0.07, 0.085 * vol); const end = t + d + 0.25; this.osc('sawtooth', f, t, end, this.pan(fl, -0.4), -7); this.osc('sawtooth', f, t, end, this.pan(fl, 0.4), 7); wet(0.3); break; }
+      case 'brass': {
+        const fl = ctx.createBiquadFilter(); fl.type = 'lowpass'; fl.Q.value = 1.2; fl.frequency.setValueAtTime(Math.min(600, f * 1.5), t); fl.frequency.linearRampToValueAtTime(Math.min(4200, f * 6), t + 0.07); fl.frequency.exponentialRampToValueAtTime(Math.min(2400, f * 3.5), t + 0.4); fl.connect(g);
+        this.env(g.gain, t, 0.045, 0.2, 0.8, dur * 0.95, 0.16, 0.12 * vol); const end = t + dur + 0.3;
+        const vib = ctx.createOscillator(), vg = ctx.createGain(); vib.frequency.value = 5; vg.gain.setValueAtTime(0, t); vg.gain.linearRampToValueAtTime(f * 0.003, t + Math.min(0.5, dur) + 0.05); vib.connect(vg); vib.start(t); vib.stop(end);
+        for (const [dt, pn] of [[-6, -0.3], [6, 0.3]]) { const o = this.osc('sawtooth', f, t, end, this.pan(fl, pn), dt); vg.connect(o.frequency); } wet(0.35); break; }
+      case 'timp': {
+        // литавры: глухой удар с лёгким «подъездом» высоты, обертоны 1.5 и 2, войлочная колотушка
+        g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.55 * vol, t + 0.008); g.gain.exponentialRampToValueAtTime(0.001, t + 1.6); const end = t + 1.65;
+        for (const [m, a] of [[1, 1], [1.5, 0.3], [2, 0.18]]) { const gg = ctx.createGain(); gg.gain.value = a; gg.connect(g); const o = this.osc('sine', f * m * 1.04, t, end, gg); o.frequency.exponentialRampToValueAtTime(f * m, t + 0.08); }
+        const nf = ctx.createBiquadFilter(); nf.type = 'lowpass'; nf.frequency.value = 400; const ng = ctx.createGain(); ng.gain.setValueAtTime(0.4 * vol, t); ng.gain.exponentialRampToValueAtTime(0.001, t + 0.09); nf.connect(ng); ng.connect(dest); this.noise(t, 0.1, nf); wet(0.5); break; }
+      case 'harp': {
+        const fl = ctx.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = Math.min(6000, f * 7); fl.connect(this.pan(g, (Math.random() - 0.5) * 0.7));
+        g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.2 * vol, t + 0.003); g.gain.exponentialRampToValueAtTime(0.001, t + 1.8); const end = t + 1.85;
+        this.osc('triangle', f, t, end, fl); const g2 = ctx.createGain(); g2.gain.value = 0.25; g2.connect(fl); this.osc('sine', f * 2, t, end, g2); const g3 = ctx.createGain(); g3.gain.value = 0.08; g3.connect(fl); this.osc('sine', f * 3, t, end, g3); wet(0.5); break; }
+      case 'balalaika': {
+        // балалайка/мандолина: тремоло щипками (быстрые повторные атаки), звонкий корпус
+        const fl = ctx.createBiquadFilter(); fl.type = 'bandpass'; fl.frequency.value = Math.min(4000, f * 2.5); fl.Q.value = 0.8;
+        const am = ctx.createGain(); am.gain.value = 0.5; fl.connect(am); am.connect(this.pan(g, (Math.random() - 0.5) * 0.6));
+        const lfo = ctx.createOscillator(), lg = ctx.createGain(); lfo.type = 'sawtooth'; lfo.frequency.value = 13 + Math.random() * 2; lg.gain.value = -0.48; lfo.connect(lg); lg.connect(am.gain);
+        this.env(g.gain, t, 0.005, 0.2, 0.55, dur, 0.15, 0.3 * vol); const end = t + dur + 0.3; lfo.start(t); lfo.stop(end);
+        this.osc('sawtooth', f, t, end, fl); this.osc('triangle', f, t, end, fl, 6); wet(0.3); break; }
+      case 'flute': {
+        const fl = ctx.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = Math.min(7000, f * 4); fl.connect(g);
+        this.env(g.gain, t, 0.04, 0.1, 0.8, dur * 0.95, 0.12, 0.16 * vol); const end = t + dur + 0.25;
+        const vib = ctx.createOscillator(), vg = ctx.createGain(); vib.frequency.value = 5.2; vg.gain.setValueAtTime(0, t); vg.gain.linearRampToValueAtTime(f * 0.005, t + Math.min(0.4, dur) + 0.05); vib.connect(vg); vib.start(t); vib.stop(end);
+        const o = this.osc('sine', f, t, end, fl); vg.connect(o.frequency); const g2 = ctx.createGain(); g2.gain.value = 0.12; g2.connect(fl); const o2 = this.osc('triangle', f * 2, t, end, g2); vg.connect(o2.frequency);
+        const bf = ctx.createBiquadFilter(); bf.type = 'bandpass'; bf.frequency.value = f * 2; bf.Q.value = 2; const bg = ctx.createGain(); bg.gain.value = 0.05; bf.connect(bg); bg.connect(fl); this.noise(t, dur + 0.2, bf); wet(0.45); break; }
+      case 'pad': { const fl = ctx.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = 900; fl.connect(g); const a = 0.35; this.env(g.gain, t, Math.min(a, dur * 0.5), 0.2, 0.85, dur, 0.5, 0.075 * vol); const end = t + dur + 0.7; this.osc('sawtooth', f, t, end, fl, -7); this.osc('sawtooth', f, t, end, fl, 8); wet(0.5); break; }
       case 'lead': case 'pluck': { const fl = ctx.createBiquadFilter(); fl.type = 'lowpass'; fl.Q.value = 4; fl.frequency.setValueAtTime(inst === 'pluck' ? 3500 : 2600, t); fl.frequency.exponentialRampToValueAtTime(inst === 'pluck' ? 500 : 1400, t + 0.25); fl.connect(g); this.env(g.gain, t, 0.006, 0.15, inst === 'pluck' ? 0.15 : 0.6, dur * 0.95, 0.12, 0.13 * vol); const end = t + dur + 0.3; this.osc(inst === 'pluck' ? 'sawtooth' : 'square', f, t, end, fl); this.osc('sawtooth', f, t, end, fl, 9); wet(0.25); break; }
       case 'sax': case 'voice': {
         const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.setValueAtTime(f * 0.985, t); o.frequency.linearRampToValueAtTime(f, t + 0.07);
