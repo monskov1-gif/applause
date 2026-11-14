@@ -216,15 +216,15 @@ class Game {
   private fadeBlockers(dt: number) {
     const room = this.room; if (!room) return; const cam = this.R.cam, p = this.player;
     this.fadeT -= dt; if (this.fadeT <= 0) {
-      this.fadeT = 0.12; const want = new Set<THREE.Mesh>(); const skip = new Set<THREE.Object3D>(room.occluders.map((o) => o.mesh)); for (const a of room.actors) skip.add(a.group); skip.add(p.group);
+      this.fadeT = 0.12; const want = new Set<THREE.Mesh>(); const high = new Set<THREE.Mesh>(); const skip = new Set<THREE.Object3D>(room.occluders.map((o) => o.mesh)); for (const a of room.actors) skip.add(a.group); skip.add(p.group);
       const ok = (o: THREE.Object3D): o is THREE.Mesh => { if (!(o as any).isMesh || (o as any).isInstancedMesh && false) return false; let q: THREE.Object3D | null = o; while (q) { if (skip.has(q)) return false; q = q.parent; } const m: any = (o as THREE.Mesh).material; if (!m || Array.isArray(m) || m.isShaderMaterial || m.blending === THREE.AdditiveBlending) return false; const g = (o as THREE.Mesh).geometry; if (!g.boundingBox) g.computeBoundingBox(); const bb = g.boundingBox!; const sy = (bb.max.y - bb.min.y) * o.scale.y; const wy = o.getWorldPosition(new THREE.Vector3()).y; if (sy < 0.5 && wy < 0.6) return false; return true; };
       this.ray.camera = cam; const from = cam.position.clone();
       for (const hy of [0.5, 1.3, 2.1]) { const to = new THREE.Vector3(p.x, hy, p.z); const dir = to.clone().sub(from); const dist = dir.length(); this.ray.set(from, dir.normalize()); this.ray.far = dist - 0.6; for (const h of this.ray.intersectObjects(room.group.children, true)) if (ok(h.object)) want.add(h.object as THREE.Mesh); }
       if (this.fadeCacheRoom !== room) { this.fadeCacheRoom = room; this.fadeCache = []; room.group.updateMatrixWorld(); room.group.traverse((o) => { if ((o as any).isMesh && ok(o)) { const v = new THREE.Vector3(); o.getWorldPosition(v); this.fadeCache.push({ m: o as THREE.Mesh, p: v, bb: new THREE.Box3().setFromObject(o) }); } }); }
       for (const e of this.fadeCache) { if (!e.m.visible) continue; if (e.bb.max.y > 1.7 && e.p.distanceToSquared(from) < 56.25) { want.add(e.m); continue; } // низкие предметы (кресла, столы) не прячем
         // высокие предметы между камерой и героиней (люстры, портал, козырьки) прячутся
-        const b = e.bb; if (b.min.y > 3.8 && b.max.z > p.z + 0.5 && b.max.z - b.min.z < 12 && Math.max(b.min.x - p.x, p.x - b.max.x, 0) < 7) want.add(e.m); }
-      for (const m of want) { let e = this.faded.get(m); if (!e) { const orig = m.material; const clone = (orig as THREE.Material).clone(); clone.transparent = true; e = { orig, clone, a: 1, tgt: 0.3 }; m.material = clone; this.faded.set(m, e); } e.tgt = 0.3; }
+        const b = e.bb; if (b.min.y > 3.8 && b.max.z > p.z + 0.5 && b.max.z - b.min.z < 12 && Math.max(b.min.x - p.x, p.x - b.max.x, 0) < 9) { want.add(e.m); high.add(e.m); } }
+      for (const m of want) { let e = this.faded.get(m); if (!e) { const orig = m.material; const clone = (orig as THREE.Material).clone(); clone.transparent = true; e = { orig, clone, a: 1, tgt: 0.3 }; m.material = clone; this.faded.set(m, e); } e.tgt = high.has(m) ? 0 : 0.3; }
       for (const [m, e] of this.faded) if (!want.has(m)) e.tgt = 1;
     }
     for (const [m, e] of this.faded) { e.a += (e.tgt - e.a) * Math.min(1, dt * 8); e.clone.opacity = e.a * ((e.orig as any).opacity ?? 1); e.clone.depthWrite = e.a > 0.9; if (e.tgt === 1 && e.a > 0.98) { m.material = e.orig; e.clone.dispose(); this.faded.delete(m); } }
