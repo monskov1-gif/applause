@@ -7,6 +7,8 @@ import { settings } from '../core/state';
 import { G } from '../world/game';
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+/** Состояние текущей мини-игры для автотеста (tests/minigames.mjs играет в них по-настоящему, без ускорения). */
+const DBG: { cur: any } = { cur: null };
 export interface PickRow { id: string; label: string; hint?: string; options: { id: string; text: string; hint?: string }[]; }
 /** Лист с вариантами: правка сценария, план ограбления, выбор образа. */
 export function pick(o: { title: string; sub?: string; intro?: string; rows: PickRow[]; confirm?: string; cls?: string; preset?: Record<string, string> }): Promise<Record<string, string>> {
@@ -69,7 +71,7 @@ export function rhythm(o: { track: string; part: number; loops?: number; title: 
     const wrap = el('div', 'mg clear', '', document.getElementById('ui')!); const cv = el('canvas', '', '', wrap) as HTMLCanvasElement; const W = cv.width = 420, H = cv.height = 620; cv.style.height = 'min(92vh, 620px)'; const c = cv.getContext('2d')!;
     const t0 = audio.music(o.track, { restart: true, fade: 0.3, delay: lead }); const bpm = 60 / (audio.stepDur((audio as any).cur?.tr || { bpm: 120 } as any) * 4);
     let hits = 0, combo = 0, maxCombo = 0, lastBeat = -1, fb = '', fbT = 0, raf = 0; const flashL = [0, 0, 0, 0]; const hitY = H - 110, speed = 330;
-    const now = () => audio.now() - t0 - settings.rhythmOffset / 1000;
+    const now = () => audio.now() - t0 - settings.rhythmOffset / 1000; DBG.cur = { kind: 'rhythm', notes, now, win };
     const press = (lane: number) => { const t = now(); flashL[lane] = 1; let best: any = null, bd = 9; for (const n of notes) { if (n.hit || n.lane !== lane) continue; const d = Math.abs(n.t - t); if (d < bd) { bd = d; best = n; } }
       if (best && bd < win) { best.hit = 1; hits++; combo++; maxCombo = Math.max(maxCombo, combo); fb = bd < win * 0.45 ? 'БРАВО!' : 'Хорошо'; fbT = 0.5; audio.sfx('hit', { f: [660, 784, 880, 1046][lane] }); o.onHit?.(lane, true); } else { combo = 0; fb = 'мимо'; fbT = 0.3; audio.sfx('miss'); o.onHit?.(lane, false); } };
     const kd = (e: KeyboardEvent) => { const l = LANE_KEYS[e.code]; if (l != null && !e.repeat && !ui.modal) { e.preventDefault(); press(l); } }; window.addEventListener('keydown', kd, true);
@@ -101,7 +103,7 @@ export function sequence(o: { title: string; sub?: string; rounds: string[][]; m
   return new Promise((res) => {
     const m = el('div', 'mg clear', `<div class="paper" style="transform:none;text-align:center;width:min(30rem,100%);margin-top:auto;margin-bottom:2rem"><h3>${o.title}</h3><div data-st style="min-height:1.6rem;font-style:italic">${o.sub || ''}</div><div data-seq style="font-size:2.6rem;letter-spacing:.5rem;min-height:3.6rem;font-family:'Playfair Display',serif"></div><div style="opacity:.6;font-size:.85rem">стрелки или WASD</div><div class="opts" style="justify-content:center;margin-top:.5rem">${['left', 'down', 'up', 'right'].map((d) => `<button class="opt" data-d="${d}" style="font-size:1.4rem;width:3rem;text-align:center">${DIR_SYM[d]}</button>`).join('')}</div></div>`, document.getElementById('ui')!);
     const st = m.querySelector('[data-st]')!, sq = m.querySelector('[data-seq]')!; let round = 0, pos = 0, listening = false; const beat = 60 / (o.bpm || 100) * 1000;
-    const want = () => o.mirror?.[round] ? o.rounds[round].map((d) => MIR[d]) : o.rounds[round];
+    const want = () => o.mirror?.[round] ? o.rounds[round].map((d) => MIR[d]) : o.rounds[round]; DBG.cur = { kind: 'sequence', want, pos: () => pos, listening: () => listening };
     const show = async () => { listening = false; st.textContent = o.roundSub?.[round] || (round === 0 ? 'Смотри…' : 'Ещё раз. Смотри…'); sq.textContent = ''; const seq = o.rounds[round]; await new Promise((r) => setTimeout(r, 500));
       for (let i = 0; i < seq.length; i++) { sq.innerHTML = seq.slice(0, i + 1).map((d, j) => `<span style="color:${j === i ? '#8e1830' : '#b89858'}">${DIR_SYM[d]}</span>`).join(''); audio.sfx('hit', { f: { up: 880, down: 523, left: 660, right: 784 }[seq[i]] }); o.onShow?.(seq[i], i); await new Promise((r) => setTimeout(r, beat)); }
       sq.textContent = '· '.repeat(seq.length); st.textContent = o.mirror?.[round] ? 'Теперь ты, зеркально.' : 'Теперь ты.'; pos = 0; listening = true; };
@@ -119,7 +121,7 @@ export function timing(o: { title: string; sub?: string; zone?: number; speed?: 
   return new Promise((res) => {
     const zone = (o.zone || 0.16) * (settings.rhythmEasy ? 1.8 : 1), z0 = 0.5 + (Math.random() - 0.5) * 0.4;
     const m = el('div', 'mg clear', `<div class="paper" style="transform:none;text-align:center;width:min(30rem,100%);margin-top:auto;margin-bottom:2rem"><h3>${o.title}</h3><div style="font-style:italic;margin-bottom:.6rem">${o.sub || ''}</div><div style="position:relative;height:1.6rem;background:#2a1a14;border:2px solid #d4ae48"><div style="position:absolute;top:0;bottom:0;left:${(z0 - zone / 2) * 100}%;width:${zone * 100}%;background:#8e1830"></div><div style="position:absolute;top:0;bottom:0;left:${(z0 - zone / 6) * 100}%;width:${zone / 3 * 100}%;background:#f0d478"></div><div data-c style="position:absolute;top:-.3rem;bottom:-.3rem;width:.3rem;background:#fff;left:0"></div></div><button class="btn small" style="margin-top:.8rem" data-go>Сейчас! (E)</button></div>`, document.getElementById('ui')!);
-    const cur = m.querySelector('[data-c]') as HTMLElement; let x = 0, dir = 1, raf = 0, prev = performance.now(), fin = false;
+    const cur = m.querySelector('[data-c]') as HTMLElement; let x = 0, dir = 1, raf = 0, prev = performance.now(), fin = false; DBG.cur = { kind: 'timing', x: () => x, z0, zone };
     const tick = () => { const n = performance.now(), dt = (n - prev) / 1000; prev = n; if (!G.paused) { x += dir * dt * (o.speed || 0.9); if (x > 1) { x = 1; dir = -1; } if (x < 0) { x = 0; dir = 1; } } cur.style.left = (x * 100) + '%'; if (!fin) raf = requestAnimationFrame(tick); };
     const go = () => { if (fin || ui.modal) return; fin = true; off(); const d = Math.abs(x - z0); const r = d < zone / 6 ? 'perfect' : d < zone / 2 ? 'ok' : 'miss'; audio.sfx(r === 'miss' ? 'error' : 'ok'); setTimeout(() => { m.remove(); res(r); }, 450); };
     const off = input.onAction((a) => { if (a === 'act') go(); }); (m.querySelector('[data-go]') as HTMLElement).onclick = go; raf = requestAnimationFrame(tick);
@@ -150,7 +152,7 @@ export function runner(o: { track: string; title: string; sub?: string; duration
     for (let t = 2; t < dur - 1; t += step * (easy ? 12 : 8)) { const n = Math.random() < (easy ? 0.15 : 0.35) ? 2 : 1; const used = new Set<number>(); for (let k = 0; k < n; k++) { let l = Math.floor(Math.random() * 3); while (used.has(l)) l = (l + 1) % 3; used.add(l); obs.push({ lane: l, t, kind: Math.floor(Math.random() * 3) }); } }
     const kd = (e: KeyboardEvent) => { if (ui.modal) return; if (['ArrowLeft', 'KeyA'].includes(e.code)) { lane = Math.max(0, lane - 1); e.preventDefault(); } if (['ArrowRight', 'KeyD'].includes(e.code)) { lane = Math.min(2, lane + 1); e.preventDefault(); } };
     window.addEventListener('keydown', kd, true); cv.addEventListener('pointerdown', (e) => { const r = cv.getBoundingClientRect(); lane = (e.clientX - r.left) / r.width < 0.5 ? Math.max(0, lane - 1) : Math.min(2, lane + 1); });
-    const LX = [W * 0.25, W * 0.5, W * 0.75], PY = H - 120, SPD = 260; let prev = performance.now();
+    const LX = [W * 0.25, W * 0.5, W * 0.75], PY = H - 120, SPD = 260; let prev = performance.now(); DBG.cur = { kind: 'runner', obs, now: () => audio.now() - t0, lane: () => lane, step, dur, lives };
     const frame = () => { const n = performance.now(), dt = (n - prev) / 1000; prev = n; const t = audio.now() - t0;
       x += (lane - x) * Math.min(1, dt * 14); inv = Math.max(0, inv - dt);
       const stage = o.skin === 'stage', city = o.skin !== 'carriage' && !stage; const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, city ? '#120a2a' : stage ? '#0a0612' : '#2a3a5a'); g.addColorStop(1, city ? '#2a0a3a' : stage ? '#3a1020' : '#5a7a4a'); c.fillStyle = g; c.fillRect(0, 0, W, H);
@@ -172,3 +174,4 @@ export function runner(o: { track: string; title: string; sub?: string; duration
     raf = requestAnimationFrame(frame);
   });
 }
+if (typeof location !== 'undefined' && /[?&]debug=1/.test(location.search)) (window as any).__MG = { pick, lock, board, rhythm, sequence, timing, runner, state: DBG };

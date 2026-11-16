@@ -1,0 +1,35 @@
+// Мини-игры «по-настоящему»: без ускорения G.fast, бот играет через те же клавиши и кнопки, что и игрок.
+// Запуск: node tests/minigames.mjs [BASE]. Проверяет, что каждая мини-игра с параметрами из глав завершается и проходима.
+import { createRequire } from 'module'; const { chromium } = createRequire('/')('/opt/node-tools/node_modules/playwright');
+const BASE = process.argv[2] || 'http://localhost:5173/';
+const b = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--autoplay-policy=no-user-gesture-required'] }); const p = await b.newPage({ viewport: { width: 960, height: 640 } });
+const errors = []; p.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
+await p.goto(BASE + '?debug=1'); await p.waitForSelector('#boot.ready', { timeout: 30000 }); await p.mouse.click(5, 5); await p.waitForSelector('.menu-screen', { timeout: 30000 });
+const res = await p.evaluate(async () => {
+  const G = window.__G, out = []; document.querySelector('.menu-screen')?.remove(); G.fast = true;
+  await G.start({ v: 3, room: 'hub_dressing', spot: 'start', chapter: 'test', f: { woke: 1 }, inv: [], notes: [], photos: [], seen: {}, mask: null, time: 0 }); await G.goto('ang_practice', 'start'); for (let i = 0; i < 100 && !window.__MG; i++) await new Promise((r) => setTimeout(r, 100)); const MG = window.__MG; if (!MG) throw new Error('мини-игры не загрузились'); G.fast = false;
+  const raf = () => new Promise((r) => requestAnimationFrame(r)), sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const key = (code) => window.dispatchEvent(new KeyboardEvent('keydown', { code, bubbles: true }));
+  const bot = async (promise, step) => { let done = false, val; promise.then((v) => { done = true; val = v; }); const t0 = performance.now(); while (!done) { if (performance.now() - t0 > 120000) throw new Error('таймаут'); await step(MG.state.cur); await raf(); } return val; };
+  const LK = ['KeyD', 'KeyF', 'KeyJ', 'KeyK'];
+  const rhythm = async (name, o) => { const r = await bot(MG.rhythm(o), (s) => { if (s?.kind !== 'rhythm') return; const t = s.now(); const used = new Set(); for (const n of s.notes) if (!n.hit && !used.has(n.lane) && n.t - t < 0.02 && t - n.t < s.win * 0.8) { used.add(n.lane); key(LK[n.lane]); } }); out.push(`${name}: нот ${r.total}, попаданий ${r.hits}, счёт ${r.score.toFixed(2)} ${r.total >= 8 && r.score > 0.85 ? '✓' : '✗'}`); };
+  await rhythm('Ритм «Sugar Sugar Heart» (вокал и идеальный концерт)', { track: 'idol_agency', part: 4, loops: 2, title: 't' });
+  await rhythm('Ритм «Песня с кухни»', { track: 'idol_own', part: 4, loops: 2, title: 't' });
+  await rhythm('Ритм «Хлопайте!» (финал)', { track: 'fin_queen', part: 2, loops: 1, title: 't' });
+  const runner = async (name, o) => { const r = await bot(MG.runner(o), (s) => { if (s?.kind !== 'runner') return; const t = s.now(); const next = s.obs.filter((x) => x.t > t - 0.12 && x.t < t + 0.55); if (!next.length) return; const t1 = Math.min(...next.map((x) => x.t)); const blocked = new Set(next.filter((x) => x.t - t1 < 0.05).map((x) => x.lane)); const cur = s.lane(); if (!blocked.has(cur)) return; const free = [0, 1, 2].filter((l) => !blocked.has(l)).sort((a, c) => Math.abs(a - cur) - Math.abs(c - cur))[0]; key(free < cur ? 'ArrowLeft' : 'ArrowRight'); }); out.push(`${name}: столкновений ${r.hits} ${r.ok ? '✓' : '✗'}`); };
+  await runner('Погоня «Казино складывается» (короткая, 5 жизней)', { track: 'chase', title: 't', duration: 16, lives: 5, skin: 'stage' });
+  await runner('Погоня «Казино складывается» (длинная, 3 жизни)', { track: 'chase', title: 't', duration: 28, lives: 3, skin: 'stage' });
+  const seq = async (name, o) => { let last = -1; const ok = await bot(MG.sequence(o), async (s) => { if (s?.kind !== 'sequence' || !s.listening()) { last = -1; return; } const pos = s.pos(); if (pos === last) return; last = pos; const d = s.want()[pos]; document.querySelector(`.mg [data-d="${d}"]`)?.click(); await sleep(120); last = -1; }); out.push(`${name}: ${ok ? '✓' : '✗'}`); };
+  await seq('Танцевальная связка (Ангелина)', { title: 't', bpm: 128, rounds: [['left', 'right', 'up', 'down'], ['up', 'up', 'left', 'right', 'down', 'up'], ['left', 'down', 'right', 'up', 'left', 'left', 'down', 'up']] });
+  await seq('Придворный менуэт (финал)', { title: 't', bpm: 112, mirror: [false, false], rounds: [['left', 'right', 'up', 'down'], ['up', 'left', 'right', 'right', 'down', 'up']] });
+  await seq('Зеркальная хореография (финал)', { title: 't', bpm: 126, mirror: [true, true, false], rounds: [['left', 'up', 'right', 'down'], ['right', 'right', 'up', 'left', 'down', 'up'], ['up', 'left', 'left', 'down', 'right', 'up', 'down', 'up']] });
+  const timing = async (name, o) => { let fired = false; const r = await bot(MG.timing(o), (s) => { if (fired || s?.kind !== 'timing') return; if (Math.abs(s.x() - s.z0) < s.zone / 4) { fired = true; key('KeyE'); } }); out.push(`${name}: ${r} ${r !== 'miss' ? '✓' : '✗'}`); };
+  await timing('Тайминг «Лассо из косы» (Лиза)', { title: 't', zone: 0.2, speed: 1.1 });
+  await timing('Тайминг «Сигнал свету» (театр)', { title: 't', zone: 0.22 });
+  await timing('Тайминг по умолчанию (Матвей, дождь)', { title: 't' });
+  { const pr = MG.lock({ title: 't', symbols: ['☾', '✶', '♣', '⚷', '◉'], len: 3 }); await sleep(300); const m = document.querySelector('.lock').closest('.modal, .paper, div[class]'); const want = [2, 3, 0]; for (let i = 0; i < 3; i++) for (let k = 0; k < want[i]; k++) document.querySelector(`[data-i="${i}"][data-d="1"]`).click(); document.querySelector('[data-ok]').click(); const r = await pr; out.push(`Замок подвала (Полина): ${r?.join(' ')} ${r?.join() === '♣,⚷,☾' ? '✓' : '✗'}`); void m; }
+  { const pr = MG.board({ title: 't', intro: '', left: { title: 'l', items: [{ id: 'a', title: 'a', text: '' }, { id: 'b', title: 'b', text: '' }] }, right: { title: 'r', items: [{ id: 'x', title: 'x', text: '' }, { id: 'y', title: 'y', text: '' }] }, pairs: [['a', 'x', ''], ['b', 'y', '']], wrong: ['нет'] }); await sleep(300); for (const [l, r] of [['a', 'y'], ['a', 'x'], ['b', 'y']]) { document.querySelector(`[data-l="${l}"]`).click(); document.querySelector(`[data-r="${r}"]`).click(); document.querySelector('[data-ok]').click(); await sleep(150); } const r = await pr; out.push(`Доска (одна неверная нитка, потом верные): ${r.done ? '✓' : '✗'}`); }
+  { const pr = MG.pick({ title: 't', rows: [{ id: 'r1', label: 'a', options: [{ id: 'o1', text: '1' }, { id: 'o2', text: '2' }] }, { id: 'r2', label: 'b', options: [{ id: 'o1', text: '1' }, { id: 'o2', text: '2' }] }] }); await sleep(300); const okb = document.querySelector('[data-ok]'); const dis0 = okb.disabled; document.querySelector('[data-r="r1"][data-o="o2"]').click(); document.querySelector('[data-r="r2"][data-o="o1"]').click(); okb.click(); const r = await pr; out.push(`Лист выбора: ${dis0 && r.r1 === 'o2' && r.r2 === 'o1' ? '✓' : '✗'}`); }
+  return out;
+}).catch((e) => ['ОШИБКА: ' + e.message]);
+console.log(res.join('\n')); if (errors.length) console.log(errors.join('\n')); await b.close(); process.exit(res.some((l) => /✗|ОШИБКА/.test(l)) || errors.length ? 1 : 0);
