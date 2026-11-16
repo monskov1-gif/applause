@@ -28,12 +28,12 @@ export interface Settings {
   textSpeed: number;               // символов в секунду, 0 = мгновенно
   reduceFlash: boolean; reduceShake: boolean; contrast: boolean;
   rhythmEasy: boolean; rhythmOffset: number;   // мс
-  touch: boolean; introAlways: boolean;
+  touch: boolean; introAlways: boolean; fullscreen: boolean;
 }
 export const defaultSettings: Settings = {
   music: 0.7, sfx: 0.8, voice: 0.6, uiScale: 1, quality: 'med', textSpeed: 45,
   reduceFlash: false, reduceShake: false, contrast: false, rhythmEasy: false, rhythmOffset: 0,
-  touch: typeof window !== 'undefined' && ('ontouchstart' in window) && matchMedia('(pointer: coarse)').matches, introAlways: false,
+  touch: typeof window !== 'undefined' && ('ontouchstart' in window) && matchMedia('(pointer: coarse)').matches, introAlways: false, fullscreen: true,
 };
 export const settings: Settings = loadSettings();
 function loadSettings(): Settings {

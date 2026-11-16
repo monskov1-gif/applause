@@ -258,3 +258,5 @@ body.noir-mode .dlg .port img, body.noir-mode .questbox, body.noir-mode .hud .ma
 .xport img { width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; } .xport span { font: 2rem 'Playfair Display', serif; color: #d4ae4877; }
 .xcard figcaption { margin-top: .3rem; font-size: .85rem; } .xcard figcaption small { display: block; opacity: .65; font-style: italic; } .xcard.locked .xport { filter: grayscale(1) brightness(.6); }
 .xtracks { display: flex; flex-wrap: wrap; gap: .4rem; } .xtrack { font-size: .85rem; padding: .35rem .7rem; } .xtrack.on { background: #8e1830; color: #fff4e0; }
+
+.eggimg { width: 48px; height: 48px; image-rendering: pixelated; float: left; margin: 0 .6rem .2rem 0; border: 2px solid #86641c; background: #1a1214; }

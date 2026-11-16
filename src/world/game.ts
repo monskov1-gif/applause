@@ -82,7 +82,7 @@ class Game {
   }
   /** Переход в комнату. fade: fade | curtain | iris | flash | glitch | mirror | page | none */
   async goto(id: string, spot = 'start', o: { fade?: string; load?: boolean; silent?: boolean } = {}) {
-    this.lock++; const from = this.room ? this.room.id : (o.load ? 'load' : '');
+    this.lock++; this.pendingIn = null; const from = this.room ? this.room.id : (o.load ? 'load' : '');
     const fade = this.fast ? 'none' : (o.fade || 'fade');
     try {
       if (fade !== 'none') await ui.transition(fade, 'out');
@@ -107,12 +107,17 @@ class Game {
       this.state.room = id; this.state.spot = spot; (this.state.f.visited ||= {})[id] = 1; if (def.chapter) this.state.chapter = def.chapter;
       ui.hud(); if (!o.load && !this.fast) await this.save('auto');
       const cardLines = def.card?.(this); if (cardLines) { await ui.card(cardLines); }
-      if (fade !== 'none') await ui.transition(fade, 'in');
+      // если у комнаты есть сценарий входа, занавес держим закрытым: сначала титр (если он есть), потом комната
+      if (fade !== 'none') { if (def.enter) { this.pendingIn = fade; const tok = this.pendingIn; setTimeout(() => { if (this.pendingIn === tok) void this.reveal(); }, 6000); } else await ui.transition(fade, 'in'); }
       if (!o.silent && from !== id) ui.place(def.name);
     } finally { this.lock--; }
     const def = this.room!.def;
     if (def.enter) await this.cut(() => def.enter!(this, from));
+    await this.reveal();
   }
+  private pendingIn: string | null = null;
+  /** Открыть комнату после перехода (если занавес ещё закрыт). */
+  async reveal() { if (!this.pendingIn) return; const f = this.pendingIn; this.pendingIn = null; await ui.transition(f, 'in'); }
   /** Перестроить текущую комнату (после изменения флагов), сохранив положение героини. */
   async rebuild() { const p = this.player, x = p.x, z = p.z, d = p.dir; await this.goto(this.room!.id, this.state.spot, { fade: 'none', silent: true }); this.player.place(x, z, d); this.camSnap(); }
   async cut<T>(fn: () => T | Promise<T>): Promise<T> { this.lock++; ui.prompt(null); try { return await fn(); } finally { this.lock--; } }
@@ -140,6 +145,7 @@ class Game {
   /** Исполняет диалоговые данные (см. src/data/dialogue). */
   private runDepth = 0;
   async run(nodes: any[]): Promise<void> {
+    await this.reveal();
     this.lock++; this.runDepth++; audio.duck(true);
     try {
       for (const n of nodes) {
@@ -221,9 +227,9 @@ class Game {
       this.ray.camera = cam; const from = cam.position.clone();
       for (const hy of [0.5, 1.3, 2.1]) { const to = new THREE.Vector3(p.x, hy, p.z); const dir = to.clone().sub(from); const dist = dir.length(); this.ray.set(from, dir.normalize()); this.ray.far = dist - 0.6; for (const h of this.ray.intersectObjects(room.group.children, true)) if (ok(h.object)) want.add(h.object as THREE.Mesh); }
       if (this.fadeCacheRoom !== room) { this.fadeCacheRoom = room; this.fadeCache = []; room.group.updateMatrixWorld(); room.group.traverse((o) => { if ((o as any).isMesh && ok(o)) { const v = new THREE.Vector3(); o.getWorldPosition(v); this.fadeCache.push({ m: o as THREE.Mesh, p: v, bb: new THREE.Box3().setFromObject(o) }); } }); }
-      for (const e of this.fadeCache) { if (!e.m.visible) continue; if (e.bb.max.y > 1.7 && e.p.distanceToSquared(from) < 56.25) { want.add(e.m); continue; } // низкие предметы (кресла, столы) не прячем
+      for (const e of this.fadeCache) { if (!e.m.visible) continue;  // низкие предметы (кресла, столы) не прячем
         // высокие предметы между камерой и героиней (люстры, портал, козырьки) прячутся
-        const b = e.bb; if (b.min.y > 3.8 && b.max.z > p.z + 0.5 && b.max.z - b.min.z < 12 && Math.max(b.min.x - p.x, p.x - b.max.x, 0) < 9) { want.add(e.m); high.add(e.m); } }
+        const b = e.bb; if (b.min.y > 3.8 && b.max.x - b.min.x > 5 && b.max.z > p.z + 0.5 && b.max.z - b.min.z < 12 && Math.max(b.min.x - p.x, p.x - b.max.x, 0) < 9) { want.add(e.m); high.add(e.m); } }
       for (const m of want) { let e = this.faded.get(m); if (!e) { const orig = m.material; const clone = (orig as THREE.Material).clone(); clone.transparent = true; e = { orig, clone, a: 1, tgt: 0.3 }; m.material = clone; this.faded.set(m, e); } e.tgt = high.has(m) ? 0 : 0.3; }
       for (const [m, e] of this.faded) if (!want.has(m)) e.tgt = 1;
     }

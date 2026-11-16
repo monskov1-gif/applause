@@ -1,3 +1,4 @@
+import { enterFullscreen, autoFullscreen } from './core/fullscreen';
 import '@fontsource/lora/cyrillic-400.css'; import '@fontsource/lora/cyrillic-400-italic.css'; import '@fontsource/lora/cyrillic-700.css'; import '@fontsource/lora/latin-400.css';
 import '@fontsource/playfair-display/cyrillic-400.css'; import '@fontsource/playfair-display/cyrillic-700.css'; import '@fontsource/playfair-display/latin-400.css'; import '@fontsource/playfair-display/cyrillic-400-italic.css';
 import '@fontsource/marck-script/cyrillic-400.css'; import '@fontsource/marck-script/latin-400.css';
@@ -17,7 +18,7 @@ async function boot() {
     const unlock = () => { audio.init(); }; window.addEventListener('pointerdown', unlock); window.addEventListener('keydown', unlock);
     // Вход: один жест пользователя включает звук и полноэкранный режим (браузеры не позволяют сделать это автоматически).
     st.innerHTML = '<span class="boot-enter">нажмите, чтобы войти в театр</span>'; bootEl.classList.add('ready');
-    await new Promise<void>((res) => { const go = () => { window.removeEventListener('keydown', go, true); bootEl.removeEventListener('pointerdown', go); audio.init(); const de: any = document.documentElement; try { const r = (de.requestFullscreen || de.webkitRequestFullscreen)?.call(de, { navigationUI: 'hide' }); if (r && r.catch) r.catch((e: any) => console.warn('[fullscreen]', e)); } catch (e) { console.warn('[fullscreen] недоступен', e); } res(); }; window.addEventListener('keydown', go, true); bootEl.addEventListener('pointerdown', go); });
+    autoFullscreen(); await new Promise<void>((res) => { const go = () => { window.removeEventListener('keydown', go, true); bootEl.removeEventListener('pointerdown', go); audio.init(); enterFullscreen(); res(); }; window.addEventListener('keydown', go, true); bootEl.addEventListener('pointerdown', go); });
     await ui.mainMenu(); bootEl.style.opacity = '0'; setTimeout(() => bootEl.remove(), 700);
   } catch (e: any) {
     console.error('[boot] игра не запустилась', e); st.textContent = 'Не удалось запустить игру: ' + (e?.message || e) + '. Проверьте, что браузер поддерживает WebGL, и обновите страницу.';

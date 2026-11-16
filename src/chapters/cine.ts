@@ -27,7 +27,7 @@ export const additive = (map: THREE.Texture, color = 0xffffff) => new THREE.Mesh
 export async function warmOn(G: any, x: number, z: number, o: { music?: string; back?: string | null; shafts?: number; motes?: 'dust' | 'fireflies' | 'petals'; glow?: number; y?: number; grade?: any; key?: number } = {}) {
   const room = G.room; if (!room) return async () => {};
   const saved = { ...G.gradeBase, tint: G.gradeBase.tint ? [...G.gradeBase.tint] : undefined }; G.grade(o.grade || WARM);
-  if (o.music) G.audio.music(o.music);
+  const prevMus = G.audio.cur?.id ?? null; const mus = o.music === undefined ? 'tender' : o.music; if (mus && mus !== prevMus) G.audio.music(mus, { fade: 2 }); // тёплый момент: трогательная музыка по умолчанию
   const grp = new THREE.Group(); grp.position.set(x, 0, z); room.group.add(grp); const mats: { m: THREE.Material & { opacity: number }; a: number }[] = [];
   const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex(), color: 0xffd8a0, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })); halo.position.set(0, o.y ?? 2.0, 0.2); halo.scale.set(9, 7, 1); grp.add(halo); mats.push({ m: halo.material as any, a: o.glow ?? 0.32 });
   for (let i = 0; i < (o.shafts ?? 3); i++) { const m = additive(shaftTex(), 0xffe0b0); const s = new THREE.Mesh(new THREE.PlaneGeometry(1.4 + i * 0.5, 10), m); s.position.set(-2.4 + i * 2.2, 4.6, -1.6 - i * 0.3); s.rotation.z = 0.38; grp.add(s); mats.push({ m: m as any, a: 0.16 - i * 0.03 }); }
@@ -39,7 +39,7 @@ export async function warmOn(G: any, x: number, z: number, o: { music?: string; 
   const key = room.named.warmKey as THREE.PointLight | undefined; const kInt = o.key ?? 6;
   await ctw(G, 1.4, (k) => { for (const e of mats) e.m.opacity = e.a * k; if (key) key.intensity = kInt * k; });
   return async () => {
-    if (G.room === room) { G.gradeBase = saved; G.applyGrade(); if (o.back !== undefined) G.audio.music(o.back); await ctw(G, 1.6, (k) => { for (const e of mats) e.m.opacity = e.a * (1 - k); if (key) key.intensity = kInt * (1 - k); }); }
+    if (G.room === room) { G.gradeBase = saved; G.applyGrade(); if (o.back !== undefined) G.audio.music(o.back); else if (mus && mus !== prevMus) G.audio.music(prevMus, { fade: 2 }); await ctw(G, 1.6, (k) => { for (const e of mats) e.m.opacity = e.a * (1 - k); if (key) key.intensity = kInt * (1 - k); }); }
     const i = room.updaters.indexOf(upd); if (i >= 0) room.updaters.splice(i, 1); grp.parent?.remove(grp); geo.dispose();
   };
 }

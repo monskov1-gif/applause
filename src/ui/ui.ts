@@ -53,6 +53,8 @@ function theaterMap(cur: string, visited: Record<string, 1>) {
 }
 const fmtTime = (s: number) => `${Math.floor(s / 3600)}:${String(Math.floor(s / 60) % 60).padStart(2, '0')}`;
 import { logoSVG } from './logo';
+import { eggIcon } from './eggicons';
+import { enterFullscreen, exitFullscreen } from '../core/fullscreen';
 export const LOGO = logoSVG('m');
 
 class UI {
@@ -181,7 +183,7 @@ class UI {
     if (G.fast) return Promise.resolve();
     return new Promise((res) => {
       const c = el('div', 'card', lines.map((l, i) => { const [t, cls] = Array.isArray(l) ? l : [l, '']; return `<p class="${cls}" style="animation-delay:${i * 0.9}s">${t}</p>`; }).join('') + '<div class="more">нажмите, чтобы продолжить</div>', root());
-      const t0 = performance.now(); let gone = false; const fin = () => { if (gone || performance.now() - t0 < 900) return; gone = true; off(); c.classList.add('out'); setTimeout(() => { c.remove(); res(); }, 650); }; const off = input.onAction((a) => { if (a === 'act' && !this.modal) fin(); }); c.onclick = fin;
+      const t0 = performance.now(); let gone = false; const fin = () => { if (gone || performance.now() - t0 < 900) return; gone = true; off(); c.classList.add('out'); void (G as any).reveal?.(); setTimeout(() => { c.remove(); res(); }, 650); }; const off = input.onAction((a) => { if (a === 'act' && !this.modal) fin(); }); c.onclick = fin;
     });
   }
 
@@ -215,11 +217,11 @@ class UI {
       ${row('Меньше вспышек', chk('reduceFlash'), 'приглушает вспышки и глитч-эффекты')}${row('Без тряски камеры', chk('reduceShake'))}${row('Повышенный контраст текста', chk('contrast'))}
       ${row('Облегчённые ритм-сцены', chk('rhythmEasy'), 'широкие окна попадания, меньше нот, нельзя проиграть')}${row('Задержка звука, мс', rng('rhythmOffset', -200, 200, 5) + ' <span data-off></span>', 'для ритм-сцен')}
       ${row('', '<button class="btn small" data-a="calib">Калибровка задержки</button>')}
-      ${row('Сенсорное управление', chk('touch'), 'экспериментально: джойстик и кнопки на экране')}${row('Вступление при каждом запуске', chk('introAlways'), 'иначе, только при первом запуске')}
+      ${row('Сенсорное управление', chk('touch'), 'экспериментально: джойстик и кнопки на экране')}${row('Полноэкранный режим', chk('fullscreen'), 'игра сама разворачивается на весь экран; на iPhone добавьте её на экран «Домой»')}${row('Вступление при каждом запуске', chk('introAlways'), 'иначе, только при первом запуске')}
       <p class="warn">Управление: WASD или стрелки, ходьба, Shift, быстрее, E / Enter / Пробел, действие, 1–3, маски, Q: снять маску, C: фотоаппарат, Tab, блокнот, H: история, Ctrl, пропуск прочитанного, Esc, пауза.</p></div>
       <div class="foot"><button class="btn small" data-x>Готово</button></div>`);
     (m.querySelector('[data-k=quality]') as HTMLSelectElement).value = s.quality; const offL = m.querySelector('[data-off]')!; offL.textContent = s.rhythmOffset + '';
-    m.addEventListener('input', (e) => { const t = e.target as HTMLInputElement, k = t.dataset.k; if (!k) return; (s as any)[k] = t.type === 'checkbox' ? t.checked : t.tagName === 'SELECT' ? t.value : parseFloat(t.value); offL.textContent = s.rhythmOffset + ''; saveSettings(); this.applySettings(); if (k === 'quality') G.R.setup(); if (k === 'sfx') audio.sfx('click'); });
+    m.addEventListener('input', (e) => { const t = e.target as HTMLInputElement, k = t.dataset.k; if (!k) return; (s as any)[k] = t.type === 'checkbox' ? t.checked : t.tagName === 'SELECT' ? t.value : parseFloat(t.value); offL.textContent = s.rhythmOffset + ''; saveSettings(); this.applySettings(); if (k === 'quality') G.R.setup(); if (k === 'sfx') audio.sfx('click'); if (k === 'fullscreen') { if (s.fullscreen) enterFullscreen(); else exitFullscreen(); } });
     m.addEventListener('click', async (e) => { if ((e.target as HTMLElement).dataset?.a === 'calib') { const { calibrate } = await import('./minigames'); const v = await calibrate(); if (v != null) { s.rhythmOffset = v; saveSettings(); (m.querySelector('[data-k=rhythmOffset]') as HTMLInputElement).value = String(v); offL.textContent = v + ''; } } });
   }
   async saveLoad(mode: 'save' | 'load') {
@@ -248,7 +250,7 @@ class UI {
       if (t === 'quests') { const o = objective(G); body.innerHTML = `<div class="q-main"><small>Сейчас</small><h3>${esc(o.main || 'Смотреть спектакль')}</h3>${o.hint ? `<p><i>${esc(o.hint)}</i></p>` : ''}</div>${(o.extra || []).length ? `<h4 class="q-h">Можно сделать</h4><ul class="q-list">${o.extra!.map((e) => `<li>${esc(e)}</li>`).join('')}</ul>` : ''}<h4 class="q-h">Сыграно</h4><ul class="q-list done">${['polina', 'ruben', 'matvey', 'erika', 'liza', 'angelina'].filter((c) => f['done_' + c]).map((c) => `<li>${esc(CHARS[c].name)}: история сыграна</li>`).join('') || '<li><i>пока ничего</i></li>'}</ul>`; return; }
       if (t === 'items') { body.innerHTML = G.state.inv.length ? `<div class="inv">${G.state.inv.map((id) => `<div class="inv-it"><img src="${itemIcon(id)}" alt=""><b>${esc(ITEMS[id]?.name || id)}</b><span>${esc(ITEMS[id]?.desc || '')}</span></div>`).join('')}</div>` : '<p><i>Карманы пусты.</i></p>'; return; }
       if (t === 'mech') { const got = Object.keys(f.mech || {}); body.innerHTML = got.length ? got.filter((k) => MECH[k]).map((k) => `<div class="entry noimg"><div><h4>${esc(MECH[k].title)}</h4><p>${esc(MECH[k].text)}</p></div></div>`).join('') : '<p><i>Механики появятся по ходу игры.</i></p>'; return; }
-      if (t === 'eggs') { const e = f.eggs || {}; const all = Object.entries(EGGS); body.innerHTML = `<p class="warn">Найдено ${Object.keys(e).length} из ${all.length}. Пасхалки, отсылки и мелкие радости.</p><div class="eggs">${all.map(([k, v]) => `<div class="egg ${e[k] ? 'on' : ''}"><b>${e[k] ? '★ ' + esc(v.title) : '☆ ???'}</b><span>${e[k] ? esc(v.desc) : 'Где искать: ' + esc(v.hint)}</span></div>`).join('')}</div>`; return; }
+      if (t === 'eggs') { const e = f.eggs || {}; const all = Object.entries(EGGS); body.innerHTML = `<p class="warn">Найдено ${Object.keys(e).length} из ${all.length}. Пасхалки, отсылки и мелкие радости.</p><div class="eggs">${all.map(([k, v]) => `<div class="egg ${e[k] ? 'on' : ''}"><img class="eggimg" src="${eggIcon(k, !!e[k])}" alt=""><b>${e[k] ? '★ ' + esc(v.title) : '☆ ???'}</b><span>${e[k] ? esc(v.desc) : 'Где искать: ' + esc(v.hint)}</span></div>`).join('')}</div>`; return; }
       if (t === 'map') { body.innerHTML = theaterMap(G.state.room, f.visited || {}); return; }
       if (t === 'photos') { body.innerHTML = G.state.photos.length ? `<div class="photos">${G.state.photos.map((p, i) => `<div class="photo" data-ph="${i}" style="--r:${(i * 37 % 7) - 3}deg"><img src="${p.img}" alt=""><span>${esc(p.caption)}</span></div>`).join('')}</div>` : '<p><i>Плёнка пока пуста. Фотоаппарат, клавиша C.</i></p>'; return; }
       const sec = (cat: string, title: string) => { const list = G.state.notes.map((id) => NOTES[id]).filter((n) => n && n.cat === cat); if (!list.length) return ''; return `<h4 class="q-h">${title}</h4>` + list.map((n) => { const c = n.char ? CHARS[n.char] : null; return `<div class="entry ${c ? '' : 'noimg'}">${c ? `<img src="${portrait(n.char!, (n.expr || 'neutral') as any)}" alt="">` : ''}<div><h4>${esc(n.title)}</h4>${c?.role ? `<div class="role">${esc(c.role)}</div>` : ''}<p>${n.text}</p></div></div>`; }).join(''); };
